@@ -792,12 +792,12 @@ UTF-8 เป็นการเข้ารหัส Unicode แบบ variable-l
 #### 7.6 Rune ใน Go
 `rune` เป็น alias ของ `int32` ใช้แทน Unicode code point ใน Go
 ```go
-var ch rune = 'ก' // รหัส Unicode 0xE01
-fmt.Printf("%c %U\n", ch, ch) // ก U+0E01
+var ch rune = 'CD' // รหัส Unicode 0xE01
+fmt.Printf("%c %U\n", ch, ch) //   U+0E01
 ```
 การวนลูปผ่าน string แบบ rune:
 ```go
-s := "hello 世界"
+s := "hello"
 for i, r := range s {
     fmt.Printf("%d: %c (%U)\n", i, r, r)
 }
