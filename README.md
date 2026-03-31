@@ -53,7 +53,20 @@ In this project use 3 layer architecture
 - OR  go run main.go serve  on loca Windows OS
 - Swagger: [localhost:5000/swagger/](http://localhost:5000/swagger/)
 - http://localhost:5000/swagger/index.html#/
+- 
+```bash
+ 
+  Email: root@gmail.com
+  Password: root_password
 
+{
+  "confirm_password": "kongnakornna",
+  "email": "kongnakornna@gmail.com",
+  "name": "kongnakornna",
+  "password": "kongnakornna"
+}
+
+```
 ## TODO
 
 - Traefik
@@ -150,11 +163,12 @@ go run main.go serve --help
    ```bash
       go run main.go serve
    ```
-   
+
 ```bash
    go run main.go migrate
    go run main.go initdata
    go run main.go serve
+
 
  ```
 ## If you get configuration errors:
