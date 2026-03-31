@@ -34,7 +34,7 @@ postgres:
   Dbname: db
 
 redis:
-  Addr: redis:6379
+  Addr: localhost:6379
   Password:
   Db: 0
   MinIdleConns: 200
@@ -42,15 +42,15 @@ redis:
   PoolTimeout: 240
 
 taskRedis:
-  Addr: redis:6379
+  Addr: localhost:6379
   Db: 1
 
 email:
-  From: admin@admin.com
+  From: kongnakornna@gamil.com
   Name: Go restapi
   Link: https://github.com/kongnakornna/gorestapi
   LogoLink: https://media.vov.vn/sites/default/files/styles/front_large/public/2022-12/nhung-dieu-thu-vi-ve-logo-apple-ma-ban-chua-biet-4.png
-  Copyright: Copyright © 2017 example inc. All rights reserved.
+  Copyright: Copyright © 2026 example inc. All rights reserved.
   VerificationSubject: Your account verification code
   ResetSubject: Your account password reset token
 

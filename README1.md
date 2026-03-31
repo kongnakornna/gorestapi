@@ -466,3 +466,6 @@ go run main.go initdata
 5. **Swagger documentation** - If you've set up swagger, you might be able to access it at `http://localhost:8080/swagger/index.html`
 
 Is the server starting correctly when you run `go run main.go serve`, or are you seeing any errors?
+
+
+go run main.go serve

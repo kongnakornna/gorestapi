@@ -104,6 +104,8 @@ go mod verify
 
 # 4. Run the application
 go run main.go
+go run main.go serve
+
 # Or if the main file is in cmd directory:
 go run cmd/gorestapi/main.go
 
@@ -116,6 +118,50 @@ ls main.go
 ls go.mod
 
 ```
+The output shows the CLI is working correctly. Now you need to actually run one of the commands. The application isn't starting because you haven't specified which command to run.
+
+## To start your API server, run:
+
+```bash
+go run main.go serve
+```
+
+If you want to see what options are available for the serve command:
+
+```bash
+go run main.go serve --help
+```
+
+## Typical workflow for a new setup:
+
+1. **First, run migrations** to set up your database schema:
+   ```bash
+   go run main.go migrate
+   ```
+
+2. **Then initialize data** (if you have seed data):
+   ```bash
+   go run main.go initdata
+   ```
+
+3. **Finally, start the server**:
+   ```bash
+   go run main.go serve
+   ```
+
+## If you get configuration errors:
+
+Your app likely needs configuration. Check if you have:
+- A `.env` file or `config.yaml` in your project root
+- Environment variables set for database connection, Redis, etc.
+
+Common configuration needed:
+- Database URL (PostgreSQL)
+- Redis URL (for asynq)
+- JWT secret
+- SMTP settings for email (since it's passwordless auth)
+
+
 
 ## Common Next Steps Based on Project Type
 
