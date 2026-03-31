@@ -3,14 +3,14 @@ package cmd
 import (
 	"context"
 
-	"github.com/hiennguyen9874/go-boilerplate/config"
-	"github.com/hiennguyen9874/go-boilerplate/internal/distributor"
-	userDistributor "github.com/hiennguyen9874/go-boilerplate/internal/users/distributor"
-	userRepository "github.com/hiennguyen9874/go-boilerplate/internal/users/repository"
-	userUseCase "github.com/hiennguyen9874/go-boilerplate/internal/users/usecase"
-	"github.com/hiennguyen9874/go-boilerplate/pkg/db/postgres"
-	"github.com/hiennguyen9874/go-boilerplate/pkg/db/redis"
-	"github.com/hiennguyen9874/go-boilerplate/pkg/logger"
+	"github.com/kongnakornna/gorestapi/config"
+	"github.com/kongnakornna/gorestapi/internal/distributor"
+	userDistributor "github.com/kongnakornna/gorestapi/internal/users/distributor"
+	userRepository "github.com/kongnakornna/gorestapi/internal/users/repository"
+	userUseCase "github.com/kongnakornna/gorestapi/internal/users/usecase"
+	"github.com/kongnakornna/gorestapi/pkg/db/postgres"
+	"github.com/kongnakornna/gorestapi/pkg/db/redis"
+	"github.com/kongnakornna/gorestapi/pkg/logger"
 	"github.com/spf13/cobra"
 )
 

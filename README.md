@@ -76,3 +76,189 @@ In this project use 3 layer architecture
 - [codevoweb.com/how-to-upload-single-and-multiple-files-in-golang/](https://codevoweb.com/how-to-upload-single-and-multiple-files-in-golang/)
 - [codevoweb.com/forgot-reset-passwords-in-golang-with-html-email/](https://codevoweb.com/forgot-reset-passwords-in-golang-with-html-email/)
 - [techmaster.vn/posts/34577/kien-truc-sach-voi-golang](https://techmaster.vn/posts/34577/kien-truc-sach-voi-golang)
+
+
+
+### Installation
+
+Perfect! You're setting up an existing Go project (gorestapi). Here's how to properly set it up and run it:
+
+## Complete Setup Steps for Your gorestapi Project
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/kongnakornna/gorestapi
+cd gorestapi
+
+# 2. Download and tidy up dependencies
+go mod tidy
+
+# 3. Verify the module is set up correctly
+go mod verify
+
+
+# Inside container or locally
+go mod tidy
+go mod download
+go mod verify
+
+# 4. Run the application
+go run main.go
+# Or if the main file is in cmd directory:
+go run cmd/gorestapi/main.go
+
+# Project Structure Check
+
+# Check if these exist
+ls docker-compose.yml
+ls Dockerfile
+ls main.go
+ls go.mod
+
+```
+
+## Common Next Steps Based on Project Type
+
+### If it's a REST API (likely based on the name):
+
+```bash
+# Run the server (usually on port 8080)
+go run main.go
+
+# In another terminal, test the API endpoints
+curl http://localhost:8080/health
+curl http://localhost:8080/api/users
+```
+
+### If you need to build the binary:
+
+```bash
+# Build for current OS
+go build -o gorestapi
+
+# Run the binary
+./gorestapi
+
+# Build for different platforms (optional)
+# Windows:
+GOOS=windows GOARCH=amd64 go build -o gorestapi.exe
+# Linux:
+GOOS=linux GOARCH=amd64 go build -o gorestapi-linux
+# macOS:
+GOOS=darwin GOARCH=arm64 go build -o gorestapi-mac
+```
+
+## Troubleshooting Common Issues
+
+### If `go mod tidy` fails:
+
+```bash
+# Check Go version (need Go 1.11+ for modules)
+go version
+
+# If Go is not installed, install it first:
+# On Ubuntu/Debian:
+sudo apt install golang-go
+# On macOS:
+brew install go
+# On Windows: Download from https://golang.org/dl
+
+# Clean module cache if needed
+go clean -modcache
+go mod tidy
+```
+
+### If there are dependency conflicts:
+
+```bash
+# Update all dependencies to compatible versions
+go get -u ./...
+go mod tidy
+```
+
+### If the project uses environment variables:
+
+```bash
+# Check for .env file or example
+ls -la | grep env
+
+# If .env.example exists, copy it
+cp .env.example .env
+
+# Load environment variables (on Linux/macOS)
+source .env
+# Or export them directly
+export PORT=8080
+export DB_URL="postgres://..."
+```
+
+## Project Structure Check
+
+After cloning, look for these common patterns:
+
+```bash
+# Check the project structure
+ls -la
+
+# Typical gorestapi structure might look like:
+# .
+# ├── main.go
+# ├── go.mod
+# ├── go.sum
+# ├── handlers/
+# ├── models/
+# ├── routes/
+# ├── database/
+# └── config/
+```
+
+## Quick Testing Commands
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with verbose output
+go test -v ./...
+
+# Run specific test
+go test -run TestFunctionName ./handlers
+
+# Run tests with coverage
+go test -cover ./...
+```
+
+## Development with Hot Reload (Optional)
+
+For better development experience:
+
+```bash
+# Install air (hot reload tool)
+go install github.com/cosmtrek/air@latest
+
+# Run with air
+air
+
+# Or use nodemon if you have it installed
+nodemon --exec go run main.go --signal SIGTERM
+```
+
+## Check What the API Does
+
+Look at the code to understand the endpoints:
+
+```bash
+# Look at main.go
+cat main.go
+
+# Search for route definitions
+grep -r "router\." . --include="*.go"
+grep -r "HandleFunc" . --include="*.go"
+```
+
+**Need more specific help?** Let me know:
+1. What error messages you're seeing (if any)
+2. What database the project uses (look for postgres, mysql, sqlite in go.mod)
+3. Whether there's a README with specific setup instructions
+
+The `go mod tidy` command you mentioned is exactly the right first step after cloning!
