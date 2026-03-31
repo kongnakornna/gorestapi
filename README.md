@@ -51,7 +51,7 @@ In this project use 3 layer architecture
 
 - `docker-compose up`
 - Swagger: [localhost:5000/swagger/](http://localhost:5000/swagger/)
-
+- http://localhost:5000/swagger/index.html
 ## TODO
 
 - Traefik
