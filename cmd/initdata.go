@@ -11,7 +11,7 @@ import (
 	"github.com/kongnakornna/gorestapi/pkg/db/postgres"
 	"github.com/kongnakornna/gorestapi/pkg/db/redis"
 	"github.com/kongnakornna/gorestapi/pkg/logger"
-	"github.com/spf13/cobra"
+	"github.com/spf13/cobra" 
 )
 
 var initDataCmd = &cobra.Command{

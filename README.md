@@ -262,3 +262,159 @@ grep -r "HandleFunc" . --include="*.go"
 3. Whether there's a README with specific setup instructions
 
 The `go mod tidy` command you mentioned is exactly the right first step after cloning!
+
+
+This error indicates that your `go.mod` file has a dependency on `github.com/hiennguyen9874/go-dev@v0.0.1`, which doesn't exist or is not accessible. This appears to be an incorrectly referenced module that has been pulled in indirectly through other dependencies.
+
+Here's how to fix this issue:
+
+## Solution 1: Clean and Reset Dependencies
+
+```powershell
+# Clear the module cache
+go clean -modcache
+
+# Remove go.sum and try again
+Remove-Item go.sum -ErrorAction SilentlyContinue
+
+# Run go mod tidy again
+go mod tidy
+```
+
+## Solution 2: Check and Fix go.mod File
+
+Open your `go.mod` file and look for any reference to `github.com/hiennguyen9874/go-dev`. If found, remove it manually:
+
+```powershell
+# Check if the bad dependency is directly in go.mod
+Select-String -Path go.mod -Pattern "hiennguyen9874"
+```
+
+If found, edit `go.mod` and remove that line, then run:
+```powershell
+go mod tidy
+```
+
+## Solution 3: Replace the Bad Dependency (if it's a transitive dependency)
+
+Add a replace directive to your `go.mod` file to exclude the problematic module:
+
+```powershell
+# Add replace directive to go.mod
+go mod edit -replace github.com/hiennguyen9874/go-dev=github.com/hiennguyen9874/go-dev@none
+```
+
+Then run:
+```powershell
+go mod tidy
+```
+
+## Solution 4: Update Your Dependencies
+
+Try updating all dependencies to their latest versions:
+
+```powershell
+# Get latest versions of all direct dependencies
+go get -u ./...
+
+# Then tidy up
+go mod tidy
+```
+
+## Solution 5: Check Your Code for Incorrect Imports
+
+Search your codebase for any incorrect imports that might reference this module:
+
+```powershell
+# Search for the problematic import in your code
+Get-ChildItem -Recurse -Include "*.go" | Select-String "hiennguyen9874"
+```
+
+If you find any, correct those imports to use the proper packages.
+
+## Most Likely Fix
+
+The most common cause is a corrupted module cache. Try this sequence:
+
+```powershell
+# Step 1: Clean everything
+go clean -modcache
+go clean -cache
+
+# Step 2: Remove go.sum
+Remove-Item go.sum -ErrorAction SilentlyContinue
+
+# Step 3: Download dependencies again
+go mod download
+
+# Step 4: Tidy up
+go mod tidy
+```
+
+If none of these solutions work, please share the contents of your `go.mod` file so I can provide more specific guidance.
+
+ 
+
+# **Kongnakorn Jantakun (Na)**
+**Technical Lead | Full-Stack Engineer | Solution Architect**
+
+**Mobile:** +66 (095) 508-8091  
+**Email:** kongnakornjantakun@gmail.com  
+**GitHub:** [github.com/kongnakornna/developer_document](https://github.com/kongnakornna/developer_document)
+
+---
+
+### **Executive Summary**
+A seasoned **Technical Lead and Full-Stack Developer** with over **15 years of technical expertise**, 6 years in leadership, and 2 years in executive management. I bridge the gap between complex engineering and business objectives. My core strength lies in designing scalable architectures, implementing DevOps best practices, and leveraging emerging technologies like **Generative AI, n8n automation, and RPA** to drive organizational efficiency.
+
+**Leadership Philosophy:** "Lead with integrity and without bias. Treat others with respect and dignity. Prioritize giving and supporting the team to achieve collective success."
+
+---
+
+### **Core Competencies & Key Selling Points**
+* **The "Business-Minded" Tech Lead:** Extensive experience in **Business Model Canvas, Design Thinking, and Presale Engineering** (PoC, Proposal Management, and Technical Consulting).
+* **High-Scale System Design:** Proven track record in designing **Microservices Architecture**, handling high-frequency data/order processing, and implementing **Kafka/Redis** for robust data flows.
+* **Full-Stack & DevOps Specialist:** Mastery across **Node.js, Python, and Go**, integrated with advanced **Kubernetes, Docker, and CI/CD** pipelines.
+* **Data & Monitoring:** Expert in the **ELK Stack and Grafana** for real-time application monitoring and observability.
+
+---
+
+### **Technical Skills**
+
+| Category | Technologies |
+| :--- | :--- |
+| **Languages** | HTML, JavaScript, Node.js, TypeScript, Python, Golang, Java (Spring Boot), Kotlin, PHP |
+| **Frameworks** | ReactJS, Next.js, Nest.js, AngularJS, Vue.js, Express, Django, FastAPI, CodeIgniter |
+| **Databases** | MySQL, PostgreSQL, MongoDB, MSSQL, Oracle, Elasticsearch, InfluxDB, Redis, TimescaleDB |
+| **DevOps & Infra** | Docker, Kubernetes (K8s), Jenkins, Ansible, Terraform, CI/CD Pipelines |
+| **Automation & AI** | n8n (AI Agents), Generative AI (OpenAI), UiPath RPA, Node-RED |
+| **Data & Messaging** | Apache Kafka, SQL Query Optimization, ORM (TypeORM, Sequelize) |
+| **Monitoring** | ELK Stack (Elasticsearch, Logstash, Kibana), Grafana, Application Monitoring |
+
+---
+
+### **Professional Experience**
+
+**Technical Lead / Senior Full-Stack Engineer** | *CTC Global (Thailand) Co., Ltd.* **2024 – Present** * Focusing on Technical Architecture, DevOps, and integrating Generative AI/n8n automation to optimize enterprise workflows.
+* *Current Salary: 85,000 THB*
+
+**Senior Software Engineer / Team Lead** | *True Corporation Public Company Limited* **2016 – 2023** * Led development teams in a high-pressure environment, focusing on scalable telecommunications solutions.
+* *Last Salary: 62,000 THB*
+
+**Software Developer** | *Siam Sport Syndicate Public Company Limited* **2010 – 2016** * Developed and maintained web applications and media platforms.
+* *Last Salary: 45,000 THB*
+
+**Junior Software Developer** | *Control Data (Thailand) Co., Ltd.* **2005 – 2010** * Foundational years focusing on software implementation and database management.
+* *Last Salary: 25,000 THB*
+
+---
+
+### **Specialized Expertise: High-Scale System Design**
+I specialize in designing architectures for high-performance systems (e.g., CRM and high-frequency order processing):
+* **Scalability:** Utilizing **Microservices** and **Load Balancing** to ensure high availability for massive user bases.
+* **Data Flow & Performance:** Implementing **Kafka** for message queuing and **Redis** for caching to manage high-velocity data streams effectively.
+* **Full Lifecycle Management:** From **Requirement Analysis** and **Architecture Design** to **UAT, Deployment, and Post-launch Support.**
+
+---
+
+**Would you like me to adjust this into a specific resume format (like a PDF-friendly layout) or help you draft a Cover Letter based on these details?**
