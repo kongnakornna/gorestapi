@@ -189,12 +189,12 @@ Common configuration needed:
 ### If it's a REST API (likely based on the name):
 
 ```bash
-# Run the server (usually on port 8080)
+# Run the server (usually on port 5000)
 go run main.go
 
 # In another terminal, test the API endpoints
-curl http://localhost:8080/health
-curl http://localhost:8080/api/users
+curl http://localhost:5000/health
+curl http://localhost:5000/api/users
 ```
 
 ### If you need to build the binary:
@@ -255,7 +255,7 @@ cp .env.example .env
 # Load environment variables (on Linux/macOS)
 source .env
 # Or export them directly
-export PORT=8080
+export PORT=5000
 export DB_URL="postgres://..."
 ```
 

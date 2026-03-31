@@ -40,7 +40,7 @@ var f float64 = 3.14
 var b byte = 255  // uint8
 
 // String
-var s string = "Go语言"
+var s string = "Go"
 
 // Boolean
 var flag bool = true
