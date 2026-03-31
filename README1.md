@@ -351,75 +351,7 @@ go mod download
 # Step 4: Tidy up
 go mod tidy
 ```
-
-If none of these solutions work, please share the contents of your `go.mod` file so I can provide more specific guidance.
-
  
-
-# **Kongnakorn Jantakun (Na)**
-**Technical Lead | Full-Stack Engineer | Solution Architect**
-
-**Mobile:** +66 (095) 508-8091  
-**Email:** kongnakornjantakun@gmail.com  
-**GitHub:** [github.com/kongnakornna/developer_document](https://github.com/kongnakornna/developer_document)
-
----
-
-### **Executive Summary**
-A seasoned **Technical Lead and Full-Stack Developer** with over **15 years of technical expertise**, 6 years in leadership, and 2 years in executive management. I bridge the gap between complex engineering and business objectives. My core strength lies in designing scalable architectures, implementing DevOps best practices, and leveraging emerging technologies like **Generative AI, n8n automation, and RPA** to drive organizational efficiency.
-
-**Leadership Philosophy:** "Lead with integrity and without bias. Treat others with respect and dignity. Prioritize giving and supporting the team to achieve collective success."
-
----
-
-### **Core Competencies & Key Selling Points**
-* **The "Business-Minded" Tech Lead:** Extensive experience in **Business Model Canvas, Design Thinking, and Presale Engineering** (PoC, Proposal Management, and Technical Consulting).
-* **High-Scale System Design:** Proven track record in designing **Microservices Architecture**, handling high-frequency data/order processing, and implementing **Kafka/Redis** for robust data flows.
-* **Full-Stack & DevOps Specialist:** Mastery across **Node.js, Python, and Go**, integrated with advanced **Kubernetes, Docker, and CI/CD** pipelines.
-* **Data & Monitoring:** Expert in the **ELK Stack and Grafana** for real-time application monitoring and observability.
-
----
-
-### **Technical Skills**
-
-| Category | Technologies |
-| :--- | :--- |
-| **Languages** | HTML, JavaScript, Node.js, TypeScript, Python, Golang, Java (Spring Boot), Kotlin, PHP |
-| **Frameworks** | ReactJS, Next.js, Nest.js, AngularJS, Vue.js, Express, Django, FastAPI, CodeIgniter |
-| **Databases** | MySQL, PostgreSQL, MongoDB, MSSQL, Oracle, Elasticsearch, InfluxDB, Redis, TimescaleDB |
-| **DevOps & Infra** | Docker, Kubernetes (K8s), Jenkins, Ansible, Terraform, CI/CD Pipelines |
-| **Automation & AI** | n8n (AI Agents), Generative AI (OpenAI), UiPath RPA, Node-RED |
-| **Data & Messaging** | Apache Kafka, SQL Query Optimization, ORM (TypeORM, Sequelize) |
-| **Monitoring** | ELK Stack (Elasticsearch, Logstash, Kibana), Grafana, Application Monitoring |
-
----
-
-### **Professional Experience**
-
-**Technical Lead / Senior Full-Stack Engineer** | *CTC Global (Thailand) Co., Ltd.* **2024 – Present** * Focusing on Technical Architecture, DevOps, and integrating Generative AI/n8n automation to optimize enterprise workflows.
-* *Current Salary: 85,000 THB*
-
-**Senior Software Engineer / Team Lead** | *True Corporation Public Company Limited* **2016 – 2023** * Led development teams in a high-pressure environment, focusing on scalable telecommunications solutions.
-* *Last Salary: 62,000 THB*
-
-**Software Developer** | *Siam Sport Syndicate Public Company Limited* **2010 – 2016** * Developed and maintained web applications and media platforms.
-* *Last Salary: 45,000 THB*
-
-**Junior Software Developer** | *Control Data (Thailand) Co., Ltd.* **2005 – 2010** * Foundational years focusing on software implementation and database management.
-* *Last Salary: 25,000 THB*
-
----
-
-### **Specialized Expertise: High-Scale System Design**
-I specialize in designing architectures for high-performance systems (e.g., CRM and high-frequency order processing):
-* **Scalability:** Utilizing **Microservices** and **Load Balancing** to ensure high availability for massive user bases.
-* **Data Flow & Performance:** Implementing **Kafka** for message queuing and **Redis** for caching to manage high-velocity data streams effectively.
-* **Full Lifecycle Management:** From **Requirement Analysis** and **Architecture Design** to **UAT, Deployment, and Post-launch Support.**
-
----
-
-**Would you like me to adjust this into a specific resume format (like a PDF-friendly layout) or help you draft a Cover Letter based on these details?**
-
 # FIX
 Great! Your application is running successfully. The output shows that your Go REST API application is working and displaying the Cobra CLI help menu.
 
