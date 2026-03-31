@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kongnakornna/golangiot/pkg/logger"
+	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
 var log = logger.Default()
