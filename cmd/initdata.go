@@ -27,9 +27,9 @@ var initDataCmd = &cobra.Command{
 
 		psqlDB, err := postgres.NewPsqlDB(cfg)
 		if err != nil {
-			appLogger.Fatalf("Postgresql init: %s", err)
+			appLogger.Fatalf("เชื่อมต่อไม่สำเร็จ - Postgresql init: %s", err)
 		} else {
-			appLogger.Infof("Postgres connected")
+			appLogger.Infof("Postgres connected เชื่อมต่อสำเร็จ..")
 		}
 
 		redisClient := redis.NewRedis(cfg)

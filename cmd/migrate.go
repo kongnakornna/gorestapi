@@ -22,17 +22,17 @@ var migrateCmd = &cobra.Command{
 
 		psqlDB, err := postgres.NewPsqlDB(cfg)
 		if err != nil {
-			appLogger.Fatalf("Postgresql init: %s", err)
+			appLogger.Fatalf("เชื่อมต่อไม่สำเร็จ - Postgresql init: %s", err)
 		} else {
-			appLogger.Infof("Postgres connected")
+			appLogger.Infof("Postgres connected successfully - เชื่อมต่อสำเร็จ..")
 		}
 
 		err = Migrate(psqlDB)
 
 		if err != nil {
-			appLogger.Info("Can not migrate data")
+			appLogger.Info("Can not migrate data - ไม่สามารถ migrate ข้อมูลได้")
 		} else {
-			appLogger.Info("Data migrated")
+			appLogger.Info("Data migrated - Data migrated สำเร็จ")
 		}
 	},
 }

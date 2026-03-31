@@ -39,6 +39,19 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	//  กำหนดแฟลกและการตั้งค่า Config 
+	// Cobra รองรับ persistent flags ซึ่งเมื่อกำหนดที่นี่แล้ว
+	// จะเป็น global สำหรับแอปพลิเคชัน 
+	// RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "ไฟล์คอนฟิกูเรชัน (ค่าเริ่มต้นคือ $HOME/.go-base.yaml)")
+
+	// Cobra ยังรองรับ local flags ซึ่งจะทำงานเฉพาะเมื่อ
+	// เรียกใช้แอ็กชันนี้โดยตรงเท่านั้น
+	// RootCmd.Flags().BoolP("toggle", "t", false, "ข้อความช่วยเหลือสำหรับ toggle")
+
+	// Persistent flags - แฟลกที่ใช้ได้กับคำสั่งนี้และคำสั่งย่อยทั้งหมด
+	// Local flags - แฟลกที่ใช้ได้กับคำสั่งนี้เท่านั้น
+	// toggle -  เปิด/ปิด (true/false)
 }
 
 // initConfig reads in config file and ENV variables if set.
