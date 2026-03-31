@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/kongnakornna/golangiot/pkg/logger"
+	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
 // TracingMiddleware request tracing middleware
