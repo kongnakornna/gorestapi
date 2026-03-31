@@ -417,8 +417,8 @@ go mod download
 # Step 4: Tidy up
 go mod tidy
 ```
- 
- # คู่มือเรียนภาษา Go (Go Lessons)
+  
+# คู่มือเรียนภาษา Go (Go Lessons)
 
 คู่มือการเรียนรู้ภาษา Go อย่างครอบคลุม ตั้งแต่พื้นฐานจนถึงระดับสูง
 
@@ -3170,6 +3170,12 @@ defer cancel()
 
 ---
 
+## สรุป
+
+คู่มือนี้ครอบคลุมเนื้อหาตั้งแต่พื้นฐานไปจนถึงระดับสูงของภาษา Go หวังว่าจะเป็นประโยชน์สำหรับผู้ที่ต้องการเริ่มต้นและพัฒนาทักษะการเขียนโปรแกรมด้วย Go อย่างจริงจัง
+
+การฝึกฝนอย่างต่อเนื่องและการนำไปใช้ในโปรเจกต์จริงจะช่วยให้คุณเข้าใจและเชี่ยวชาญภาษา Go ได้ดียิ่งขึ้น ขอให้สนุกกับการเขียนโปรแกรมด้วย Go!
+
 
 ## บทที่ 43: เครื่องมือและไลบรารียอดนิยมสำหรับการพัฒนาแอปพลิเคชัน Go
 
@@ -4620,3 +4626,1031 @@ sequenceDiagram
 - **เครื่องมือ** ที่ช่วยเพิ่มประสิทธิภาพการพัฒนา เช่น air สำหรับ hot-reload, cobra สำหรับ CLI, chi สำหรับ routing
 
 การนำไปใช้ควรปรับตามความเหมาะสมของแต่ละโปรเจกต์ โดยให้ความสำคัญกับความปลอดภัย, การทดสอบ, และการบำรุงรักษาในระยะยาว
+
+## บทที่ 46: Go-DDD: การออกแบบบริการด้วย Domain-Driven Design
+
+---
+
+### 46.1 บทนำสู่ Domain-Driven Design
+
+#### 46.1.1 Domain-Driven Design (DDD) คืออะไร?
+
+Domain-Driven Design เป็นแนวทางการออกแบบซอฟต์แวร์ที่เน้นการสร้างโมเดลที่สะท้อนความรู้ความเข้าใจ (domain knowledge) อย่างแท้จริง โดยมีหลักการสำคัญคือการทำให้ซอฟต์แวร์สอดคล้องกับความต้องการทางธุรกิจผ่านการร่วมมือกันระหว่างนักพัฒนาและผู้เชี่ยวชาญในโดเมน (domain experts)
+
+DDD ถูกนิยามโดย Eric Evans ในหนังสือ “Domain-Driven Design: Tackling Complexity in the Heart of Software” (2003) โดยมีเป้าหมายเพื่อจัดการความซับซ้อนของซอฟต์แวร์ในองค์กรขนาดใหญ่
+
+#### 46.1.2 หลักการสำคัญของ DDD
+
+1. **Ubiquitous Language (ภาษาร่วม)**
+   - สร้างภาษากลางที่ใช้ร่วมกันระหว่างนักพัฒนาและผู้เชี่ยวชาญโดเมน
+   - ใช้ศัพท์เดียวกันในโค้ด, การสนทนา, และเอกสาร
+   - ลดความเข้าใจผิดและเพิ่มความสอดคล้อง
+
+2. **Bounded Context (บริบทที่จำกัด)**
+   - แบ่งโดเมนขนาดใหญ่ออกเป็นบริทย่อยที่มีขอบเขตชัดเจน
+   - แต่ละ Bounded Context มีโมเดลของตัวเองและภาษาร่วมของตัวเอง
+   - ลดความซับซ้อนและความขัดแย้งของโมเดล
+
+3. **Entities และ Value Objects**
+   - **Entity**: วัตถุที่มีเอกลักษณ์ (identity) และสามารถเปลี่ยนแปลงได้ (mutable) เช่น `User`, `Order`
+   - **Value Object**: วัตถุที่ไม่มีเอกลักษณ์ในตัวเอง ถูกกำหนดโดยคุณสมบัติ (immutable) เช่น `Address`, `Money`
+
+4. **Aggregates**
+   - กลุ่มของ Entities และ Value Objects ที่ถูกจัดการเป็นหน่วยเดียวกัน
+   - มี Aggregate Root (รูท) เป็นตัวควบคุมความสอดคล้องของข้อมูล
+   - เช่น `Order` (aggregate root) ประกอบด้วย `OrderItem` (entity) และ `Address` (value object)
+
+5. **Domain Events**
+   - เหตุการณ์สำคัญในโดเมนที่เกิดขึ้น เช่น `OrderPlaced`, `UserRegistered`
+   - ใช้ในการสื่อสารระหว่าง aggregates หรือระหว่าง bounded contexts
+
+6. **Repositories**
+   - ให้ abstraction ในการเข้าถึง aggregate roots
+   - ซ่อนรายละเอียดของแหล่งข้อมูล (database, cache)
+
+7. **Domain Services**
+   - ใช้สำหรับ logic ที่ไม่เหมาะจะอยู่ใน entity หรือ value object
+   - เช่น `TransferService` ที่โอนเงินระหว่างบัญชี
+
+#### 46.1.3 ทำไมต้องใช้ DDD กับ Go?
+
+Go มีคุณสมบัติที่เข้ากันได้ดีกับ DDD:
+- **Simple, readable code**: ทำให้โมเดลโดเมนอ่านง่าย
+- **Interfaces**: เหมาะสำหรับกำหนด repository และ domain service abstractions
+- **Composition**: สนับสนุนการสร้าง aggregates โดยการฝัง structs
+- **Package system**: ช่วยจัดระเบียบ bounded contexts ได้ดี
+- **Concurrency**: ใช้จัดการ domain events และการสื่อสารระหว่าง contexts
+
+อย่างไรก็ตาม Go ไม่มี inheritance ซึ่ง DDD บางครั้งใช้ แต่เราสามารถใช้ embedding และ interface แทนได้
+
+---
+
+### 46.2 คู่มือการนำ DDD ไปใช้ใน Go
+
+#### 46.2.1 โครงสร้างโปรเจกต์แบบ DDD
+
+```
+project/
+├── cmd/
+│   └── api/
+│       └── main.go                 # entry point
+├── internal/
+│   ├── domain/                     # ชั้นโดเมน (core business logic)
+│   │   ├── user/
+│   │   │   ├── entity.go           # User entity
+│   │   │   ├── value_objects.go    # Email, Password, etc.
+│   │   │   ├── repository.go       # interface
+│   │   │   ├── service.go          # domain services
+│   │   │   └── events.go           # domain events
+│   │   ├── order/
+│   │   │   └── ...
+│   │   └── shared/                 # shared value objects
+│   ├── application/                # ชั้นแอปพลิเคชัน (use cases)
+│   │   ├── user/
+│   │   │   ├── register.go         # use case
+│   │   │   ├── login.go
+│   │   │   └── dto.go              # input/output DTOs
+│   │   └── order/
+│   │       └── ...
+│   ├── infrastructure/             # ชั้นโครงสร้างพื้นฐาน
+│   │   ├── persistence/
+│   │   │   ├── gorm/
+│   │   │   │   ├── user_repo.go    # implementation
+│   │   │   │   └── models.go       # GORM models
+│   │   │   └── redis/
+│   │   ├── mail/
+│   │   └── bus/                    # event bus
+│   └── interfaces/                 # ชั้นติดต่อกับภายนอก
+│       ├── http/
+│       │   ├── handlers/
+│       │   ├── middleware/
+│       │   └── routes.go
+│       └── cli/
+├── pkg/                            # reusable packages
+└── go.mod
+```
+
+#### 46.2.2 การสร้าง Domain Layer
+
+**1. Entities (domain/user/entity.go)**
+```go
+package user
+
+import (
+    "time"
+    "github.com/google/uuid"
+)
+
+type User struct {
+    id          uuid.UUID
+    email       Email          // value object
+    password    Password       // value object
+    name        string
+    isVerified  bool
+    createdAt   time.Time
+    updatedAt   time.Time
+}
+
+// Constructor
+func NewUser(email, password, name string) (*User, error) {
+    emailVO, err := NewEmail(email)
+    if err != nil {
+        return nil, err
+    }
+    passwordVO, err := NewPassword(password)
+    if err != nil {
+        return nil, err
+    }
+    
+    return &User{
+        id:         uuid.New(),
+        email:      *emailVO,
+        password:   *passwordVO,
+        name:       name,
+        isVerified: false,
+        createdAt:  time.Now(),
+        updatedAt:  time.Now(),
+    }, nil
+}
+
+// Getters (exported)
+func (u *User) ID() uuid.UUID      { return u.id }
+func (u *User) Email() Email       { return u.email }
+func (u *User) Name() string       { return u.name }
+func (u *User) IsVerified() bool   { return u.isVerified }
+
+// Behavior methods
+func (u *User) Verify() {
+    u.isVerified = true
+    u.updatedAt = time.Now()
+    u.addDomainEvent(NewUserVerifiedEvent(u.id))
+}
+
+func (u *User) ChangePassword(old, new string) error {
+    if err := u.password.Compare(old); err != nil {
+        return ErrInvalidPassword
+    }
+    newPassword, err := NewPassword(new)
+    if err != nil {
+        return err
+    }
+    u.password = *newPassword
+    u.updatedAt = time.Now()
+    return nil
+}
+```
+
+**2. Value Objects (domain/user/value_objects.go)**
+```go
+package user
+
+import (
+    "regexp"
+    "errors"
+    "golang.org/x/crypto/bcrypt"
+)
+
+type Email struct {
+    value string
+}
+
+func NewEmail(email string) (*Email, error) {
+    // validate email format
+    emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`)
+    if !emailRegex.MatchString(email) {
+        return nil, errors.New("invalid email format")
+    }
+    return &Email{value: email}, nil
+}
+
+func (e Email) String() string { return e.value }
+
+type Password struct {
+    hash string
+}
+
+func NewPassword(plain string) (*Password, error) {
+    if len(plain) < 8 {
+        return nil, errors.New("password must be at least 8 characters")
+    }
+    hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+    if err != nil {
+        return nil, err
+    }
+    return &Password{hash: string(hash)}, nil
+}
+
+func (p *Password) Compare(plain string) error {
+    return bcrypt.CompareHashAndPassword([]byte(p.hash), []byte(plain))
+}
+```
+
+**3. Repository Interface (domain/user/repository.go)**
+```go
+package user
+
+import (
+    "context"
+    "github.com/google/uuid"
+)
+
+type Repository interface {
+    Save(ctx context.Context, user *User) error
+    FindByID(ctx context.Context, id uuid.UUID) (*User, error)
+    FindByEmail(ctx context.Context, email Email) (*User, error)
+    Delete(ctx context.Context, id uuid.UUID) error
+}
+```
+
+**4. Domain Events (domain/user/events.go)**
+```go
+package user
+
+import (
+    "time"
+    "github.com/google/uuid"
+)
+
+type DomainEvent interface {
+    OccurredAt() time.Time
+}
+
+type UserRegisteredEvent struct {
+    UserID    uuid.UUID `json:"user_id"`
+    Email     string    `json:"email"`
+    Occurred  time.Time `json:"occurred_at"`
+}
+
+func (e UserRegisteredEvent) OccurredAt() time.Time { return e.Occurred }
+
+func NewUserRegisteredEvent(userID uuid.UUID, email string) UserRegisteredEvent {
+    return UserRegisteredEvent{
+        UserID:   userID,
+        Email:    email,
+        Occurred: time.Now(),
+    }
+}
+
+// ใน entity สามารถมี slice ของ events และ method addDomainEvent
+type User struct {
+    // ... fields
+    events []DomainEvent
+}
+
+func (u *User) addDomainEvent(event DomainEvent) {
+    u.events = append(u.events, event)
+}
+
+func (u *User) Events() []DomainEvent { return u.events }
+func (u *User) ClearEvents()          { u.events = nil }
+```
+
+#### 46.2.3 การสร้าง Application Layer
+
+**Use Case (application/user/register.go)**
+```go
+package user
+
+import (
+    "context"
+    "your-project/internal/domain/user"
+    "your-project/internal/infrastructure/bus"
+)
+
+type RegisterUseCase struct {
+    userRepo user.Repository
+    eventBus *bus.EventBus
+}
+
+type RegisterInput struct {
+    Email    string `json:"email" validate:"required,email"`
+    Password string `json:"password" validate:"required,min=8"`
+    Name     string `json:"name" validate:"required"`
+}
+
+type RegisterOutput struct {
+    ID    string `json:"id"`
+    Email string `json:"email"`
+    Name  string `json:"name"`
+}
+
+func NewRegisterUseCase(repo user.Repository, eventBus *bus.EventBus) *RegisterUseCase {
+    return &RegisterUseCase{
+        userRepo: repo,
+        eventBus: eventBus,
+    }
+}
+
+func (uc *RegisterUseCase) Execute(ctx context.Context, input RegisterInput) (*RegisterOutput, error) {
+    // 1. ตรวจสอบว่า email ซ้ำหรือไม่
+    emailVO, _ := user.NewEmail(input.Email)
+    existing, _ := uc.userRepo.FindByEmail(ctx, *emailVO)
+    if existing != nil {
+        return nil, ErrEmailAlreadyExists
+    }
+    
+    // 2. สร้าง User entity
+    newUser, err := user.NewUser(input.Email, input.Password, input.Name)
+    if err != nil {
+        return nil, err
+    }
+    
+    // 3. บันทึกผ่าน repository
+    if err := uc.userRepo.Save(ctx, newUser); err != nil {
+        return nil, err
+    }
+    
+    // 4. Dispatch domain events
+    for _, event := range newUser.Events() {
+        uc.eventBus.Publish(event)
+    }
+    newUser.ClearEvents()
+    
+    // 5. ส่ง output
+    return &RegisterOutput{
+        ID:    newUser.ID().String(),
+        Email: newUser.Email().String(),
+        Name:  newUser.Name(),
+    }, nil
+}
+```
+
+#### 46.2.4 การสร้าง Infrastructure Layer
+
+**Repository Implementation (infrastructure/persistence/gorm/user_repo.go)**
+```go
+package gorm
+
+import (
+    "context"
+    "gorm.io/gorm"
+    "your-project/internal/domain/user"
+)
+
+type UserModel struct {
+    ID         string `gorm:"primaryKey"`
+    Email      string `gorm:"uniqueIndex"`
+    Password   string
+    Name       string
+    IsVerified bool
+    CreatedAt  time.Time
+    UpdatedAt  time.Time
+}
+
+type UserRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) user.Repository {
+    return &UserRepository{db: db}
+}
+
+func (r *UserRepository) Save(ctx context.Context, u *user.User) error {
+    model := &UserModel{
+        ID:         u.ID().String(),
+        Email:      u.Email().String(),
+        Password:   u.PasswordHash(), // need to expose getter
+        Name:       u.Name(),
+        IsVerified: u.IsVerified(),
+        CreatedAt:  u.CreatedAt(),
+        UpdatedAt:  u.UpdatedAt(),
+    }
+    return r.db.WithContext(ctx).Save(model).Error
+}
+
+func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
+    var model UserModel
+    err := r.db.WithContext(ctx).Where("id = ?", id.String()).First(&model).Error
+    if err != nil {
+        return nil, err
+    }
+    return model.ToDomain()
+}
+
+func (m *UserModel) ToDomain() (*user.User, error) {
+    // ใช้ private constructor หรือ method เพื่อสร้าง domain object
+    // อาจต้อง expose factory method ใน domain layer
+}
+```
+
+**Event Bus (infrastructure/bus/event_bus.go)**
+```go
+package bus
+
+import (
+    "context"
+    "sync"
+    "your-project/internal/domain/user"
+)
+
+type EventHandler func(context.Context, user.DomainEvent) error
+
+type EventBus struct {
+    handlers map[string][]EventHandler
+    mu       sync.RWMutex
+}
+
+func NewEventBus() *EventBus {
+    return &EventBus{
+        handlers: make(map[string][]EventHandler),
+    }
+}
+
+func (b *EventBus) Subscribe(eventName string, handler EventHandler) {
+    b.mu.Lock()
+    defer b.mu.Unlock()
+    b.handlers[eventName] = append(b.handlers[eventName], handler)
+}
+
+func (b *EventBus) Publish(event user.DomainEvent) {
+    b.mu.RLock()
+    handlers := b.handlers[eventName(event)]
+    b.mu.RUnlock()
+    
+    for _, h := range handlers {
+        go h(context.Background(), event) // async
+    }
+}
+```
+
+#### 46.2.5 การสร้าง Interfaces Layer
+
+**HTTP Handler (interfaces/http/handlers/user_handler.go)**
+```go
+package handlers
+
+import (
+    "encoding/json"
+    "net/http"
+    "your-project/internal/application/user"
+)
+
+type UserHandler struct {
+    registerUseCase *user.RegisterUseCase
+}
+
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+    var input user.RegisterInput
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    output, err := h.registerUseCase.Execute(r.Context(), input)
+    if err != nil {
+        // map domain errors to HTTP status
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(output)
+}
+```
+
+---
+
+### 46.3 การออกแบบ Workflow ด้วย DDD
+
+#### 46.3.1 Event Storming
+
+Event Storming เป็นกระบวนการในการทำความเข้าใจโดเมนผ่านการระบุ events, commands, aggregates, และ bounded contexts ร่วมกันระหว่างทีมพัฒนาและผู้เชี่ยวชาญโดเมน
+
+**ขั้นตอน Event Storming:**
+1. **ระบุ Domain Events** (สีส้ม)
+   - เหตุการณ์ที่เกิดขึ้นในระบบ เช่น `UserRegistered`, `OrderPlaced`, `PaymentReceived`
+
+2. **ระบุ Commands** (สีน้ำเงิน)
+   - การกระทำที่ทำให้เกิด events เช่น `RegisterUser`, `PlaceOrder`
+
+3. **ระบุ Aggregates** (สีเหลือง)
+   - วัตถุหลักที่รับ commands และสร้าง events
+
+4. **ระบุ External Systems** (สีชมพู)
+   - ระบบภายนอกที่เกี่ยวข้อง
+
+5. **ระบุ Bounded Contexts**
+   - จัดกลุ่ม events, commands, aggregates ที่เกี่ยวข้องกัน
+
+**ตัวอย่าง Event Storming สำหรับระบบ e-commerce:**
+
+```
+[Bounded Context: User Management]
+- RegisterUser (command) → UserRegistered (event)
+- VerifyEmail → UserEmailVerified
+- Login → UserLoggedIn
+
+[Bounded Context: Order Management]
+- PlaceOrder → OrderPlaced
+- CancelOrder → OrderCancelled
+- ShipOrder → OrderShipped
+
+[Bounded Context: Payment]
+- ProcessPayment → PaymentProcessed / PaymentFailed
+```
+
+#### 46.3.2 การแบ่ง Bounded Contexts
+
+หลักการแบ่ง Bounded Context:
+- แต่ละ context มีโมเดลและภาษาของตัวเอง
+- การสื่อสารระหว่าง contexts ใช้ APIs หรือ messages
+- หลีกเลี่ยงการแชร์โมเดลโดยตรง
+
+**รูปแบบการสื่อสารระหว่าง Bounded Contexts:**
+1. **Conformist**: context หนึ่งยอมรับโมเดลของอีก context
+2. **Anti-Corruption Layer (ACL)**: แปลงโมเดลระหว่าง contexts ป้องกัน contamination
+3. **Open Host Service**: เปิด API ให้ context อื่นเรียกใช้
+4. **Published Language**: ใช้ภาษากลาง (เช่น JSON schema) ในการสื่อสาร
+
+#### 46.3.3 การออกแบบ Aggregates
+
+Aggregate เป็นหน่วยความสอดคล้อง (transactional consistency) ต้องออกแบบให้มีขอบเขตที่เหมาะสม
+
+**หลักการออกแบบ Aggregate:**
+1. **Invariants ต้องอยู่ภายใน aggregate เดียว** - กฎทางธุรกิจที่ต้องสอดคล้องกันตลอดเวลาควรอยู่ภายใน aggregate เดียว
+2. **Aggregate root เป็นตัวเดียวที่เข้าถึงได้จากภายนอก**
+3. **ใช้ ID references แทนการอ้างอิงโดยตรง** - เพื่อลด coupling
+4. **ขนาดเล็ก** - aggregate ที่ใหญ่เกินไปจะเกิดปัญหา performance และ concurrency
+
+**ตัวอย่าง Aggregate Design:**
+
+```go
+// Order Aggregate
+type Order struct {
+    id          OrderID
+    customerID  CustomerID      // reference to another aggregate
+    items       []OrderItem
+    status      OrderStatus
+    total       Money
+    // ...
+}
+
+func (o *Order) AddItem(productID ProductID, quantity int, price Money) error {
+    if o.status != Draft {
+        return ErrOrderNotEditable
+    }
+    // business rule: cannot add more than 10 items
+    if len(o.items) >= 10 {
+        return ErrTooManyItems
+    }
+    o.items = append(o.items, NewOrderItem(productID, quantity, price))
+    o.recalculateTotal()
+    return nil
+}
+```
+
+#### 46.3.4 การสื่อสารระหว่าง Bounded Contexts
+
+**1. Synchronous (REST/gRPC):**
+- ใช้เมื่อต้องการ response ทันที
+- ต้องจัดการ timeout, retry, circuit breaker
+
+**2. Asynchronous (Message Broker):**
+- ใช้เมื่อต้องการ decoupling และ event-driven
+- เช่น RabbitMQ, Kafka, NATS
+
+**ตัวอย่างการสื่อสารด้วย Domain Events:**
+
+```go
+// ใน context Order Management
+// เมื่อ OrderPlaced เกิดขึ้น จะส่ง event ไปยัง Payment Context
+type OrderPlacedEvent struct {
+    OrderID    string
+    CustomerID string
+    Total      Money
+}
+
+// Payment Context subscribe event นี้
+func (h *PaymentHandler) HandleOrderPlaced(event OrderPlacedEvent) {
+    // สร้าง Payment transaction
+    payment := NewPayment(event.OrderID, event.Total)
+    // ...
+}
+```
+
+---
+
+### 46.4 TASK LIST Template (สำหรับโปรเจกต์ DDD)
+
+#### Phase 1: Domain Discovery
+- [ ] จัดประชุม Event Storming กับ domain experts
+- [ ] ระบุ Domain Events ทั้งหมด
+- [ ] ระบุ Commands และ Aggregates
+- [ ] แบ่ง Bounded Contexts
+- [ ] กำหนด Ubiquitous Language สำหรับแต่ละ context
+- [ ] สร้างเอกสาร Context Map
+
+#### Phase 2: Domain Modeling
+- [ ] สำหรับแต่ละ Bounded Context:
+  - [ ] กำหนด Entities และ Value Objects
+  - [ ] กำหนด Aggregates และ Aggregate Roots
+  - [ ] กำหนด Domain Events
+  - [ ] กำหนด Domain Services (ถ้ามี)
+  - [ ] เขียน unit tests สำหรับ domain logic
+  - [ ] Implement domain models ใน Go
+
+#### Phase 3: Application Layer
+- [ ] กำหนด Use Cases (application services)
+- [ ] สร้าง DTOs (Input/Output)
+- [ ] Implement Use Cases (orchestrate domain objects)
+- [ ] ใช้ repository interfaces
+- [ ] Dispatch domain events
+- [ ] เขียน unit tests สำหรับ use cases (mock repositories)
+
+#### Phase 4: Infrastructure Layer
+- [ ] Implement Repositories (GORM, MongoDB, etc.)
+- [ ] Implement Event Bus (in-memory, message broker)
+- [ ] Implement external service clients (email, payment, etc.)
+- [ ] Setup database migrations
+- [ ] Setup caching (Redis)
+- [ ] เขียน integration tests
+
+#### Phase 5: Interfaces Layer
+- [ ] Implement HTTP handlers (หรือ gRPC)
+- [ ] Implement middleware (auth, logging, etc.)
+- [ ] Map routes
+- [ ] Implement CLI commands (ถ้ามี)
+- [ ] เขียน contract tests / API tests
+
+#### Phase 6: Cross-Cutting Concerns
+- [ ] Dependency Injection (wire, fx, หรือ manual)
+- [ ] Configuration management (viper)
+- [ ] Logging (zap)
+- [ ] Error handling strategy
+- [ ] Metrics and monitoring
+- [ ] Graceful shutdown
+
+#### Phase 7: Testing & Quality
+- [ ] Unit tests (domain + application) > 80% coverage
+- [ ] Integration tests (infrastructure)
+- [ ] End-to-end tests (critical paths)
+- [ ] Performance benchmarks
+- [ ] Linting and static analysis (golangci-lint)
+
+#### Phase 8: Deployment & Operations
+- [ ] Dockerfile (multi-stage)
+- [ ] docker-compose for local development
+- [ ] CI/CD pipeline (GitHub Actions, GitLab CI)
+- [ ] Health check endpoints
+- [ ] Observability (OpenTelemetry, Prometheus)
+
+---
+
+### 46.5 CHECKLIST Template (สำหรับตรวจสอบการออกแบบ DDD)
+
+#### Ubiquitous Language
+- [ ] ชื่อในโค้ดตรงกับภาษาที่ domain experts ใช้
+- [ ] ไม่มีศัพท์เทคนิคเกินจำเป็นใน domain layer
+- [ ] ทีมเข้าใจและใช้ภาษาร่วมกันอย่างสม่ำเสมอ
+
+#### Bounded Contexts
+- [ ] แต่ละ context มีขอบเขตชัดเจน
+- [ ] ไม่มีการแชร์โมเดลระหว่าง contexts โดยตรง
+- [ ] การสื่อสารระหว่าง contexts เป็นไปตามรูปแบบที่กำหนด (ACL, Open Host Service, etc.)
+
+#### Entities & Value Objects
+- [ ] Entities มี identity เฉพาะ (ไม่ใช้ชื่อหรือ attributes เป็น identity)
+- [ ] Value Objects เป็น immutable
+- [ ] Value Objects มีการ validate ใน constructor
+- [ ] Entities มี behavior (methods) ที่เกี่ยวข้องกับ business logic
+- [ ] ไม่มี getter/setter ที่ไม่จำเป็น (anemic model)
+
+#### Aggregates
+- [ ] Aggregate root เป็นจุดเดียวที่เข้าถึงได้จากภายนอก
+- [ ] Invariants ถูกตรวจสอบภายใน aggregate
+- [ ] ขนาด aggregate ไม่ใหญ่เกินไป (avoid bloated aggregates)
+- [ ] การอ้างอิงถึง aggregate อื่นใช้ ID แทน direct reference
+- [ ] Transactions ครอบคลุม aggregate เดียว (ไม่ครอบคลุมหลาย aggregate)
+
+#### Domain Events
+- [ ] Events ถูกตั้งชื่อในอดีตกาล (UserRegistered, OrderShipped)
+- [ ] Events มีข้อมูลที่จำเป็นสำหรับการประมวลผล
+- [ ] Events ถูก dispatch ผ่าน event bus
+- [ ] Handlers ทำงานแบบ asynchronous (ถ้าไม่ต้องการ transactional consistency)
+
+#### Repositories
+- [ ] Repository interface อยู่ใน domain layer
+- [ ] Implementation อยู่ใน infrastructure layer
+- [ ] Repository methods ใช้ domain objects เป็นพารามิเตอร์และคืนค่า
+- [ ] Repository ซ่อนรายละเอียดของ persistence
+
+#### Domain Services
+- [ ] ใช้เมื่อ logic ไม่เหมาะสมใน entity/value object
+- [ ] Domain services มีพฤติกรรมที่เกี่ยวข้องกับโดเมน (ไม่ใช่ technical)
+- [ ] รับ domain objects และคืนค่า domain objects
+
+#### Application Layer (Use Cases)
+- [ ] Use cases มีหน้าที่ orchestrate เท่านั้น (ไม่ใส่ business logic)
+- [ ] Use cases มีขนาดเล็กและทำสิ่งเดียว
+- [ ] Input validation ผ่าน DTOs
+- [ ] ใช้ repository interfaces
+- [ ] Dispatch domain events หลังจาก transaction commit
+
+#### Infrastructure Layer
+- [ ] Implementation ถูกแยกออกจาก domain ด้วย interfaces
+- [ ] ใช้ dependency injection
+- [ ] การจัดการ transaction ทำใน infrastructure หรือ application layer? (ต้องสอดคล้อง)
+
+#### Testing
+- [ ] Domain layer test โดยไม่พึ่ง infrastructure
+- [ ] Application layer test ด้วย mock repositories
+- [ ] Integration test สำหรับ infrastructure
+- [ ] มี test สำหรับ domain invariants
+- [ ] มี test สำหรับ domain events
+
+#### Performance & Scalability
+- [ ] Aggregate boundaries ถูกออกแบบให้รองรับการทำงานพร้อมกัน (concurrency)
+- [ ] การสื่อสารระหว่าง contexts ไม่สร้าง latency สูงเกินไป
+- [ ] ใช้ caching ตามความเหมาะสม
+
+#### Documentation
+- [ ] Context Map ได้รับการบันทึก
+- [ ] เหตุผลในการออกแบบ aggregates และ bounded contexts มีเอกสาร
+- [ ] Domain events มีการบันทึก schema
+
+---
+
+## สรุป
+
+Domain-Driven Design ช่วยให้เราสร้างซอฟต์แวร์ที่สะท้อนความต้องการทางธุรกิจอย่างแท้จริง โดยเฉพาะในระบบที่มีความซับซ้อนสูง Go มีคุณสมบัติที่เหมาะสมกับการนำ DDD ไปใช้ ทั้งในเรื่องความเรียบง่าย, interfaces, และ concurrency
+
+การนำ DDD ไปใช้ต้องอาศัยความร่วมมือระหว่างทีมพัฒนาและผู้เชี่ยวชาญโดเมน รวมถึงต้องใช้เวลาในการเรียนรู้และปรับใช้ อย่างไรก็ตาม ผลลัพธ์ที่ได้คือระบบที่ยืดหยุ่น, บำรุงรักษาง่าย, และตอบสนองต่อการเปลี่ยนแปลงทางธุรกิจได้ดี
+
+คู่มือนี้เป็นจุดเริ่มต้นสำหรับการออกแบบบริการด้วย Go และ DDD โดยสามารถปรับใช้ตามความเหมาะสมของแต่ละโปรเจกต์
+
+## บทที่ 47: Blueprint สำหรับโปรเจกต์ Go ระดับ Production
+
+---
+
+### 47.1 บทนำ
+
+การเริ่มต้นโปรเจกต์ Go ใหม่ให้มีโครงสร้างที่แข็งแรง พร้อมขยาย และบำรุงรักษาง่าย เป็นความท้าทายที่นักพัฒนาทุกคนต้องเผชิญ โครงสร้างโปรเจกต์ที่นำเสนอในบทนี้เป็น blueprint ที่ผ่านการพิสูจน์แล้วจากโปรเจกต์จริง มีการออกแบบตามหลัก **Clean Architecture** พร้อมด้วยฟีเจอร์ครบวงจรสำหรับการพัฒนาแอปพลิเคชันระดับ production
+
+โครงสร้างนี้แยกชั้นการทำงานอย่างชัดเจน:
+
+- **Core (domain)** – จัดเก็บโมเดลธุรกิจหลัก (entity, repository interface, service interface)
+- **Platform (infrastructure)** – จัดการการเชื่อมต่อฐานข้อมูล, Redis, logging, message queue
+- **Transport (delivery)** – รับส่งข้อมูลผ่าน HTTP, middleware, response formatter
+- **Apps** – จุดรวม dependencies และกำหนด routes
+
+นอกจากนี้ยังมีฟีเจอร์พร้อมใช้ที่ช่วยลดเวลาการพัฒนา เช่น:
+
+- Authentication (JWT access/refresh token)
+- Rate limiting (IP-based)
+- Health check (พร้อม dependency monitoring)
+- Caching (Redis)
+- Message queue (Redis pub/sub + worker pool)
+- Transaction management
+- Structured logging
+- Graceful shutdown
+
+โครงสร้างนี้เหมาะสำหรับโปรเจกต์ที่ต้องมีขนาดใหญ่ ทำงานพร้อมกันสูง และต้องการความน่าเชื่อถือ
+
+---
+
+### 47.2 คู่มือการใช้งานโครงสร้างโปรเจกต์
+
+#### 47.2.1 โครงสร้างโฟลเดอร์หลัก
+
+```
+project-root/
+├── cmd/                 # จุดเริ่มต้นของโปรแกรม (executable)
+├── internal/            # โค้ดเฉพาะของแอปพลิเคชัน (ไม่ถูก import จากภายนอก)
+├── pkg/                 # โค้ดที่นำกลับไปใช้ได้ (reusable) ในโปรเจกต์อื่น
+├── api/                 # ไฟล์ที่เกี่ยวข้องกับ API (เช่น Swagger)
+├── configs/             # ไฟล์ configuration
+├── deploy/              # Docker, Kubernetes files
+├── migrations/          # SQL migration files
+├── scripts/             # สคริปต์ช่วยพัฒนา
+└── test/                # integration tests
+```
+
+#### 47.2.2 ชั้นการทำงานภายใน `internal/`
+
+**apps/** – จุดรวม dependencies และกำหนด routing
+
+- `bootstrap/injection/` – ใช้สำหรับ wire dependencies (repository, service, handler) ด้วย dependency injection แบบ manual
+- `router/v1/` – กำหนด routes สำหรับ API version 1 แยก public/protected
+
+**core/** – ชั้นโดเมนของแอปพลิเคชัน (แบ่งตาม domain module)
+
+แต่ละ module (เช่น `auth`, `user`, `iot`) มีโครงสร้างย่อย:
+
+- `entity/` – entity หลัก (struct พร้อม behavior) และ value objects
+- `repository/` – interface สำหรับ repository
+- `service/` – interface สำหรับ service และการ implement business logic
+- `dto/` – data transfer objects (request/response)
+- `model/` – model ที่ใช้กับฐานข้อมูล (optional)
+- `handler/` – HTTP handlers (รับ request, เรียก service, ส่ง response)
+- `routes.go` – ลงทะเบียน routes ของ module นี้
+
+**platform/** – ชั้น infrastructure
+
+- `config/` – โหลด configuration (viper)
+- `db/` – การเชื่อมต่อ PostgreSQL, Redis
+- `cache/` – ฟังก์ชันช่วยสำหรับ Redis cache
+- `queue/` – message queue (Redis pub/sub) + worker pool + dead letter queue
+- `logger/` – structured logger (slog) + middleware
+
+**transport/** – ชั้น delivery
+
+- `middleware/` – middleware ต่างๆ (CORS, rate limit, auth, logging, recovery, security headers)
+- `httpx/` – utilities สำหรับ response, request, validation
+- `utils/` – helper functions (context, pagination)
+
+#### 47.2.3 การทำงานของ dependency injection
+
+ใน `internal/apps/app/bootstrap/injection/` มีไฟล์:
+
+- `dependencies.go` – สร้าง dependencies ทั่วไป (config, db, redis, logger)
+- `repositories.go` – สร้าง repository implementations (ส่งต่อ db)
+- `services.go` – สร้าง service implementations (ส่งต่อ repository)
+- `handlers.go` – สร้าง handlers (ส่งต่อ service)
+
+ทุกอย่างถูกสร้างใน `initDependencies()` และถูกส่งไปยัง router
+
+#### 47.2.4 การเพิ่มโมดูลใหม่ (Feature)
+
+สมมติต้องการเพิ่มโมดูล `product`:
+
+1. สร้างโครงสร้างใน `internal/core/product/`:
+   - `entity/product.go` – entity และ behavior
+   - `repository/repository.go` – interface สำหรับ repository
+   - `service/service.go` – interface สำหรับ service + implementation
+   - `dto/product_dto.go` – request/response structs
+   - `handler/product_handler.go` – HTTP handlers
+   - `routes.go` – routes สำหรับ product
+
+2. เพิ่ม repository implementation ใน `internal/platform/db/postgres/` (หรือถ้ามีหลาย module ให้แยกไฟล์)
+3. เพิ่ม service implementation ใน `internal/core/product/service/service_impl.go`
+4. เพิ่ม handler ใน `internal/core/product/handler/`
+5. ลงทะเบียน dependencies ใน `internal/apps/app/bootstrap/injection/`:
+   - `repositories.go`: `productRepo := postgres.NewProductRepository(db)`
+   - `services.go`: `productService := product.NewProductService(productRepo)`
+   - `handlers.go`: `productHandler := product.NewProductHandler(productService)`
+6. เพิ่ม routes ใน `internal/apps/app/router/v1/protected_routes.go` (หรือ public_routes.go)
+7. อย่าลืมเพิ่ม migrations ถ้ามีการเปลี่ยนแปลง schema
+
+---
+
+### 47.3 การออกแบบ Workflow สำหรับการพัฒนา
+
+#### 47.3.1 ขั้นตอนการพัฒนา Feature ใหม่
+
+1. **Analyze** – ทำความเข้าใจ requirement, ระบุ domain models, use cases
+2. **Design** – ออกแบบ entities, value objects, repository interface, service interface
+3. **Implement Domain** – เขียน entity, repository interface, service interface ใน `internal/core/<module>`
+4. **Implement Infrastructure** – เขียน repository implementation (GORM), cache, queue (ถ้าจำเป็น)
+5. **Implement Service** – เขียน business logic ใน service implementation
+6. **Implement Handler** – เขียน HTTP handlers, ตรวจสอบ input validation, ใช้ service
+7. **Register Routes** – ลงทะเบียน routes ใน router
+8. **Test** – เขียน unit tests (domain, service), integration tests (handler)
+9. **Document** – อัปเดต API docs (Swagger) ถ้ามี
+
+#### 47.3.2 การใช้เครื่องมือช่วยพัฒนา
+
+- **Air** – hot-reload (`air` ใน root) ช่วยให้เห็นผลทันที
+- **Docker Compose** – ใช้ `docker-compose up` ใน `deploy/docker/` เพื่อรัน Postgres, Redis
+- **Migrate** – ใช้ `scripts/migrate.sh` เพื่อรัน migrations
+- **Seed** – ใช้ `scripts/seed.sh` เพื่อเติมข้อมูลตัวอย่าง
+
+#### 47.3.3 การจัดการ configuration
+
+- ไฟล์ใน `configs/` (เช่น `config.yaml`) จะถูกโหลดด้วย viper
+- Environment variables สามารถ override ค่าได้ (ตั้งค่าใน docker-compose หรือ k8s)
+
+#### 47.3.4 การ deploy
+
+- ใช้ Dockerfile ใน `deploy/docker/Dockerfile` (multi-stage)
+- ใช้ Kubernetes manifests ใน `deploy/k8s/` สำหรับ production
+
+---
+
+### 47.4 TASK LIST Template (สำหรับการพัฒนา Feature ใหม่)
+
+#### Phase 1: Domain Design
+- [ ] ระบุ domain model (entity, value objects)
+- [ ] กำหนด invariants (business rules)
+- [ ] ระบุ use cases (methods in service)
+- [ ] กำหนด events (ถ้ามี)
+- [ ] ออกแบบ repository interface (methods)
+- [ ] ออกแบบ DTOs (request/response)
+
+#### Phase 2: Implementation
+- [ ] สร้าง entity struct และ behavior methods
+- [ ] สร้าง repository interface
+- [ ] สร้าง service interface
+- [ ] สร้าง DTO structs
+- [ ] เขียน unit tests สำหรับ entity
+- [ ] เขียน unit tests สำหรับ service (mock repository)
+
+#### Phase 3: Infrastructure
+- [ ] สร้าง repository implementation (GORM)
+- [ ] สร้าง migration file (ถ้ามี)
+- [ ] ตั้งค่า Redis cache (ถ้าจำเป็น)
+- [ ] ตั้งค่า message queue (ถ้าจำเป็น)
+- [ ] ทดสอบ repository ด้วย integration test
+
+#### Phase 4: Delivery
+- [ ] สร้าง HTTP handlers
+- [ ] เพิ่ม input validation (go-playground/validator)
+- [ ] สร้าง routes
+- [ ] ลงทะเบียน dependencies ใน injection
+- [ ] ทดสอบ handler ด้วย httptest
+
+#### Phase 5: Integration & Documentation
+- [ ] ทดสอบ end-to-end ด้วย curl/Postman
+- [ ] อัปเดต Swagger docs (ถ้ามี)
+- [ ] อัปเดต README (ถ้าจำเป็น)
+- [ ] รัน linter (`golangci-lint run`) และแก้ไข warnings
+
+#### Phase 6: Review & Deploy
+- [ ] Code review
+- [ ] ตรวจสอบ performance (ถ้ามีการ query มาก)
+- [ ] รัน test coverage (`go test -cover`), ควร > 80%
+- [ ] รัน race detector (`go test -race`)
+- [ ] Deploy to staging
+- [ ] ทดสอบใน staging
+- [ ] Deploy to production
+
+---
+
+### 47.5 CHECKLIST Template (สำหรับการตรวจสอบคุณภาพ)
+
+#### Domain Layer (core)
+- [ ] Entity ไม่มี setter ที่ไม่จำเป็น (immutable pattern)
+- [ ] Entity มี behavior ที่เกี่ยวข้อง (ไม่ใช่แค่ data holder)
+- [ ] Value objects มี constructor และ validation
+- [ ] Repository interface ใช้ domain objects (ไม่ใช้ model ของ ORM)
+- [ ] Service interface มีชื่อชัดเจน (เช่น `UserService`, `AuthService`)
+- [ ] ไม่มี business logic ซ้ำซ้อน (DRY)
+- [ ] Unit test coverage > 80%
+
+#### Infrastructure Layer (platform)
+- [ ] Repository implementation ใช้ interface ที่กำหนด
+- [ ] การจัดการ connection pool ถูกต้อง (max open, max idle)
+- [ ] การใช้ transaction ถูกต้อง (ถ้ามี)
+- [ ] Redis cache มี TTL และการ invalidate ที่เหมาะสม
+- [ ] Message queue มี error handling และ dead letter queue
+- [ ] Logging มี structured fields (ไม่ใช่ string concatenation)
+
+#### Transport Layer (delivery)
+- [ ] HTTP handlers มีขนาดเล็ก (ไม่เกิน 50 บรรทัด)
+- [ ] Input validation ครอบคลุมทุก field
+- [ ] Response มีรูปแบบมาตรฐาน (ผ่าน httpx.Response)
+- [ ] มีการจัดการ error ที่เหมาะสม (map domain error -> HTTP status)
+- [ ] Middleware ทำงานตามลำดับที่ถูกต้อง
+- [ ] มีการทดสอบ integration (httptest)
+
+#### Security
+- [ ] JWT secret ถูกเก็บใน environment (ไม่ hardcode)
+- [ ] Rate limiting เปิดใช้งานสำหรับ endpoints ที่ sensitive
+- [ ] Security headers (CSP, HSTS, etc.) ถูก set ผ่าน middleware
+- [ ] SQL injection ป้องกันโดย GORM (parameterized query)
+- [ ] No sensitive data in logs (password, token)
+- [ ] CORS กำหนด allow origins เฉพาะที่จำเป็น
+
+#### Performance
+- [ ] มีการ cache สำหรับข้อมูลที่อ่านบ่อย
+- [ ] มีการใช้ connection pooling สำหรับ DB และ Redis
+- [ ] มีการใช้ bulk operation แทน loop insert/update
+- [ ] มีการตั้ง timeout สำหรับ HTTP client และ database queries
+- [ ] มีการใช้ goroutine อย่างเหมาะสม (ไม่สร้าง goroutine มากเกินไป)
+
+#### Reliability
+- [ ] มี health check endpoints (`/health`, `/health/detailed`, `/ready`, `/live`)
+- [ ] Graceful shutdown ทำงาน (รอ pending requests)
+- [ ] มีการ retry สำหรับ transient failures (เช่น network)
+- [ ] มี dead letter queue สำหรับ messages ที่ประมวลผลไม่สำเร็จ
+- [ ] มีการ log panic และ recover ด้วย middleware
+
+#### Maintainability
+- [ ] โค้ดผ่าน `go fmt` และ `go vet`
+- [ ] ไม่มี unused imports, variables
+- [ ] มีการแบ่งแพคเกจตาม domain (ไม่ใช่ technical layers)
+- [ ] มีการใช้ dependency injection (ไม่ใช้ global variables)
+- [ ] มีเอกสารใน `docs/` สำหรับ architecture, deployment
+- [ ] README มี quick start guide
+
+#### Deployment
+- [ ] Dockerfile เป็น multi-stage (ลดขนาด image)
+- [ ] docker-compose ใช้งานได้ (development)
+- [ ] Kubernetes manifests มี liveness/readiness probes
+- [ ] Environment variables ถูกกำหนดใน deployment (ไม่ฝังใน image)
+- [ ] Migration รันอัตโนมัติหรือเป็นขั้นตอนแยก (ก่อน deploy)
+
+---
+
+## สรุป
+
+โครงสร้างโปรเจกต์ที่นำเสนอในบทนี้เป็น blueprint ที่รวบรวมประสบการณ์จากโปรเจกต์จริง ช่วยให้นักพัฒนาสามารถเริ่มต้นโปรเจกต์ใหม่ได้อย่างรวดเร็วโดยไม่ต้องเสียเวลากับการออกแบบโครงสร้างพื้นฐาน และยังมีฟีเจอร์พร้อมใช้ที่ช่วยให้แอปพลิเคชันมีความปลอดภัย, มีประสิทธิภาพ, และพร้อมสำหรับการขยายขนาด
+
+การนำ blueprint นี้ไปใช้ควรปรับให้เข้ากับความต้องการของแต่ละโปรเจกต์ โดยยึดหลักการ:
+
+- **แยกความรับผิดชอบ** (Separation of Concerns)
+- **ทดสอบง่าย** (Testability)
+- **บำรุงรักษาง่าย** (Maintainability)
+- **ขยายได้** (Scalability)
+
+การใช้ task list และ checklist ที่กำหนดจะช่วยให้ทีมพัฒนามีมาตรฐานเดียวกันและลดข้อผิดพลาดที่อาจเกิดขึ้น
