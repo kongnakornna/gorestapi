@@ -28,7 +28,7 @@ var serveCmd = &cobra.Command{
 			appLogger.Error(" เชื่อมต่อ Databse Postgresql ล้มเหลว", "error", err)
 		} else {
 			appLogger.Infof("Postgres connected")
-			appLogger.Info("เชื่อมต่อ Databse Postgresql สำเร็จ", "signal", cfg.String())
+			appLogger.Info("เชื่อมต่อ Databse Postgresql สำเร็จ")
 		}
 
 		if cfg.Server.MigrateOnStart {
