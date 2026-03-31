@@ -103,8 +103,8 @@ go mod download
 go mod verify
 
 # 4. Run the application
-go run main.go
 go run main.go serve
+
 
 # Or if the main file is in cmd directory:
 go run cmd/gorestapi/main.go

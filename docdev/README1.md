@@ -123,12 +123,12 @@ ls go.mod
 ### If it's a REST API (likely based on the name):
 
 ```bash
-# Run the server (usually on port 8080)
+# Run the server (usually on port 5000)
 go run main.go
 
 # In another terminal, test the API endpoints
-curl http://localhost:8080/health
-curl http://localhost:8080/api/users
+curl http://localhost:5000/health
+curl http://localhost:5000/api/users
 ```
 
 ### If you need to build the binary:
@@ -189,7 +189,7 @@ cp .env.example .env
 # Load environment variables (on Linux/macOS)
 source .env
 # Or export them directly
-export PORT=8080
+export PORT=5000
 export DB_URL="postgres://..."
 ```
 
@@ -373,7 +373,7 @@ Run one of these commands:
 go run main.go serve
 
 # Or with specific port (if your app supports flags)
-go run main.go serve --port=8080
+go run main.go serve --port=5000
 
 # Run database migrations first (if you haven't already)
 go run main.go migrate
@@ -393,9 +393,9 @@ go run main.go initdata
 
 3. **Check if the server starts successfully** - You should see log messages indicating the server is running (using your zap logger).
 
-4. **Access your API** - Once running, your API should be available at something like `http://localhost:8080`
+4. **Access your API** - Once running, your API should be available at something like `http://localhost:5000`
 
-5. **Swagger documentation** - If you've set up swagger, you might be able to access it at `http://localhost:8080/swagger/index.html`
+5. **Swagger documentation** - If you've set up swagger, you might be able to access it at `http://localhost:5000/swagger/index.html`
 
 Is the server starting correctly when you run `go run main.go serve`, or are you seeing any errors?
 

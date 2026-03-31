@@ -11,5 +11,6 @@
             "database": "postgres",
             "username": "postgres"
         }
-    ]
+    ],
+    "snyk.advanced.autoSelectOrganization": true
 }
