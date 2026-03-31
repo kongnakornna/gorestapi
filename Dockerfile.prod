@@ -11,13 +11,13 @@ RUN go mod download
 
 COPY ./ .
 
-RUN go build -ldflags "-s -w" -o /app/go-boilerplate
+RUN go build -ldflags "-s -w" -o /app/go-dev
 
 FROM golang:1.20-alpine as runtime
 
 WORKDIR /app
 
-COPY --from=builder /app/go-boilerplate /app/go-boilerplate
+COPY --from=builder /app/go-dev /app/go-dev
 COPY --from=builder /go/bin/wait-for-it /go/wait-for-it
 
 RUN mkdir config

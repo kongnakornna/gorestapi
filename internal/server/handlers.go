@@ -27,7 +27,7 @@ import (
 	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
-// @title Go boilerplate
+// @title Go dev
 // @version 1.0
 
 // @BasePath /api

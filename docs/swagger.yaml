@@ -18,7 +18,7 @@ definitions:
   presenter.ForgotPassword:
     properties:
       email:
-        example: hiennguyen9874@gmail.com
+        example: kongnakornna@gmail.com
         type: string
     required:
     - email
@@ -92,7 +92,7 @@ definitions:
         minLength: 8
         type: string
       email:
-        example: hiennguyen9874@gmail.com
+        example: kongnakornna@gmail.com
         type: string
       name:
         example: Xuan Hien
@@ -197,7 +197,7 @@ definitions:
     type: object
 info:
   contact: {}
-  title: Go boilerplate
+  title: Go dev
   version: "1.0"
 paths:
   /auth/forgotpassword:

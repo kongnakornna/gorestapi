@@ -8,7 +8,7 @@ import (
 
 type UserCreate struct {
 	Name            string `json:"name" validate:"required" example:"Xuan Hien"`
-	Email           string `json:"email" validate:"required" example:"hiennguyen9874@gmail.com"`
+	Email           string `json:"email" validate:"required" example:"kongnakornna@gmail.com"`
 	Password        string `json:"password" validate:"required,min=8" example:"password"`
 	ConfirmPassword string `json:"confirm_password" validate:"required,min=8" example:"password"`
 }
@@ -35,7 +35,7 @@ type UserResponse struct {
 }
 
 type UserSignIn struct {
-	Email    string `json:"email" validate:"required" example:"hiennguyen9874@gmail.com"`
+	Email    string `json:"email" validate:"required" example:"kongnakornna@gmail.com"`
 	Password string `json:"password" validate:"required,min=8" example:"password"`
 }
 
@@ -51,7 +51,7 @@ type PublicKey struct {
 }
 
 type ForgotPassword struct {
-	Email string `json:"email" validate:"required" example:"hiennguyen9874@gmail.com"`
+	Email string `json:"email" validate:"required" example:"kongnakornna@gmail.com"`
 }
 
 type ResetPassword struct {

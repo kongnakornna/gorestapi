@@ -1377,7 +1377,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "hiennguyen9874@gmail.com"
+                    "example": "kongnakornna@gmail.com"
                 }
             }
         },
@@ -1488,7 +1488,7 @@ const docTemplate = `{
                 },
                 "email": {
                     "type": "string",
-                    "example": "hiennguyen9874@gmail.com"
+                    "example": "kongnakornna@gmail.com"
                 },
                 "name": {
                     "type": "string",
@@ -1646,7 +1646,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "Go boilerplate",
+	Title:            "Go dev",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

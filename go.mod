@@ -10,7 +10,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
 	github.com/hibiken/asynq v0.24.0
-	github.com/hiennguyen9874/go-boilerplate v0.0.1
+	github.com/hiennguyen9874/go-dev v0.0.1
 	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/spf13/cobra v1.6.1

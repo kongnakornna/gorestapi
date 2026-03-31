@@ -13,8 +13,8 @@ import (
 var (
 	RootCmd = &cobra.Command{
 		Use:   "go-base",
-		Short: "A RESTful API boilerplate",
-		Long:  `A RESTful API boilerplate with password less authentication.`,
+		Short: "A RESTful API dev",
+		Long:  `A RESTful API dev with password less authentication.`,
 		// Uncomment the following line if your bare application
 		// has an action associated with it:
 		//	Run: func(cmd *cobra.Command, args []string) { },

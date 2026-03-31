@@ -1,6 +1,6 @@
-# Go Restful API Boilerplate
+# Go Restful API dev
 
-An API Boilerplate written in Golang with chi-route and Gorm. Write restful API with fast development and developer friendly.
+An API dev written in Golang with chi-route and Gorm. Write restful API with fast development and developer friendly.
 
 ## Architecture
 

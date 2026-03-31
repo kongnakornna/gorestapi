@@ -1368,7 +1368,7 @@
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "hiennguyen9874@gmail.com"
+                    "example": "kongnakornna@gmail.com"
                 }
             }
         },
@@ -1479,7 +1479,7 @@
                 },
                 "email": {
                     "type": "string",
-                    "example": "hiennguyen9874@gmail.com"
+                    "example": "kongnakornna@gmail.com"
                 },
                 "name": {
                     "type": "string",
