@@ -197,8 +197,8 @@ definitions:
     type: object
 info:
   contact: {}
-  title: Go dev
-  version: "1.0"
+  title: Go RestAPI Kongnak
+  version: "2026.03.31 1.0"
 paths:
   /auth/forgotpassword:
     post:

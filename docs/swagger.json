@@ -1,9 +1,9 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "Go restapi",
-        "contact": {},
-        "version": "1.0"
+        "title": "Go RestAPI Kongnakorn jantakun",
+        "contact": { "email":"kongnakornjantakun@gmail.com"},
+        "version": "2026.03.31 1.0"
     },
     "basePath": "/api",
     "paths": {

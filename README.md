@@ -50,8 +50,10 @@ In this project use 3 layer architecture
 ### Run
 
 - `docker-compose up`
+- OR  go run main.go serve  on loca Windows OS
 - Swagger: [localhost:5000/swagger/](http://localhost:5000/swagger/)
-- http://localhost:5000/swagger/index.html
+- http://localhost:5000/swagger/index.html#/
+
 ## TODO
 
 - Traefik
@@ -146,9 +148,15 @@ go run main.go serve --help
 
 3. **Finally, start the server**:
    ```bash
-   go run main.go serve
+      go run main.go serve
    ```
+   
+```bash
+   go run main.go migrate
+   go run main.go initdata
+   go run main.go serve
 
+ ```
 ## If you get configuration errors:
 
 Your app likely needs configuration. Check if you have:
