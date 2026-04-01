@@ -7,9 +7,7 @@
 - username : demo1
 - password : demo1
 
-- http://cmoniot.trueddns.com:52160/
-- username : demo4
-- password : demo4
+ 
 
 ![Icmon](https://github.com/user-attachments/assets/8c41aa84-257a-40cd-9141-4a24f4202937)
 
