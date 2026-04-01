@@ -449,6 +449,61 @@ go mod download
 go mod tidy
 ```
 
+# แผนภาพ Call Stack และการไหลของ panic (แบบลำดับเวลา)
+```mermaid
+sequenceDiagram
+    participant main
+    participant L1 as level1
+    participant L2 as level2
+    participant L3 as level3
+
+    main->>L1: เรียก level1()
+    activate L1
+    L1->>L2: เรียก level2()
+    activate L2
+    L2->>L3: เรียก level3()
+    activate L3
+    L3-->>L3: panic เกิดขึ้น (ค่า "error")
+    Note over L3: execute defer (level3)
+    L3-->>L2: panic ส่งขึ้น
+    deactivate L3
+    Note over L2: execute defer (level2)
+    L2-->>L1: panic ส่งขึ้น
+    deactivate L2
+    Note over L1: execute defer (level1)
+    L1-->>main: panic ส่งขึ้น
+    deactivate L1
+    Note over main: execute defer (main)<br/>โปรแกรมหยุด (ถ้าไม่มี recover)
+```
+
+---
+
+##  `recover` หยุดการ unwind (การคลายสแต็ก)
+
+```mermaid
+sequenceDiagram
+    participant main
+    participant L1 as level1
+    participant L2 as level2
+    participant L3 as level3
+
+    main->>L1: เรียก level1()
+    activate L1
+    L1->>L2: เรียก level2()
+    activate L2
+    L2->>L3: เรียก level3()
+    activate L3
+    L3-->>L3: panic เกิดขึ้น (ค่า "error")
+    Note over L3: execute defer (level3)
+    L3-->>L2: panic ส่งขึ้น
+    deactivate L3
+    Note over L2: defer มี recover()<br/>จับ panic และหยุด unwind
+    L2-->>L1: return ปกติ (ไม่มี panic)
+    deactivate L2
+    L1-->>main: return ปกติ
+    deactivate L1
+    Note over main: โปรแกรมทำงานต่อ
+```
 
 # คู่มือภาษา พื้นฐาน Golang 
 
