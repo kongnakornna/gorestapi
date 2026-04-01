@@ -1,4 +1,4 @@
-# Go Restful API 
+![Rest](https://github.com/user-attachments/assets/af279fbe-7ac4-46e7-a676-f611a1ca0a51)# Go Restful API 
 
 An API dev written in Golang with chi-route and Gorm. Write restful API with fast development and developer friendly.
 
@@ -2248,7 +2248,9 @@ srv := &http.Server{
 }
 srv.ListenAndServe()
 ```
- 
+<img width="1778" height="2732" alt="rest" src="https://github.com/user-attachments/assets/81aabd3b-5d2c-4662-9121-49c455a2eb7f" />
+
+
 
 ### อธิบายรายละเอียดแต่ละส่วน
 
