@@ -2248,42 +2248,7 @@ srv := &http.Server{
 }
 srv.ListenAndServe()
 ```
-
-## พื้นฐานการสร้าง HTTP Server ด้วย Golang
-
-การสร้าง HTTP Server ในภาษา Go (Golang) เป็นเรื่องที่ทำได้ง่ายและมีประสิทธิภาพสูง เนื่องจากภาษา Go มีแพ็คเกจ `net/http` ในมาตรฐานที่ครบครัน รองรับการทำงานแบบ concurrent 
-ผ่าน goroutine ทำให้สามารถรับคำขอพร้อมกันได้โดยไม่ต้องพึ่งพา web framework ภายนอก
-
  
-```mermaid
-flowchart TB
-    Client([Client]) -->|HTTP Request<br/>GET /api/users| Server
-
-    subgraph Server [HTTP Server (Go)]
-        Router[Router / ServeMux<br/>- จับคู่ path + method<br/>- อาจมี middleware chain]
-        Middleware[Middleware (ถ้ามี)<br/>- Logging, Auth, Recovery, etc.]
-        Handler[Handler Func<br/>- อ่าน request body/params<br/>- ประมวลผล (DB, external API, etc.)<br/>- เขียน response (JSON, HTML, etc.)]
-        Writer[Response Writer<br/>- กำหนด Header, Status Code<br/>- เขียน response body]
-        
-        Router --> Middleware
-        Middleware --> Handler
-        Handler --> Writer
-    end
-
-    Writer -->|HTTP Response<br/>200 OK, JSON data| Client
-```
-
- 
-**คำอธิบายองค์ประกอบ** (เพื่อนำไปสร้างใน draw.io):
-
-- **Client**: ผู้ใช้หรือโปรแกรมที่ส่ง HTTP request (เช่น browser, mobile app, curl)
-- **HTTP Server (Go)**: กระบวนการที่รันด้วย `http.ListenAndServe` หรือ `http.Server` รับฟังพอร์ต
-- **Router / ServeMux**: ตัวจับคู่เส้นทาง (routing) โดยใช้ `http.NewServeMux()` หรือ `http.DefaultServeMux` กำหนดว่า path ไหนควรถูกส่งไปยัง handler ใด
-- **Middleware**: ฟังก์ชันที่ทำงานก่อนถึง handler หลัก ใช้สำหรับ logging, authentication, recovery จาก panic, rate limiting ฯลฯ
-- **Handler Func**: ฟังก์ชันที่รับ `http.ResponseWriter` และ `*http.Request` เป็นพารามิเตอร์ ทำงานตาม business logic
-- **Response Writer**: อินเทอร์เฟซที่ใช้ในการสร้าง HTTP response กลับไปยัง client
-
----
 
 ### อธิบายรายละเอียดแต่ละส่วน
 
