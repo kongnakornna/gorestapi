@@ -9243,16 +9243,3 @@ func main() {
 เส้นทางกว่าสิบห้าปีที่ผ่านมา สอนให้รู้ว่านักพัฒนาซอฟต์แวร์ที่ดีไม่ได้มีแค่ทักษะการเขียนโค้ด แต่ต้องเข้าใจธุรกิจ มีวิสัยทัศน์ในการออกแบบระบบ มีทักษะการนำทีม และที่สำคัญคือต้องมีใจที่อยากเรียนรู้และแบ่งปันเสมอ ผมเชื่อว่าทุกโครงการ ทุกบรรทัดโค้ด ที่เขียนขึ้น ล้วนเป็นส่วนหนึ่งในการขับเคลื่อนองค์กรและสร้างประสบการณ์ที่ดีให้ผู้ใช้ และนั่นคือความภาคภูมิใจของนักพัฒนาทุกคน
 
 ---
- Ref: http://cmoniot.trueddns.com:52160
- 
- ![Licence](https://github.com/user-attachments/assets/e2966221-53c5-4315-ae45-276320e5f915)
-
- ![Icmon6](https://github.com/user-attachments/assets/7d9585a8-0378-4a48-b4ad-b742d4981ed9)
-
-![87796](https://github.com/user-attachments/assets/8b90b10a-e670-48f6-a7a9-a168d3ce42dd)
-
-![87795](https://github.com/user-attachments/assets/5bb131e9-e3fb-4921-8109-f44a58373a4f)
-
-![87793](https://github.com/user-attachments/assets/4bb6d385-8514-4d6f-a330-f5395c57231a)
-
-
