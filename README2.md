@@ -4628,61 +4628,1736 @@ graph TD
 เริ่มจากสร้างโมดูลด้วย `go mod init` ได้ไฟล์ `go.mod` และ `go.sum` จากนั้นเขียน test (`_test.go`) แล้วรัน `go test` เพื่อวัด coverage ข้อมูลที่ถูกต้องผ่านการทดสอบจะถูกนำไปใช้กับคอลเลกชัน (array, slice, map) และในที่สุดการจัดการข้อผิดพลาดจะเกิดขึ้นเมื่อพบ error
 
 ---
+# ภาคที่ 3: การจัดการโปรเจกต์และโครงสร้างข้อมูลขั้นสูง (บทที่ 17–23)
 
-## ภาคที่ 4: การพัฒนาแอปพลิเคชันเชิงปฏิบัติ (บทที่ 24–33)
- ```mermaid
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
+
+```mermaid
 flowchart TD
-    subgraph Input[การรับข้อมูล]
-        A[HTTP Server<br/>บทที่ 26] --> B[การแยกวิเคราะห์<br/>JSON/XML<br/>บทที่ 25]
-        B --> C[Enum / Iota / Bitmask<br/>บทที่ 27]
-        C --> D[วันที่และเวลา<br/>บทที่ 28]
+    subgraph ProjectManagement["1. การจัดการโปรเจกต์ (บทที่ 17-18)"]
+        direction TB
+        A1["Go Modules (บทที่ 17)<br/>go.mod, go.sum<br/>module, require, replace<br/>go mod init/tidy/vendor"]
+        A2["Go Module Proxies (บทที่ 18)<br/>GOPROXY, GOSUMDB<br/>GOPRIVATE, Athens<br/>ความปลอดภัยและความเร็ว"]
+        
+        A1 --> A2
     end
 
-    subgraph Processing[การประมวลผล]
-        E[ฟังก์ชันนิรนาม / Closure<br/>บทที่ 24] --> F[การทำงานพร้อมกัน (Concurrency)<br/>บทที่ 30]
-        F --> G[การจัดการข้อผิดพลาด<br/>ใช้จากบทที่ 23]
+    subgraph Testing["2. การทดสอบ (บทที่ 19)"]
+        direction TB
+        B1["Unit Tests<br/>_test.go, TestXxx(t *testing.T)<br/>t.Run(), table-driven tests<br/>t.Helper(), t.Parallel()"]
+        B2["Test Coverage<br/>go test -cover<br/>go test -coverprofile<br/>go tool cover -html"]
+        B3["Test Doubles<br/>Mock, Stub, Fake<br/>interface-based mocking"]
+        
+        B1 --> B2
+        B2 --> B3
     end
 
-    subgraph Storage[การจัดเก็บ]
-        H[ไฟล์และฐานข้อมูล<br/>บทที่ 29] --> I[Logging<br/>บทที่ 31]
+    subgraph DataStructures["3. โครงสร้างข้อมูลขั้นสูง (บทที่ 20-22)"]
+        direction TB
+        C1["Arrays (บทที่ 20)<br/>[n]T, fixed size<br/>value type, compile-time size<br/>rarely used directly"]
+        C2["Slices (บทที่ 21)<br/>[]T, dynamic size<br/>len, cap, append, copy<br/>backed by array, reference type"]
+        C3["Maps (บทที่ 22)<br/>map[K]V, hash table<br/>make(), delete, comma ok idiom<br/>unordered, not safe for concurrent"]
+        
+        C1 --> C2
+        C2 --> C3
     end
 
-    subgraph Output[การส่งออก]
-        J[เทมเพลต (Templates)<br/>บทที่ 32] --> K[การจัดการค่า Configuration<br/>บทที่ 33]
-        K --> L[ส่ง Response]
+    subgraph ErrorHandling["4. การจัดการข้อผิดพลาด (บทที่ 23)"]
+        direction TB
+        D1["Error Interface<br/>error interface<br/>errors.New, fmt.Errorf"]
+        D2["Error Wrapping<br/>%w, errors.Unwrap<br/>errors.Is, errors.As<br/>error chains"]
+        D3["Best Practices<br/>check errors early<br/>don't ignore errors<br/>custom error types"]
+        
+        D1 --> D2
+        D2 --> D3
     end
 
-    Input --> Processing
-    Processing --> Storage
-    Storage --> Output
+    subgraph Flow["ลำดับการเรียนรู้"]
+        direction LR
+        F1[จัดการโปรเจกต์] --> F2[เขียนทดสอบ] --> F3[ใช้โครงสร้างข้อมูล] --> F4[จัดการข้อผิดพลาด]
+    end
+
+    ProjectManagement --> Testing
+    Testing --> DataStructures
+    DataStructures --> ErrorHandling
+    Flow -.-> ProjectManagement
 ```
 
-**คำอธิบายภาษาไทย:**
-
-แผนภาพนี้แสดงลำดับและความสัมพันธ์ของเนื้อหาในภาคที่ 4 (บทที่ 24–33) ซึ่งเป็นการพัฒนาแอปพลิเคชันเชิงปฏิบัติ โดยแบ่งเป็น 4 ขั้นตอนหลัก:
-
-1. **การรับข้อมูล (Input)**  
-   - **HTTP Server (บทที่ 26)** เป็นจุดเริ่มต้นรับคำขอจากผู้ใช้  
-   - ข้อมูลที่ส่งมา (JSON/XML) จะถูกแปลงเป็น struct ของ Go ด้วยเทคนิคจาก **บทที่ 25**  
-   - ใช้ **Enum / Iota / Bitmask (บทที่ 27)** เพื่อกำหนดสถานะหรือตัวเลือกที่มีค่าแน่นอน  
-   - ข้อมูลวันที่และเวลาจากคำขอจะถูกประมวลผลด้วย **บทที่ 28**  
-
-2. **การประมวลผล (Processing)**  
-   - ตรรกะธุรกิจอาจใช้ **ฟังก์ชันนิรนามและ Closure (บทที่ 24)** เพื่อสร้าง callback หรือ factory  
-   - งานที่ใช้เวลานานหรือต้องทำพร้อมกันจะใช้ **Concurrency (บทที่ 30)** ผ่าน goroutine, channel, select  
-   - การจัดการข้อผิดพลาดอ้างอิงจาก **บทที่ 23** (Errors) เพื่อให้โปรแกรมมั่นคง  
-
-3. **การจัดเก็บ (Storage)**  
-   - ข้อมูลที่ผ่านการประมวลผลจะถูกบันทึกลง **ไฟล์หรือฐานข้อมูล (บทที่ 29)**  
-   - ระหว่างนี้จะมีการบันทึก log ตาม **บทที่ 31** เพื่อติดตามการทำงาน  
-
-4. **การส่งออก (Output)**  
-   - ผลลัพธ์อาจถูกส่งผ่าน **เทมเพลต (บทที่ 32)** เพื่อสร้างหน้า HTML หรือข้อความที่กำหนดรูปแบบ  
-   - ค่ากำหนดต่าง ๆ (เช่น พอร์ตเซิร์ฟเวอร์, ชื่อฐานข้อมูล) จะถูกโหลดผ่าน **การจัดการ Configuration (บทที่ 33)**  
-   - สุดท้ายส่ง Response กลับไปยังผู้ใช้
-
-แผนภาพนี้ช่วยให้เห็นภาพรวมของการพัฒนาแอปพลิเคชันเว็บด้วย Go ตั้งแต่การรับคำขอ, ประมวลผล, จัดเก็บ, ไปจนถึงการแสดงผล โดยแต่ละบทจะสนับสนุนขั้นตอนใดขั้นตอนหนึ่งอย่างชัดเจน
 ---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 3 ครอบคลุมบทที่ 17–23 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งแสดงลำดับการเรียนรู้ที่ต่อเนื่องกัน
+
+---
+
+## 1. การจัดการโปรเจกต์ (บทที่ 17–18)
+
+### บทที่ 17: Go Modules – การจัดการโปรเจกต์สมัยใหม่
+
+**เป้าหมาย:** จัดการ dependencies (แพคเกจภายนอก) และ versioning
+
+#### Go Modules คืออะไร?
+
+Go Modules เป็นระบบ dependency management อย่างเป็นทางการของ Go เริ่มตั้งแต่ Go 1.11 (stable ตั้งแต่ 1.16) แทนที่ GOPATH workspace แบบเดิม
+
+#### โครงสร้างไฟล์
+
+```
+myproject/
+├── go.mod          # ไฟล์หลัก ระบุ module name และ dependencies
+├── go.sum          # checksum ของ dependencies (ความปลอดภัย)
+├── main.go
+└── internal/       # โค้ดเฉพาะของโปรเจกต์
+```
+
+#### คำสั่งพื้นฐาน
+
+```bash
+# เริ่มต้นโปรเจกต์ใหม่
+go mod init github.com/username/myproject
+
+# เพิ่ม dependency อัตโนมัติ (เมื่อ import ในโค้ด)
+go mod tidy
+
+# ดาวน์โหลด dependencies
+go mod download
+
+# แสดง dependency graph
+go mod graph
+
+# แก้ไข go.mod โดยตรง
+go mod edit -require=github.com/gorilla/mux@v1.8.0
+
+# ลบ unused dependencies
+go mod tidy -v
+
+# สร้าง vendor folder (copy dependencies เข้าโปรเจกต์)
+go mod vendor
+```
+
+#### ตัวอย่าง go.mod
+
+```go
+module github.com/username/myapp
+
+go 1.21
+
+require (
+    github.com/gin-gonic/gin v1.9.1
+    github.com/go-sql-driver/mysql v1.7.1
+    gorm.io/gorm v1.25.5
+)
+
+require (
+    github.com/bytedance/sonic v1.9.1 // indirect
+    github.com/jinzhu/inflection v1.0.0 // indirect
+)
+
+replace github.com/old/package => github.com/new/package v1.0.0
+
+exclude github.com/broken/package v1.2.3
+```
+
+**คำอธิบายแต่ละส่วน:**
+- `module`: ชื่อของโปรเจกต์ (ปกติเป็น repository URL)
+- `go`: เวอร์ชัน Go ที่ใช้
+- `require`: dependencies ที่โปรเจกต์ต้องการ
+- `indirect`: dependency ที่ถูกนำเข้ามาทางอ้อม
+- `replace`: ใช้แทนที่แพคเกจด้วยเวอร์ชันหรือ source อื่น
+- `exclude`: ห้ามใช้เวอร์ชันที่ระบุ
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. สร้างโปรเจกต์ใหม่**
+
+```bash
+# สร้างโฟลเดอร์
+mkdir my-rest-api
+cd my-rest-api
+
+# เริ่มต้น Go module
+go mod init github.com/mycompany/my-rest-api
+
+# สร้างไฟล์ main.go
+cat > main.go << 'EOF'
+package main
+
+import (
+    "fmt"
+    "github.com/gin-gonic/gin"
+)
+
+func main() {
+    r := gin.Default()
+    r.GET("/ping", func(c *gin.Context) {
+        c.JSON(200, gin.H{"message": "pong"})
+    })
+    r.Run() // listen and serve on 0.0.0.0:8080
+}
+EOF
+
+# รัน go mod tidy จะดึง gin มาให้อัตโนมัติ
+go mod tidy
+
+# ดูผลลัพธ์ go.mod
+cat go.mod
+```
+
+**ผลลัพธ์ go.mod:**
+```
+module github.com/mycompany/my-rest-api
+
+go 1.21
+
+require github.com/gin-gonic/gin v1.9.1
+
+require (
+    github.com/bytedance/sonic v1.9.1 // indirect
+    github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
+    github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+    // ... indirect dependencies อื่นๆ
+)
+```
+
+**2. การอัปเกรด dependency**
+
+```bash
+# ดูเวอร์ชันล่าสุด
+go list -u -m all
+
+# อัปเกรดแพคเกจเฉพาะ
+go get -u github.com/gin-gonic/gin
+
+# อัปเกรดเป็นเวอร์ชันเฉพาะ
+go get github.com/gin-gonic/gin@v1.9.0
+
+# อัปเกรดทั้งหมด
+go get -u ./...
+```
+
+**3. การใช้ replace สำหรับ local development**
+
+```go
+// go.mod
+module github.com/mycompany/myapp
+
+go 1.21
+
+require (
+    github.com/mycompany/mylib v1.0.0
+)
+
+// ใช้ local path แทน (ตอนพัฒนา)
+replace github.com/mycompany/mylib => ../mylib
+```
+
+**4. Semantic Import Versioning (SIV)**
+
+Go ใช้ major version ใน import path เมื่อ major version > 1
+
+```go
+// v1 (ไม่ต้องระบุ /v1)
+import "github.com/user/pkg"
+
+// v2 ขึ้นไป ต้องระบุใน path
+import "github.com/user/pkg/v2"
+import "github.com/user/pkg/v3"
+```
+
+---
+
+### บทที่ 18: Go Module Proxies
+
+**เป้าหมาย:** เพิ่มความเร็วและความปลอดภัยในการดาวน์โหลด dependencies
+
+#### Go Module Proxy คืออะไร?
+
+Go Module Proxy เป็นเซิร์ฟเวอร์ที่เก็บ cache ของ Go modules ช่วยให้:
+- ดาวน์โหลด dependencies ได้เร็วขึ้น (cache ในประเทศ)
+- ทำงานในองค์กรที่มี firewall
+- ป้องกันการลบ module ออกจาก GitHub (sum.golang.org)
+- ตรวจสอบความถูกต้องของ module
+
+#### ตัวแปรสภาพแวดล้อมที่สำคัญ
+
+```bash
+# ตั้งค่า GOPROXY (ใช้ proxy หลายตัว)
+export GOPROXY=https://proxy.golang.org,direct
+
+# ใช้ private proxy
+export GOPROXY=https://goproxy.io,https://proxy.golang.org,direct
+
+# ตั้งค่า GOSUMDB (ตรวจสอบ checksum)
+export GOSUMDB=sum.golang.org
+
+# ตั้งค่า GOPRIVATE (private repositories)
+export GOPRIVATE=github.com/mycompany/*,gitlab.com/private/*
+
+# ปิด checksum สำหรับ private repo
+export GONOSUMDB=github.com/mycompany/*
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. ตั้งค่า proxy สำหรับองค์กร**
+
+```bash
+# .bashrc หรือ .zshrc
+export GOPROXY=https://goproxy.company.com,https://proxy.golang.org,direct
+export GOPRIVATE=github.com/mycompany/*
+export GONOSUMDB=github.com/mycompany/*
+export GOSUMDB=sum.golang.org
+```
+
+**2. ใช้ Athens (self-hosted proxy)**
+
+Athens เป็น Go module proxy ที่สามารถติดตั้งเองได้
+
+```yaml
+# docker-compose.yml
+version: '3'
+services:
+  athens:
+    image: gomods/athens:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - ATHENS_STORAGE_TYPE=disk
+      - ATHENS_DISK_STORAGE_ROOT=/var/lib/athens
+    volumes:
+      - ./athens-storage:/var/lib/athens
+```
+
+```bash
+# เริ่มต้น Athens
+docker-compose up -d
+
+# ตั้งค่า GOPROXY
+export GOPROXY=http://localhost:3000
+```
+
+**3. การทำงานของ GOPROXY**
+
+```
+1. go build/run/test
+   ↓
+2. ตรวจสอบ GOPROXY
+   ↓
+3. proxy.golang.org มี cache ไหม?
+   ├── มี → ดาวน์โหลดจาก proxy
+   └── ไม่มี → ดึงจาก VCS (GitHub) → เก็บ cache
+   ↓
+4. ตรวจสอบ GOSUMDB
+   ↓
+5. ดาวน์โหลด module
+```
+
+**4. ปัญหาที่พบบ่อยและ解决方法**
+
+```bash
+# ปัญหา: checksum mismatch สำหรับ private repo
+# วิธีแก้: ตั้ง GONOSUMDB
+export GONOSUMDB=github.com/private/*
+
+# ปัญหา: proxy ไม่มี module (404)
+# วิธีแก้: ใช้ direct
+export GOPROXY=https://proxy.golang.org,direct
+
+# ปัญหา: module ถูกลบจาก GitHub
+# วิธีแก้: ใช้ proxy ที่มี cache (proxy.golang.org มี cache)
+# หรือใช้ vendor
+go mod vendor
+```
+
+---
+
+## 2. การทดสอบหน่วย (บทที่ 19)
+
+**เป้าหมาย:** เขียน test เพื่อให้โค้ดมีความมั่นใจและบำรุงรักษาง่าย
+
+### บทที่ 19: Unit Tests
+
+#### โครงสร้างการทดสอบ
+
+```go
+// calculator/calculator.go
+package calculator
+
+func Add(a, b int) int {
+    return a + b
+}
+
+func Divide(a, b int) (int, error) {
+    if b == 0 {
+        return 0, ErrDivisionByZero
+    }
+    return a / b, nil
+}
+```
+
+```go
+// calculator/calculator_test.go
+package calculator
+
+import (
+    "testing"
+)
+
+// 1. Test function (ต้องขึ้นต้นด้วย Test)
+func TestAdd(t *testing.T) {
+    result := Add(2, 3)
+    expected := 5
+    
+    if result != expected {
+        t.Errorf("Add(2,3) = %d; want %d", result, expected)
+    }
+}
+
+// 2. Table-driven tests (แนะนำ)
+func TestDivide(t *testing.T) {
+    tests := []struct {
+        name     string
+        a, b     int
+        expected int
+        hasError bool
+    }{
+        {"positive numbers", 10, 2, 5, false},
+        {"negative numbers", -10, 2, -5, false},
+        {"division by zero", 10, 0, 0, true},
+        {"zero divided", 0, 5, 0, false},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result, err := Divide(tt.a, tt.b)
+            
+            if tt.hasError {
+                if err == nil {
+                    t.Errorf("expected error but got none")
+                }
+                return
+            }
+            
+            if err != nil {
+                t.Errorf("unexpected error: %v", err)
+            }
+            
+            if result != tt.expected {
+                t.Errorf("Divide(%d,%d) = %d; want %d", 
+                    tt.a, tt.b, result, tt.expected)
+            }
+        })
+    }
+}
+
+// 3. Helper function
+func testHelper(t *testing.T, msg string) {
+    t.Helper() // บรรทัดนี้บอกว่าเป็น helper (error จะแสดง caller)
+    if msg == "" {
+        t.Fatal("message cannot be empty")
+    }
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. การทดสอบ HTTP Handler**
+
+```go
+// handler/user_handler.go
+package handler
+
+import (
+    "encoding/json"
+    "net/http"
+)
+
+type User struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+}
+
+type UserHandler struct {
+    userService UserService
+}
+
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+    // รับ ID จาก URL
+    id := r.URL.Query().Get("id")
+    if id == "" {
+        http.Error(w, "id required", http.StatusBadRequest)
+        return
+    }
+    
+    user, err := h.userService.GetUser(id)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusNotFound)
+        return
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(user)
+}
+```
+
+```go
+// handler/user_handler_test.go
+package handler
+
+import (
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+)
+
+// Mock UserService
+type mockUserService struct {
+    getUserFunc func(id string) (*User, error)
+}
+
+func (m *mockUserService) GetUser(id string) (*User, error) {
+    return m.getUserFunc(id)
+}
+
+func TestGetUser(t *testing.T) {
+    tests := []struct {
+        name           string
+        userID         string
+        mockService    func() UserService
+        expectedStatus int
+        expectedUser   *User
+    }{
+        {
+            name:   "success",
+            userID: "1",
+            mockService: func() UserService {
+                return &mockUserService{
+                    getUserFunc: func(id string) (*User, error) {
+                        return &User{ID: 1, Name: "John"}, nil
+                    },
+                }
+            },
+            expectedStatus: http.StatusOK,
+            expectedUser:   &User{ID: 1, Name: "John"},
+        },
+        {
+            name:   "user not found",
+            userID: "999",
+            mockService: func() UserService {
+                return &mockUserService{
+                    getUserFunc: func(id string) (*User, error) {
+                        return nil, ErrUserNotFound
+                    },
+                }
+            },
+            expectedStatus: http.StatusNotFound,
+            expectedUser:   nil,
+        },
+        {
+            name:           "missing id",
+            userID:         "",
+            mockService:    func() UserService { return &mockUserService{} },
+            expectedStatus: http.StatusBadRequest,
+            expectedUser:   nil,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // สร้าง handler
+            handler := &UserHandler{
+                userService: tt.mockService(),
+            }
+            
+            // สร้าง request
+            req := httptest.NewRequest("GET", "/user?id="+tt.userID, nil)
+            w := httptest.NewRecorder()
+            
+            // เรียก handler
+            handler.GetUser(w, req)
+            
+            // ตรวจสอบ status code
+            if w.Code != tt.expectedStatus {
+                t.Errorf("status = %d; want %d", w.Code, tt.expectedStatus)
+            }
+            
+            // ตรวจสอบ response body
+            if tt.expectedUser != nil {
+                var user User
+                json.NewDecoder(w.Body).Decode(&user)
+                if user.ID != tt.expectedUser.ID {
+                    t.Errorf("user.ID = %d; want %d", user.ID, tt.expectedUser.ID)
+                }
+            }
+        })
+    }
+}
+```
+
+**2. การใช้ Subtests และ Parallel**
+
+```go
+func TestDatabaseQueries(t *testing.T) {
+    // setup database (once)
+    db := setupTestDB(t)
+    defer db.Close()
+    
+    tests := []struct {
+        name string
+        query string
+        expected int
+    }{
+        {"count users", "SELECT COUNT(*) FROM users", 10},
+        {"count orders", "SELECT COUNT(*) FROM orders", 25},
+    }
+    
+    for _, tt := range tests {
+        tt := tt // capture range variable (Go 1.21+ ไม่ต้องแล้ว)
+        t.Run(tt.name, func(t *testing.T) {
+            t.Parallel() // รัน parallel
+            
+            var count int
+            err := db.QueryRow(tt.query).Scan(&count)
+            if err != nil {
+                t.Fatal(err)
+            }
+            if count != tt.expected {
+                t.Errorf("count = %d; want %d", count, tt.expected)
+            }
+        })
+    }
+}
+```
+
+**3. Test Coverage**
+
+```bash
+# ดู coverage ใน terminal
+go test -cover
+
+# สร้าง coverage profile
+go test -coverprofile=coverage.out
+
+# ดู coverage ใน browser
+go tool cover -html=coverage.out
+
+# ดูเฉพาะบาง package
+go test -cover ./internal/...
+
+# ตั้งค่า threshold (ใน CI)
+go test -cover -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out | grep total
+# total: (statements) 85.2%
+```
+
+**4. Test Main (Setup/Teardown ทั้ง package)**
+
+```go
+// package_test.go
+package mypackage
+
+import (
+    "os"
+    "testing"
+)
+
+// TestMain รันก่อน test ทั้งหมด
+func TestMain(m *testing.M) {
+    // setup (รันก่อน test)
+    setup()
+    
+    // รัน test
+    code := m.Run()
+    
+    // teardown (รันหลัง test)
+    teardown()
+    
+    os.Exit(code)
+}
+
+func setup() {
+    // ตั้งค่า database connection, mock server, etc.
+}
+
+func teardown() {
+    // clean up
+}
+```
+
+**5. การใช้ testdata folder**
+
+```
+myproject/
+├── internal/
+│   └── parser/
+│       ├── parser.go
+│       ├── parser_test.go
+│       └── testdata/           # ไฟล์สำหรับ test
+│           ├── valid.json
+│           ├── invalid.json
+│           └── sample.csv
+```
+
+```go
+func TestParseJSON(t *testing.T) {
+    // อ่านไฟล์จาก testdata
+    data, err := os.ReadFile("testdata/valid.json")
+    if err != nil {
+        t.Fatal(err)
+    }
+    
+    result, err := ParseJSON(data)
+    if err != nil {
+        t.Fatal(err)
+    }
+    
+    // assert...
+}
+```
+
+---
+
+## 3. โครงสร้างข้อมูลขั้นสูง (บทที่ 20–22)
+
+### บทที่ 20: Arrays (อาเรย์)
+
+**เป้าหมาย:** เข้าใจโครงสร้างข้อมูลแบบ fixed-size
+
+#### ลักษณะสำคัญ
+
+- **Fixed size**: ขนาดคงที่ กำหนดตอน compile time
+- **Value type**: การ assign หรือส่งเป็น argument จะ copy ทั้ง array
+- **Contiguous memory**: เก็บข้อมูลต่อเนื่องในหน่วยความจำ
+
+#### ตัวอย่างการใช้งาน
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // 1. ประกาศ array
+    var arr1 [5]int                    // [0 0 0 0 0]
+    arr2 := [3]string{"a", "b", "c"}   // [a b c]
+    arr3 := [...]int{1, 2, 3}          // compiler นับขนาดอัตโนมัติ
+    
+    fmt.Println(arr1, arr2, arr3)
+    
+    // 2. เข้าถึงและแก้ไข
+    arr1[0] = 10
+    arr1[1] = 20
+    fmt.Println(arr1[0])  // 10
+    
+    // 3. array เป็น value type (copy)
+    original := [3]int{1, 2, 3}
+    copy := original
+    copy[0] = 100
+    fmt.Println(original) // [1 2 3] (ไม่เปลี่ยน)
+    fmt.Println(copy)     // [100 2 3]
+    
+    // 4. วนลูป array
+    nums := [5]int{10, 20, 30, 40, 50}
+    
+    // แบบ index
+    for i := 0; i < len(nums); i++ {
+        fmt.Println(nums[i])
+    }
+    
+    // แบบ range
+    for index, value := range nums {
+        fmt.Printf("index=%d, value=%d\n", index, value)
+    }
+    
+    // 5. ส่ง array เข้าฟังก์ชัน (copy)
+    func modifyArray(arr [3]int) {
+        arr[0] = 999
+    }
+    
+    data := [3]int{1, 2, 3}
+    modifyArray(data)
+    fmt.Println(data) // [1 2 3] (ไม่เปลี่ยน)
+    
+    // 6. ส่ง pointer ของ array (rarely used)
+    func modifyArrayPtr(arr *[3]int) {
+        arr[0] = 999
+    }
+    
+    modifyArrayPtr(&data)
+    fmt.Println(data) // [999 2 3]
+}
+```
+
+#### ข้อควรจำ
+
+- **Arrays ใช้ไม่บ่อยใน Go** เพราะขนาดคงที่และ copy ข้อมูล
+- **ส่วนใหญ่ใช้ Slices แทน** (บทถัดไป)
+- ใช้ array เมื่อต้องการ:
+  - ขนาดคงที่แน่นอน (เช่น 7 วันในสัปดาห์)
+  - ประสิทธิภาพสูงมาก (stack allocation)
+  - ทำงานกับระบบ low-level
+
+---
+
+### บทที่ 21: Slices (สไลซ์)
+
+**เป้าหมาย:** เข้าใจโครงสร้างข้อมูล dynamic ที่ใช้บ่อยที่สุดใน Go
+
+#### Slices คืออะไร?
+
+Slice คือ **view** ที่ยืดหยุ่นของ array ประกอบด้วย 3 ส่วน:
+- **pointer** → ชี้ไปยัง underlying array
+- **len** → ความยาวปัจจุบัน
+- **cap** → ความจุทั้งหมด
+
+```
+Slice Structure:
+┌─────────────────────────────────┐
+│ Slice Header                    │
+├─────────────────────────────────┤
+│ ptr ──────┐                     │
+│ len = 3   │                     │
+│ cap = 5   │                     │
+└───────────┼─────────────────────┘
+            ↓
+     ┌─────┬─────┬─────┬─────┬─────┐
+     │ 10  │ 20  │ 30  │ 40  │ 50  │  ← underlying array
+     └─────┴─────┴─────┴─────┴─────┘
+            ↑           ↑
+            ptr         ptr+cap
+```
+
+#### ตัวอย่างการใช้งาน
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // 1. สร้าง slice
+    var s1 []int                    // nil slice (len=0, cap=0)
+    s2 := []int{1, 2, 3}           // literal
+    s3 := make([]int, 5)           // length=5, capacity=5
+    s4 := make([]int, 5, 10)       // length=5, capacity=10
+    
+    fmt.Println(s1, s2, s3, s4)
+    
+    // 2. append (เพิ่มสมาชิก)
+    numbers := []int{1, 2, 3}
+    numbers = append(numbers, 4)     // [1,2,3,4]
+    numbers = append(numbers, 5, 6)  // [1,2,3,4,5,6]
+    
+    // append slice กับ slice
+    more := []int{7, 8, 9}
+    numbers = append(numbers, more...)  // ... ใช้ unpack slice
+    
+    fmt.Println(numbers)  // [1,2,3,4,5,6,7,8,9]
+    
+    // 3. len และ cap
+    slice := make([]int, 3, 5)
+    fmt.Printf("len=%d, cap=%d\n", len(slice), cap(slice))  // len=3, cap=5
+    
+    slice = append(slice, 100)
+    fmt.Printf("len=%d, cap=%d\n", len(slice), cap(slice))  // len=4, cap=5
+    
+    slice = append(slice, 200, 300)
+    fmt.Printf("len=%d, cap=%d\n", len(slice), cap(slice))  // len=6, cap=10 (double)
+    
+    // 4. Slicing (สร้าง slice ใหม่จาก slice)
+    original := []int{1, 2, 3, 4, 5}
+    sub := original[1:4]   // [2,3,4]
+    fmt.Println(sub)
+    
+    // sub ชี้ไปที่ underlying array เดียวกับ original
+    sub[0] = 999
+    fmt.Println(original)  // [1,999,3,4,5] (เปลี่ยนด้วย!)
+    
+    // 5. copy slice (deep copy)
+    src := []int{1, 2, 3}
+    dst := make([]int, len(src))
+    copy(dst, src)
+    dst[0] = 999
+    fmt.Println(src)  // [1,2,3] (ไม่เปลี่ยน)
+    fmt.Println(dst)  // [999,2,3]
+    
+    // 6. การลบ element
+    // ลบ element ที่ index 2
+    s := []int{1, 2, 3, 4, 5}
+    index := 2
+    s = append(s[:index], s[index+1:]...)
+    fmt.Println(s)  // [1,2,4,5]
+    
+    // 7. การ insert element
+    s = []int{1, 2, 4, 5}
+    s = append(s[:2], append([]int{3}, s[2:]...)...)
+    fmt.Println(s)  // [1,2,3,4,5]
+}
+
+// 8. ฟังก์ชันที่รับและคืน slice
+func filter(numbers []int, predicate func(int) bool) []int {
+    result := make([]int, 0, len(numbers))
+    for _, n := range numbers {
+        if predicate(n) {
+            result = append(result, n)
+        }
+    }
+    return result
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. Pagination (การแบ่งหน้า)**
+
+```go
+type PaginatedResult struct {
+    Data       []User
+    Total      int
+    Page       int
+    PerPage    int
+    TotalPages int
+}
+
+func GetUsers(page, perPage int) (*PaginatedResult, error) {
+    // ดึงข้อมูลทั้งหมด
+    allUsers, err := userRepo.FindAll()
+    if err != nil {
+        return nil, err
+    }
+    
+    total := len(allUsers)
+    totalPages := (total + perPage - 1) / perPage
+    
+    // คำนวณ start และ end index
+    start := (page - 1) * perPage
+    end := start + perPage
+    
+    if start >= total {
+        return &PaginatedResult{
+            Data:       []User{},
+            Total:      total,
+            Page:       page,
+            PerPage:    perPage,
+            TotalPages: totalPages,
+        }, nil
+    }
+    
+    if end > total {
+        end = total
+    }
+    
+    // slice ข้อมูล
+    return &PaginatedResult{
+        Data:       allUsers[start:end],
+        Total:      total,
+        Page:       page,
+        PerPage:    perPage,
+        TotalPages: totalPages,
+    }, nil
+}
+```
+
+**2. Stack (LIFO) ด้วย Slice**
+
+```go
+type Stack[T any] struct {
+    items []T
+}
+
+func (s *Stack[T]) Push(item T) {
+    s.items = append(s.items, item)
+}
+
+func (s *Stack[T]) Pop() (T, bool) {
+    if len(s.items) == 0 {
+        var zero T
+        return zero, false
+    }
+    
+    lastIndex := len(s.items) - 1
+    item := s.items[lastIndex]
+    s.items = s.items[:lastIndex]
+    return item, true
+}
+
+func (s *Stack[T]) Peek() (T, bool) {
+    if len(s.items) == 0 {
+        var zero T
+        return zero, false
+    }
+    return s.items[len(s.items)-1], true
+}
+```
+
+**3. Queue (FIFO) ด้วย Slice**
+
+```go
+type Queue[T any] struct {
+    items []T
+}
+
+func (q *Queue[T]) Enqueue(item T) {
+    q.items = append(q.items, item)
+}
+
+func (q *Queue[T]) Dequeue() (T, bool) {
+    if len(q.items) == 0 {
+        var zero T
+        return zero, false
+    }
+    
+    item := q.items[0]
+    q.items = q.items[1:]
+    return item, true
+}
+```
+
+**4. Performance Tip: Preallocate capacity**
+
+```go
+// ไม่ดี: ทำให้เกิดการ reallocation บ่อย
+func badBuild() []int {
+    var result []int
+    for i := 0; i < 1000000; i++ {
+        result = append(result, i)  // reallocate หลายครั้ง
+    }
+    return result
+}
+
+// ดี: preallocate capacity
+func goodBuild() []int {
+    result := make([]int, 0, 1000000)  // allocate ครั้งเดียว
+    for i := 0; i < 1000000; i++ {
+        result = append(result, i)
+    }
+    return result
+}
+```
+
+---
+
+### บทที่ 22: Maps (แมพ)
+
+**เป้าหมาย:** เข้าใจโครงสร้างข้อมูล key-value ที่ใช้บ่อย
+
+#### Maps คืออะไร?
+
+Map เป็น **hash table** ที่เก็บ key-value pairs
+- Key ต้องเป็น comparable type (==, !=)
+- Value สามารถเป็นชนิดใดก็ได้
+- **ไม่ปลอดภัยต่อ concurrent access** (ต้องใช้ mutex หรือ sync.Map)
+
+#### ตัวอย่างการใช้งาน
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // 1. สร้าง map
+    var m1 map[string]int           // nil map (อ่านได้ แต่เขียนไม่ได้)
+    m2 := make(map[string]int)      // empty map
+    m3 := map[string]int{           // map literal
+        "apple":  5,
+        "banana": 3,
+    }
+    
+    // nil map จะ panic ถ้าเขียน
+    // m1["key"] = 1  // panic!
+    
+    // 2. เพิ่ม/แก้ไข
+    m2["apple"] = 10
+    m2["banana"] = 7
+    m2["orange"] = 4
+    
+    fmt.Println(m2)  // map[apple:10 banana:7 orange:4]
+    
+    // 3. อ่านค่า
+    value := m2["apple"]           // 10
+    value2 := m2["grape"]          // 0 (zero value, ไม่มี key นี้)
+    
+    // 4. comma ok idiom (ตรวจสอบว่ามี key หรือไม่)
+    if val, ok := m2["banana"]; ok {
+        fmt.Printf("banana exists with value %d\n", val)
+    }
+    
+    if _, ok := m2["grape"]; !ok {
+        fmt.Println("grape does not exist")
+    }
+    
+    // 5. ลบ key
+    delete(m2, "orange")
+    fmt.Println(m2)  // map[apple:10 banana:7]
+    
+    // 6. วนลูป map (order is random)
+    for key, value := range m2 {
+        fmt.Printf("%s: %d\n", key, value)
+    }
+    
+    // 7. วนลูปเฉพาะ key
+    for key := range m2 {
+        fmt.Println(key)
+    }
+    
+    // 8. map ของ struct
+    type User struct {
+        Name string
+        Age  int
+    }
+    
+    users := map[int]User{
+        1: {Name: "Alice", Age: 30},
+        2: {Name: "Bob", Age: 25},
+    }
+    
+    // 9. map ของ map (nested)
+    matrix := map[string]map[string]int{
+        "row1": {"col1": 1, "col2": 2},
+        "row2": {"col1": 3, "col2": 4},
+    }
+    
+    // 10. map กับ slice เป็น value
+    tags := map[string][]string{
+        "golang": {"backend", "fast", "concurrent"},
+        "python": {"ai", "ml", "easy"},
+    }
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. Cache (LRU cache แบบง่าย)**
+
+```go
+type Cache struct {
+    store map[string]interface{}
+    mu    sync.RWMutex
+    ttl   time.Duration
+}
+
+func NewCache(ttl time.Duration) *Cache {
+    c := &Cache{
+        store: make(map[string]interface{}),
+        ttl:   ttl,
+    }
+    
+    // start cleanup goroutine
+    go c.cleanup()
+    
+    return c
+}
+
+func (c *Cache) Set(key string, value interface{}) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.store[key] = value
+}
+
+func (c *Cache) Get(key string) (interface{}, bool) {
+    c.mu.RLock()
+    defer c.mu.RUnlock()
+    val, ok := c.store[key]
+    return val, ok
+}
+
+func (c *Cache) cleanup() {
+    ticker := time.NewTicker(c.ttl)
+    for range ticker.C {
+        c.mu.Lock()
+        // ลบ expired keys (สมมติมีเวลา expire)
+        for k := range c.store {
+            delete(c.store, k)
+        }
+        c.mu.Unlock()
+    }
+}
+```
+
+**2. Group By (การจัดกลุ่มข้อมูล)**
+
+```go
+type Order struct {
+    ID       int
+    UserID   int
+    Amount   float64
+    Status   string
+}
+
+func GroupOrdersByUser(orders []Order) map[int][]Order {
+    result := make(map[int][]Order)
+    
+    for _, order := range orders {
+        result[order.UserID] = append(result[order.UserID], order)
+    }
+    
+    return result
+}
+
+func GroupOrdersByStatus(orders []Order) map[string][]Order {
+    result := make(map[string][]Order)
+    
+    for _, order := range orders {
+        result[order.Status] = append(result[order.Status], order)
+    }
+    
+    return result
+}
+```
+
+**3. Set (ใช้ map แทน set)**
+
+```go
+type Set[T comparable] struct {
+    items map[T]struct{}
+}
+
+func NewSet[T comparable]() *Set[T] {
+    return &Set[T]{
+        items: make(map[T]struct{}),
+    }
+}
+
+func (s *Set[T]) Add(item T) {
+    s.items[item] = struct{}{}
+}
+
+func (s *Set[T]) Remove(item T) {
+    delete(s.items, item)
+}
+
+func (s *Set[T]) Contains(item T) bool {
+    _, ok := s.items[item]
+    return ok
+}
+
+func (s *Set[T]) Size() int {
+    return len(s.items)
+}
+
+func (s *Set[T]) List() []T {
+    result := make([]T, 0, len(s.items))
+    for item := range s.items {
+        result = append(result, item)
+    }
+    return result
+}
+
+// ใช้งาน
+func main() {
+    tags := NewSet[string]()
+    tags.Add("golang")
+    tags.Add("programming")
+    tags.Add("golang")  // duplicate (ไม่มีผล)
+    
+    fmt.Println(tags.Contains("golang"))   // true
+    fmt.Println(tags.Size())               // 2
+    fmt.Println(tags.List())               // [golang programming]
+}
+```
+
+**4. Counter (นับความถี่)**
+
+```go
+func WordCount(text string) map[string]int {
+    words := strings.Fields(strings.ToLower(text))
+    counter := make(map[string]int)
+    
+    for _, word := range words {
+        // ลบ punctuation
+        word = strings.Trim(word, ".,!?;:")
+        counter[word]++
+    }
+    
+    return counter
+}
+
+// ใช้งาน
+text := "Go is great. Go is fast. Go is concurrent!"
+counts := WordCount(text)
+// map[go:3 is:3 great:1 fast:1 concurrent:1]
+```
+
+**5. Graph (กราฟ) ด้วย map**
+
+```go
+type Graph struct {
+    nodes map[string][]string  // adjacency list
+}
+
+func NewGraph() *Graph {
+    return &Graph{
+        nodes: make(map[string][]string),
+    }
+}
+
+func (g *Graph) AddEdge(from, to string) {
+    g.nodes[from] = append(g.nodes[from], to)
+    g.nodes[to] = append(g.nodes[to], from)  // undirected
+}
+
+func (g *Graph) BFS(start, target string) []string {
+    visited := make(map[string]bool)
+    queue := []string{start}
+    parent := make(map[string]string)
+    visited[start] = true
+    
+    for len(queue) > 0 {
+        current := queue[0]
+        queue = queue[1:]
+        
+        if current == target {
+            // reconstruct path
+            path := []string{}
+            for node := target; node != ""; node = parent[node] {
+                path = append([]string{node}, path...)
+            }
+            return path
+        }
+        
+        for _, neighbor := range g.nodes[current] {
+            if !visited[neighbor] {
+                visited[neighbor] = true
+                parent[neighbor] = current
+                queue = append(queue, neighbor)
+            }
+        }
+    }
+    
+    return nil
+}
+```
+
+**6. Map of functions**
+
+```go
+// Strategy pattern ด้วย map
+type Operation func(a, b int) int
+
+var operations = map[string]Operation{
+    "add":      func(a, b int) int { return a + b },
+    "subtract": func(a, b int) int { return a - b },
+    "multiply": func(a, b int) int { return a * b },
+    "divide":   func(a, b int) int { return a / b },
+}
+
+func calculate(op string, a, b int) (int, error) {
+    if fn, ok := operations[op]; ok {
+        return fn(a, b), nil
+    }
+    return 0, fmt.Errorf("unknown operation: %s", op)
+}
+```
+
+---
+
+## 4. การจัดการข้อผิดพลาด (บทที่ 23)
+
+**เป้าหมาย:** เขียนโค้ดที่จัดการ error ได้อย่างถูกต้องและมีประสิทธิภาพ
+
+### บทที่ 23: Errors
+
+#### Error Interface
+
+```go
+// error interface (built-in)
+type error interface {
+    Error() string
+}
+```
+
+#### ตัวอย่างการใช้งาน
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// 1. สร้าง error ด้วย errors.New
+var ErrNotFound = errors.New("not found")
+var ErrInvalidInput = errors.New("invalid input")
+
+// 2. สร้าง error ด้วย fmt.Errorf
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, fmt.Errorf("division by zero: %f / %f", a, b)
+    }
+    return a / b, nil
+}
+
+// 3. Custom error type
+type ValidationError struct {
+    Field   string
+    Value   interface{}
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation failed for %s (value: %v): %s", 
+        e.Field, e.Value, e.Message)
+}
+
+// 4. ฟังก์ชันที่ใช้ custom error
+func validateUser(user User) error {
+    if user.Name == "" {
+        return &ValidationError{
+            Field:   "name",
+            Value:   user.Name,
+            Message: "name is required",
+        }
+    }
+    if user.Age < 0 {
+        return &ValidationError{
+            Field:   "age",
+            Value:   user.Age,
+            Message: "age must be positive",
+        }
+    }
+    return nil
+}
+```
+
+#### Error Wrapping (Go 1.13+)
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// ฟังก์ชันที่ wrap error
+func readConfig(path string) error {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        // Wrap error ด้วย context
+        return fmt.Errorf("read config file %s: %w", path, err)
+    }
+    // process data...
+    return nil
+}
+
+func process() error {
+    if err := readConfig("/etc/app/config.yaml"); err != nil {
+        // Wrap เพิ่ม layer
+        return fmt.Errorf("process failed: %w", err)
+    }
+    return nil
+}
+
+func main() {
+    err := process()
+    if err != nil {
+        // ตรวจสอบด้วย errors.Is
+        if errors.Is(err, os.ErrNotExist) {
+            fmt.Println("config file does not exist")
+        }
+        
+        // ตรวจสอบ type ด้วย errors.As
+        var pathErr *os.PathError
+        if errors.As(err, &pathErr) {
+            fmt.Printf("path error: %s\n", pathErr.Path)
+        }
+        
+        // ดู error chain
+        fmt.Printf("full error: %+v\n", err)
+    }
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. การจัดการ error ใน HTTP handler**
+
+```go
+// domain errors
+var (
+    ErrUserNotFound     = errors.New("user not found")
+    ErrInvalidPassword  = errors.New("invalid password")
+    ErrEmailExists      = errors.New("email already exists")
+)
+
+// service layer
+type UserService struct {
+    repo UserRepository
+}
+
+func (s *UserService) Login(email, password string) (*User, error) {
+    user, err := s.repo.FindByEmail(email)
+    if err != nil {
+        if errors.Is(err, ErrUserNotFound) {
+            return nil, fmt.Errorf("login failed: %w", ErrUserNotFound)
+        }
+        return nil, fmt.Errorf("database error: %w", err)
+    }
+    
+    if !user.VerifyPassword(password) {
+        return nil, fmt.Errorf("login failed: %w", ErrInvalidPassword)
+    }
+    
+    return user, nil
+}
+
+// handler layer
+type UserHandler struct {
+    service UserService
+}
+
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+    var req LoginRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "invalid request", http.StatusBadRequest)
+        return
+    }
+    
+    user, err := h.service.Login(req.Email, req.Password)
+    if err != nil {
+        // แยก error type
+        switch {
+        case errors.Is(err, ErrUserNotFound):
+            http.Error(w, "user not found", http.StatusNotFound)
+        case errors.Is(err, ErrInvalidPassword):
+            http.Error(w, "invalid password", http.StatusUnauthorized)
+        default:
+            // log internal error
+            log.Printf("login error: %v", err)
+            http.Error(w, "internal server error", http.StatusInternalServerError)
+        }
+        return
+    }
+    
+    json.NewEncoder(w).Encode(user)
+}
+```
+
+**2. Retry pattern with error handling**
+
+```go
+func Retry(maxRetries int, fn func() error) error {
+    var err error
+    
+    for i := 0; i < maxRetries; i++ {
+        err = fn()
+        if err == nil {
+            return nil
+        }
+        
+        // ตรวจสอบว่า error ที่เกิดขึ้น retry ได้หรือไม่
+        var retryable *RetryableError
+        if errors.As(err, &retryable) {
+            delay := time.Duration(1<<i) * time.Second
+            log.Printf("retry %d after %v: %v", i+1, delay, err)
+            time.Sleep(delay)
+            continue
+        }
+        
+        // error ไม่สามารถ retry ได้
+        return err
+    }
+    
+    return fmt.Errorf("max retries exceeded: %w", err)
+}
+
+type RetryableError struct {
+    Err error
+}
+
+func (e *RetryableError) Error() string {
+    return fmt.Sprintf("retryable: %v", e.Err)
+}
+
+func (e *RetryableError) Unwrap() error {
+    return e.Err
+}
+
+// ใช้งาน
+err := Retry(3, func() error {
+    resp, err := http.Get("https://api.example.com/data")
+    if err != nil {
+        return &RetryableError{Err: err}  // network error, retry
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        if resp.StatusCode >= 500 {
+            return &RetryableError{Err: fmt.Errorf("server error: %d", resp.StatusCode)}
+        }
+        return fmt.Errorf("client error: %d", resp.StatusCode)  // ไม่ retry
+    }
+    
+    return nil
+})
+```
+
+**3. Error grouping and handling**
+
+```go
+type ErrorGroup struct {
+    errors []error
+    mu     sync.Mutex
+}
+
+func (g *ErrorGroup) Add(err error) {
+    g.mu.Lock()
+    defer g.mu.Unlock()
+    g.errors = append(g.errors, err)
+}
+
+func (g *ErrorGroup) Error() string {
+    if len(g.errors) == 0 {
+        return ""
+    }
+    
+    messages := make([]string, len(g.errors))
+    for i, err := range g.errors {
+        messages[i] = err.Error()
+    }
+    return strings.Join(messages, "; ")
+}
+
+func (g *ErrorGroup) HasErrors() bool {
+    g.mu.Lock()
+    defer g.mu.Unlock()
+    return len(g.errors) > 0
+}
+
+// ใช้งาน
+func ValidateUser(user User) error {
+    var errGroup ErrorGroup
+    
+    if user.Name == "" {
+        errGroup.Add(errors.New("name is required"))
+    }
+    
+    if !strings.Contains(user.Email, "@") {
+        errGroup.Add(errors.New("invalid email"))
+    }
+    
+    if user.Age < 18 {
+        errGroup.Add(errors.New("age must be at least 18"))
+    }
+    
+    if errGroup.HasErrors() {
+        return &errGroup
+    }
+    
+    return nil
+}
+```
+
+**4. Panic recovery (เมื่อจำเป็น)**
+
+```go
+// สำหรับ service ที่ต้องรันตลอดเวลา
+func RunWithRecovery(fn func()) {
+    defer func() {
+        if r := recover(); r != nil {
+            // log panic
+            log.Printf("panic recovered: %v\n%s", r, debug.Stack())
+            
+            // send alert
+            sendAlert(fmt.Sprintf("panic: %v", r))
+        }
+    }()
+    
+    fn()
+}
+
+// ใช้กับ goroutine
+go func() {
+    RunWithRecovery(func() {
+        // risky operation
+        doSomething()
+    })
+}()
+```
+
+**5. Best Practices สรุป**
+
+```go
+// ✅ DO: ตรวจสอบ error ทันที
+data, err := readFile()
+if err != nil {
+    return fmt.Errorf("read file: %w", err)
+}
+
+// ❌ DON'T: ignore errors
+data, _ := readFile()
+
+// ✅ DO: ให้ context แก่ error
+return fmt.Errorf("failed to process user %d: %w", userID, err)
+
+// ❌ DON'T: return plain error without context
+return err
+
+// ✅ DO: ใช้ custom error types สำหรับ business logic
+var ErrInsufficientFunds = errors.New("insufficient funds")
+
+// ✅ DO: ใช้ errors.Is และ errors.As ในการตรวจสอบ
+if errors.Is(err, ErrNotFound) {
+    // handle not found
+}
+
+var valErr *ValidationError
+if errors.As(err, &valErr) {
+    fmt.Printf("field: %s\n", valErr.Field)
+}
+```
+
+---
+
+## สรุปภาคที่ 3: ความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart LR
+    subgraph Skills["ทักษะที่ได้"]
+        S1[สร้างและจัดการ<br/>โปรเจกต์ Go]
+        S2[เขียน Unit Tests<br/>และวัด coverage]
+        S3[ใช้ Slices และ Maps<br/>จัดการข้อมูล]
+        S4[จัดการ error<br/>อย่างมืออาชีพ]
+    end
+    
+    subgraph Applications["การประยุกต์ใช้"]
+        A1[โปรเจกต์ที่<br/>มีโครงสร้าง]
+        A2[โค้ดที่มั่นใจ<br/>ผ่านการทดสอบ]
+        A3[โครงสร้างข้อมูล<br/>ที่มีประสิทธิภาพ]
+        A4[ระบบที่เสถียร<br/>debug ได้ง่าย]
+    end
+    
+    Skills --> Applications
+```
+
+**สิ่งที่ได้เรียนรู้**
+
+1. **บทที่ 17-18 (Go Modules)**: 
+   - จัดการ dependencies ด้วย go.mod
+   - ใช้ module proxy เพื่อความเร็วและความปลอดภัย
+   - จัดการ version และ private modules
+
+2. **บทที่ 19 (Testing)**:
+   - เขียน table-driven tests
+   - ใช้ mock และ stub
+   - วัด test coverage
+
+3. **บทที่ 20-22 (Data Structures)**:
+   - Array: fixed-size, value type
+   - Slice: dynamic, reference type, ใช้บ่อยที่สุด
+   - Map: key-value, hash table
+
+4. **บทที่ 23 (Error Handling)**:
+   - error interface และ error wrapping
+   - custom error types
+   - errors.Is และ errors.As
+   - retry pattern และ error grouping
+
+พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 4** เพื่อพัฒนาแอปพลิเคชันเชิงปฏิบัติ เช่น HTTP server, concurrency, JSON handling, และการบันทึกข้อมูล
 
 ## ภาคที่ 5: สู่การเป็นนักพัฒนา Go มืออาชีพ (บทที่ 34–42)
  ```mermaid
