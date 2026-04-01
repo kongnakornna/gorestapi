@@ -2256,49 +2256,24 @@ srv.ListenAndServe()
 ในบทความนี้จะอธิบายตั้งแต่โครงสร้างการทำงาน (dataflow) ผ่านแผนภาพจำลอง (เหมือนกับที่ใช้ draw.io) อธิบายแต่ละส่วนอย่างละเอียด พร้อมตัวอย่างการใช้งานจริง เทมเพลต และโค้ดตัวอย่าง
 
 ---
+ Below is a Mermaid flowchart that visualizes the HTTP request flow in a Go web server, based on the diagram you provided. You can copy the code and render it in any Mermaid-compatible viewer (e.g., GitHub, Notion, or online editors).
 
-### แผนภาพ Dataflow (จำลองจาก draw.io)
+```mermaid
+graph TD
+    Client([Client]) -->|HTTP Request<br/>GET /api/users| Server
 
-เนื่องจากไม่สามารถฝังไฟล์ draw.io ได้โดยตรง ขอเสนอแผนภาพแบบข้อความ (ASCII) ที่แสดงการไหลของข้อมูลตั้งแต่ client จนถึง response กลับ:
+    subgraph Server [HTTP Server (Go)]
+        Router[Router / ServeMux<br/>- จับคู่ path + method<br/>- อาจมี middleware chain]
+        Middleware[Middleware (ถ้ามี)<br/>- Logging, Auth, Recovery, etc.]
+        Handler[Handler Func<br/>- อ่าน request body/params<br/>- ประมวลผล (DB, external API, etc.)<br/>- เขียน response (JSON, HTML, etc.)]
+        Writer[Response Writer<br/>- กำหนด Header, Status Code<br/>- เขียน response body]
+        
+        Router --> Middleware
+        Middleware --> Handler
+        Handler --> Writer
+    end
 
-```
-   [Client]
-       |
-       | HTTP Request (GET /api/users)
-       v
-+-----------------------------------------------+
-|               HTTP Server (Go)                |
-|  +-----------------------------------------+  |
-|  |           Router / ServeMux             |  |
-|  |  - จับคู่ path + method                  |  |
-|  |  - อาจมี middleware chain               |  |
-|  +-------------------+---------------------+  |
-|                      |                         |
-|                      v                         |
-|  +-----------------------------------------+  |
-|  |            Middleware (ถ้ามี)            |  |
-|  |  - Logging, Auth, Recovery, etc.        |  |
-|  +-------------------+---------------------+  |
-|                      |                         |
-|                      v                         |
-|  +-----------------------------------------+  |
-|  |              Handler Func               |  |
-|  |  - อ่าน request body/params             |  |
-|  |  - ประมวลผล (DB, external API, etc.)   |  |
-|  |  - เขียน response (JSON, HTML, etc.)    |  |
-|  +-------------------+---------------------+  |
-|                      |                         |
-|                      v                         |
-|  +-----------------------------------------+  |
-|  |              Response Writer            |  |
-|  |  - กำหนด Header, Status Code            |  |
-|  |  - เขียน response body                  |  |
-|  +-----------------------------------------+  |
-+-----------------------------------------------+
-       |
-       | HTTP Response (200 OK, JSON data)
-       v
-   [Client]
+    Writer -->|HTTP Response<br/>200 OK, JSON data| Client
 ```
 
 **คำอธิบายองค์ประกอบ** (เพื่อนำไปสร้างใน draw.io):
