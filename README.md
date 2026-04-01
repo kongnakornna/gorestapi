@@ -2,6 +2,14 @@
 
 An API dev written in Golang with chi-route and Gorm. Write restful API with fast development and developer friendly.
 
+- http://cmoniot.trueddns.com:52160/
+- username : demo1
+- password : demo1
+
+- http://cmoniot.trueddns.com:52160/
+- username : demo4
+- password : demo4
+
 ## Architecture
 
 In this project use 3 layer architecture
