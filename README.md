@@ -999,6 +999,144 @@ outer:
 (เมื่อเจอ (1,1) จะออกจาก outer loop ทันที)
 
 --- 
+## Heap, Worker, Pool คืออะไร?
+
+### 1. Heap (ฮีป)
+
+**Heap** มี 2 ความหมายในบริบทการเขียนโปรแกรม:
+
+1. **โครงสร้างข้อมูล Heap** (Priority Queue)  
+   - เป็นต้นไม้ไบนารีที่สมบูรณ์ (complete binary tree) ซึ่งมีคุณสมบัติ **heap property**  
+     - **Max-heap**: โหนดพ่อมีค่ามากกว่าหรือเท่ากับลูก  
+     - **Min-heap**: โหนดพ่อมีค่าน้อยกว่าหรือเท่ากับลูก  
+   - ใช้สำหรับสร้าง **priority queue** (คิวลำดับความสำคัญ)  
+   - การดำเนินการหลัก: `Push` (แทรก) และ `Pop` (ดึงค่าสูงสุด/ต่ำสุด) ด้วยเวลา O(log n)
+
+2. **Heap Memory** (หน่วยความจำฮีป)  
+   - พื้นที่หน่วยความจำที่ใช้สำหรับ allocate วัตถุที่มีอายุการใช้งานยาวนาน (เช่น ตัวแปรที่สร้างด้วย `new`, `make` ใน Go)  
+   - ต่างจาก stack memory ซึ่งเป็นหน่วยความจำเฉพาะฟังก์ชัน
+
+ในบริบทของ Queue Processor ที่พูดถึงก่อนหน้า **heap** หมายถึง priority queue ที่ใช้จัดลำดับงานตามความสำคัญ
+
+---
+
+### 2. Worker (เวิร์กเกอร์)
+
+**Worker** คือหน่วยงาน (goroutine, thread, หรือ process) ที่ทำหน้าที่ **ดึงงานจากคิวและประมวลผล**  
+- โดยทั่วไป Worker จะทำงานแบบไม่มีที่สิ้นสุด (loop) รอรับงาน  
+- ช่วยให้ระบบสามารถทำงานหลายอย่างพร้อมกัน (concurrency)  
+- การมีหลาย Workers เรียกว่า **Worker Pool**
+
+---
+
+### 3. Pool (พูล)
+
+**Pool** คือกลุ่มของทรัพยากรที่เตรียมไว้ล่วงหน้าเพื่อนำมาใช้ซ้ำ ลดค่าใช้จ่ายในการสร้างและทำลายทรัพยากรบ่อย ๆ  
+- **Worker Pool**: กลุ่มของ Workers ที่พร้อมรับงาน  
+- **Connection Pool**: กลุ่มของ connection ฐานข้อมูล  
+- **Memory Pool**: จัดสรรบล็อกหน่วยความจำล่วงหน้า
+
+---
+
+### แผนภาพประกอบ (Flowchart + Worker Pool + Priority Queue)
+
+```mermaid
+graph TB
+    subgraph Producer
+        A[Client / API] --> B[Create Job with Priority]
+    end
+
+    subgraph PriorityQueue[Heap-based Priority Queue]
+        C[(Min-Heap / Max-Heap)]
+        B --> C
+    end
+
+    subgraph WorkerPool[Worker Pool]
+        D[Worker 1] --> E[Process Job]
+        F[Worker 2] --> E
+        G[Worker 3] --> E
+        H[...]
+    end
+
+    C -- Job with highest priority --> D
+    C -- Job with highest priority --> F
+    C -- Job with highest priority --> G
+
+    E --> I[Database / External Service]
+    I --> J[Result / Acknowledge]
+```
+
+**คำอธิบาย**:  
+- **Producer** สร้างงานและกำหนด priority  
+- งานจะถูกแทรกเข้าไปใน **Priority Queue** (implemented ด้วย heap) ซึ่งจะจัดเรียงตาม priority  
+- **Worker Pool** มี Workers หลายตัว พร้อมดึงงานจากคิว (pop ค่าที่ priority สูงสุด)  
+- แต่ละ Worker ประมวลผลงานและส่งผลลัพธ์กลับ
+
+---
+
+### ตัวอย่างการทำงานของ Heap ใน Priority Queue (Min-Heap)
+
+```
+           (priority 1)
+          /          \
+    (3)               (5)
+    /   \            /   \
+ (8)    (10)      (6)    (7)
+```
+- เมื่อ `Push` งาน priority 2 → แทรกที่ตำแหน่งท้าย แล้วปรับโครงสร้าง (heapify up)
+- เมื่อ `Pop` งาน priority ต่ำสุด → ดึงราก (priority 1) แล้วนำโหนดสุดท้ายมาเป็นรากใหม่ แล้วปรับโครงสร้าง (heapify down)
+
+---
+
+### ตัวอย่าง Worker Pool ใน Go
+
+```go
+type Job struct {
+    ID       int
+    Priority int
+    Payload  interface{}
+}
+
+func worker(jobs <-chan Job, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for job := range jobs {
+        fmt.Printf("Worker processing job %d (priority %d)\n", job.ID, job.Priority)
+        // simulate work
+        time.Sleep(100 * time.Millisecond)
+    }
+}
+
+func main() {
+    const numWorkers = 3
+    jobs := make(chan Job, 100)
+
+    var wg sync.WaitGroup
+    for i := 0; i < numWorkers; i++ {
+        wg.Add(1)
+        go worker(jobs, &wg)
+    }
+
+    // ส่งงานเข้า queue (ในตัวอย่างใช้ channel ธรรมดา แต่ priority queue ต้อง implement เอง)
+    for i := 0; i < 10; i++ {
+        jobs <- Job{ID: i, Priority: i % 3}
+    }
+    close(jobs)
+    wg.Wait()
+}
+```
+
+---
+
+### สรุป
+
+| คำศัพท์ | ความหมาย | การประยุกต์ใน Queue Processor |
+|--------|----------|-------------------------------|
+| **Heap** | โครงสร้างข้อมูลแบบ priority queue | ใช้จัดเรียงงานตามลำดับความสำคัญก่อนดึงไปประมวลผล |
+| **Worker** | หน่วยประมวลผล (goroutine/thread) | ดึงงานจากคิวและทำงานจริง |
+| **Pool** | กลุ่มทรัพยากรที่เตรียมไว้ล่วงหน้า | Worker Pool ช่วยควบคุม concurrency, reuse goroutines |
+
+การรวมกันของ **Heap + Worker Pool** ช่วยให้ระบบสามารถจัดการงานที่มี priority ต่างกันได้อย่างมีประสิทธิภาพ โดยไม่ต้องสร้าง goroutine ใหม่ทุกครั้ง และประมวลผลงานสำคัญก่อนเสมอ
+
 # Queue Processor
 
 ## Queue Processor คืออะไร?
