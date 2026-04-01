@@ -83,12 +83,8 @@ In this project use 3 layer architecture
 - http://localhost:5000/swagger/index.html#/
 - 
 ```bash
- 
   Email: root@gmail.com
   Password: root_password
-
- 
-
 ```
 ## TODO
 
