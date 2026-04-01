@@ -13967,217 +13967,668 @@ myapp/
 
 เครื่องมือเหล่านี้ทำงานสอดคล้องกันตามแผนภาพ Data Flow ที่แสดงไว้ ช่วยให้การพัฒนาเป็นระบบ มีประสิทธิภาพ และบำรุงรักษาง่าย
 
-## ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
-เราจะนำเสนอแผนภาพใหม่สำหรับภาคที่ 7 (บทที่ 46–48) พร้อมคำอธิบายภาษาไทยแบบละเอียด โดยเน้นให้เห็นภาพรวมของสถาปัตยกรรม Clean Architecture, Blueprint สำหรับโปรเจกต์ระดับ Production, และการจัดการ Workflow รวมถึง Task Management
+## # ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
 
----
-
-## ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
-
-### แผนภาพหลัก: Clean Architecture + Production Blueprint + Workflow
+## แผนภาพ Data Flow (Flowchart TB)
 
 ```mermaid
 flowchart TB
-    subgraph Delivery[Delivery Layer]
-        D1[HTTP Handlers<br/>chi / gin]
-        D2[Middleware<br/>Auth, Logger, CORS]
-        D3[DTOs & Validation]
+    subgraph Delivery["Delivery Layer (Interfaces)"]
+        D1["HTTP Handlers<br/>chi/gin handlers"]
+        D2["Middleware<br/>Auth, Logger, CORS"]
+        D3["DTOs & Validation<br/>request/response structs"]
     end
 
-    subgraph Usecase[Usecase Layer]
-        U1[Business Logic<br/>Use Cases]
-        U2[Domain Services]
-        U3[Repository Interfaces]
+    subgraph Usecase["Usecase Layer (Business Logic)"]
+        U1["Use Case Implementations<br/>RegisterUser, CreateOrder"]
+        U2["Domain Services<br/>TransferService"]
+        U3["Repository Interfaces<br/>UserRepository, OrderRepository"]
     end
 
-    subgraph Repository[Repository Layer]
-        R1[Repository Implementations<br/>GORM / SQL]
-        R2[Cache<br/>Redis]
-        R3[External API Clients]
+    subgraph Repository["Repository Layer (Data Access)"]
+        R1["Repository Implementations<br/>PostgresUserRepo, RedisCache"]
+        R2["External API Clients<br/>PaymentGateway, SMS"]
+        R3["Cache Layer<br/>Redis"]
     end
 
-    subgraph Infrastructure[Infrastructure Layer]
-        I1[Database<br/>PostgreSQL]
-        I2[Cache Store<br/>Redis]
-        I3[Message Broker<br/>RabbitMQ]
+    subgraph Infrastructure["Infrastructure Layer"]
+        I1["Database<br/>PostgreSQL, MySQL"]
+        I2["Message Broker<br/>RabbitMQ, Kafka"]
+        I3["External Systems<br/>SMS, Email"]
     end
 
-    subgraph Blueprint[Production Blueprint]
-        B1[cmd/ / internal/ / pkg/]
-        B2[configs/ / migrations/]
-        B3[deploy/ docker/ k8s]
-        B4[scripts/ / test/]
-    end
-
-    subgraph Workflow[Workflow & Task Management]
-        W1[Task List Template]
-        W2[Checklist Template]
-        W3[Development Workflow]
+    subgraph Models["Models (Domain Entities)"]
+        M1["Entities<br/>User, Order, Product"]
+        M2["Value Objects<br/>Email, Money, Address"]
+        M3["Domain Events<br/>UserRegistered, OrderPlaced"]
     end
 
     Delivery --> Usecase
     Usecase --> Repository
     Repository --> Infrastructure
+    Models -.-> Delivery
+    Models -.-> Usecase
+    Models -.-> Repository
+
+    subgraph Blueprint["Production Blueprint"]
+        B1["cmd/<br/>api/, worker/"]
+        B2["internal/<br/>core/, application/, infrastructure/"]
+        B3["pkg/<br/>shared utils"]
+        B4["configs/, migrations/, deploy/"]
+    end
+
+    subgraph Workflow["Development Workflow"]
+        W1["Task List Template"]
+        W2["Checklist Template"]
+        W3["Feature Development Flow<br/>Analyze → Design → Implement → Test → Deploy"]
+    end
 
     Blueprint --> Delivery
     Blueprint --> Usecase
     Blueprint --> Repository
-    Blueprint --> Infrastructure
-
     Workflow --> Blueprint
-    Workflow --> Delivery
 ```
 
 ---
 
-### คำอธิบายภาษาไทย (แบบละเอียด)
+## คำอธิบายภาษาไทย (แบบละเอียด)
 
-ภาคที่ 7 ประกอบด้วย 3 บทหลัก ได้แก่:
-
-- **บทที่ 46: Clean Architecture และโครงสร้างโปรเจกต์**  
-- **บทที่ 47: Blueprint สำหรับโปรเจกต์ Go ระดับ Production**  
+ภาคที่ 7 ประกอบด้วย 3 บทหลัก:
+- **บทที่ 46: Clean Architecture และโครงสร้างโปรเจกต์**
+- **บทที่ 47: Blueprint สำหรับโปรเจกต์ Go ระดับ Production**
 - **บทที่ 48: การออกแบบ Workflow และ Task Management**
 
-ทั้งสามบทนี้เชื่อมโยงกันเพื่อให้ผู้อ่านสามารถนำไปสร้างแอปพลิเคชันที่มีโครงสร้างแข็งแรง พร้อมขยาย และมีกระบวนการพัฒนาที่มีระเบียบ
-
-#### 1. Clean Architecture (บทที่ 46)
-
-สถาปัตยกรรม Clean Architecture แบ่งชั้นอย่างชัดเจนเพื่อแยกความรับผิดชอบ (Separation of Concerns) ทำให้โค้ดทดสอบง่าย เปลี่ยนแปลงโครงสร้างพื้นฐานได้โดยไม่กระทบตรรกะธุรกิจ
-
-**ชั้น Delivery**  
-- รับ HTTP Request ผ่าน router (chi)  
-- ใช้ middleware จัดการเรื่อง logging, authentication, CORS, panic recovery  
-- แปลง request body เป็น DTO และตรวจสอบข้อมูล (validation)  
-- ส่ง DTO ไปยัง Usecase และแปลงผลลัพธ์กลับเป็น HTTP Response
-
-**ชั้น Usecase**  
-- เก็บตรรกะธุรกิจหลัก (business logic) ของแอปพลิเคชัน  
-- แต่ละ use case (เช่น RegisterUser, PlaceOrder) จะเรียกใช้ repository interface เพื่อดึงหรือบันทึกข้อมูล  
-- ใช้ domain services สำหรับกฎที่ซับซ้อน  
-- สนับสนุนการส่ง domain events (ถ้ามี)
-
-**ชั้น Repository**  
-- กำหนด interface สำหรับการเข้าถึงข้อมูล (ไม่ขึ้นกับเทคโนโลยี)  
-- การ implement (GORM, SQL, Redis) อยู่ในชั้น infrastructure แต่ถูก inject ผ่าน interface  
-- ช่วยให้สามารถเปลี่ยนฐานข้อมูลหรือ cache ได้โดยไม่ต้องแก้ use case
-
-**ชั้น Infrastructure**  
-- เป็นการ implement จริงของ repository (GORM, Redis client, HTTP client)  
-- จัดการ connection pool, migration, และการเชื่อมต่อกับระบบภายนอก
-
-**ข้อดีของ Clean Architecture**  
-- ทดสอบ unit ได้ง่าย (mock repository)  
-- เปลี่ยนฐานข้อมูลหรือ cache ได้โดยไม่กระทบ business logic  
-- โค้ดอ่านง่ายและบำรุงรักษา
+ทั้งสามบทเชื่อมโยงกันเพื่อให้ผู้อ่านสามารถออกแบบและพัฒนาแอปพลิเคชันที่มีสถาปัตยกรรมแข็งแรง พร้อมขยาย และมีกระบวนการพัฒนาที่เป็นระบบ
 
 ---
 
-#### 2. Blueprint สำหรับโปรเจกต์ Go ระดับ Production (บทที่ 47)
+## บทที่ 46: Clean Architecture และโครงสร้างโปรเจกต์
 
-Blueprint นี้เป็นโครงสร้างโฟลเดอร์และไฟล์ที่ผ่านการพิสูจน์แล้วจากโปรเจกต์จริง โดยแยกตามหลัก Clean Architecture และเพิ่มส่วนประกอบที่จำเป็นสำหรับการผลิตจริง
+### หลักการ Clean Architecture
 
-**โครงสร้างหลัก**
-- **cmd/** : จุดเริ่มต้นของแอปพลิเคชัน (main.go)  
-- **internal/** : โค้ดเฉพาะแอปพลิเคชัน ไม่ให้ import จากภายนอก  
-  - **core/** : domain models, repositories interfaces, services  
-  - **application/** : use cases, DTOs  
-  - **infrastructure/** : การ implement repository, cache, queue, logger  
-  - **interfaces/** : HTTP handlers, middleware, routes  
-- **pkg/** : โค้ดที่ reusable (jwt, mail, redis client)  
-- **configs/** : ไฟล์คอนฟิก (YAML)  
-- **migrations/** : SQL migration scripts  
-- **deploy/** : Dockerfile, docker-compose, Kubernetes manifests  
-- **scripts/** : สคริปต์ช่วย (migrate, seed)  
-- **test/** : integration tests
+Clean Architecture แบ่งระบบออกเป็นชั้น ๆ ที่มีความรับผิดชอบชัดเจน โดยมีกฎสำคัญคือ **Dependency Rule**: dependencies ต้องชี้เข้าหาศูนย์กลาง (จากภายนอกเข้าสู่ภายใน) เท่านั้น ชั้นในสุดคือ **Entities** (Domain Models) ซึ่งไม่ควรขึ้นกับอะไรภายนอก
 
-**ฟีเจอร์พร้อมใช้ใน blueprint**  
-- Authentication (JWT access/refresh token) เก็บ refresh token ใน Redis  
-- Rate limiting ตาม IP  
-- Health check endpoints (/health, /ready, /live)  
-- Caching ด้วย Redis  
-- Message queue (Redis pub/sub หรือ RabbitMQ)  
-- Transaction management  
-- Structured logging (slog หรือ zap)  
-- Graceful shutdown
+**ชั้นต่าง ๆ (จากนอกสุดเข้าสู่ในสุด):**
 
----
+1. **Delivery (Interface Adapters)**
+   - รับคำขอจากภายนอก (HTTP, gRPC, CLI)
+   - แปลงข้อมูลเป็น DTO
+   - เรียก Usecase
+   - ส่ง Response กลับ
 
-#### 3. การออกแบบ Workflow และ Task Management (บทที่ 48)
+2. **Usecase (Application Business Rules)**
+   - จัดลำดับการทำงาน (orchestration)
+   - ใช้ Repository Interfaces
+   - ไม่ขึ้นกับรายละเอียดของฐานข้อมูลหรือเฟรมเวิร์ก
 
-บทนี้มุ่งเน้นกระบวนการพัฒนาที่เป็นระบบ โดยมีเครื่องมือช่วยในการวางแผนและควบคุมคุณภาพ
+3. **Repository (Interface)**
+   - กำหนด contract สำหรับการเข้าถึงข้อมูล
+   - ถูก Implement ในชั้น Infrastructure
 
-**Workflow การพัฒนา Feature ใหม่**
-1. **Analyze** – ทำความเข้าใจ requirement, domain models, use cases  
-2. **Design** – ออกแบบ entities, value objects, repository interface, service interface  
-3. **Implement Domain** – เขียน entity, repository interface, service interface ใน `internal/core/`  
-4. **Implement Infrastructure** – เขียน repository implementation (GORM), cache, queue  
-5. **Implement Service** – เขียน business logic ใน service implementation  
-6. **Implement Handler** – เขียน HTTP handlers, ตรวจสอบ input validation, เรียก service  
-7. **Register Routes** – ลงทะเบียน routes ใน router  
-8. **Test** – unit tests (domain, service), integration tests (handler)  
-9. **Document** – อัปเดต API docs, README
+4. **Entities (Domain Models)**
+   - โมเดลหลักทางธุรกิจ (User, Order)
+   - Value Objects (Email, Money)
+   - Domain Events
 
-**Task List Template**  
-เป็นเทมเพลตสำหรับการติดตามงานในแต่ละ phase ประกอบด้วยรายการย่อยที่ต้องทำ (checklist) เช่น  
-- Phase 1: Domain Design (ระบุ entity, กำหนด invariants, ออกแบบ repository interface)  
-- Phase 2: Implementation (สร้าง entity struct, เขียน unit tests)  
-- Phase 3: Infrastructure (สร้าง repository implementation, migration)  
-- Phase 4: Delivery (สร้าง HTTP handlers, routes, dependency injection)  
-- Phase 5: Integration (end-to-end test, linter)  
-- Phase 6: Review & Deploy (code review, coverage, race detector, deploy)
+5. **Infrastructure**
+   - การ Implement จริงของ Repository (GORM, SQL)
+   - การเชื่อมต่อกับ External Services
+   - Cache, Queue, etc.
 
-**Checklist Template**  
-เป็นรายการตรวจสอบคุณภาพด้านต่าง ๆ เช่น  
-- **Code Quality**: comment, go fmt, error handling, no panic in libs  
-- **Security**: bcrypt for password, JWT secret from env, CORS, input validation  
-- **Performance**: indexes, caching, connection pools, avoid N+1 queries  
-- **Testing**: unit test coverage >80%, race detector passed, mock external dependencies  
-- **Deployment**: graceful shutdown, health checks, logging to stdout, docker multi-stage
+### ตัวอย่างโครงสร้างโปรเจกต์ตาม Clean Architecture
 
-**ประโยชน์**  
-- ลดความเสี่ยงในการลืมขั้นตอนสำคัญ  
-- สร้างมาตรฐานเดียวกันในทีม  
-- ช่วยให้การ code review มีประสิทธิภาพ  
-- ทำให้การ deploy ราบรื่น
-
----
-
-### แผนภาพเสริม: ความสัมพันธ์ระหว่างบท
-
-```mermaid
-graph LR
-    subgraph Ch46[บทที่ 46: Clean Architecture]
-        A[Delivery] --> B[Usecase]
-        B --> C[Repository]
-        C --> D[Infrastructure]
-    end
-
-    subgraph Ch47[บทที่ 47: Production Blueprint]
-        E[cmd/ internal/ pkg/]
-        F[configs/ migrations/]
-        G[deploy/ scripts/]
-    end
-
-    subgraph Ch48[บทที่ 48: Workflow & Task Management]
-        H[Task List Template]
-        I[Checklist Template]
-        J[Development Workflow]
-    end
-
-    Ch46 -->|นำไปใช้| Ch47
-    Ch47 -->|กำหนดโครงสร้าง| Ch48
-    Ch48 -->|ควบคุมกระบวนการ| Ch46
+```
+myapp/
+├── cmd/
+│   └── api/
+│       └── main.go                 # entry point
+├── internal/
+│   ├── config/                     # โหลด configuration
+│   ├── domain/                     # Entities, Value Objects, Events
+│   │   ├── user/
+│   │   │   ├── entity.go
+│   │   │   ├── value_objects.go
+│   │   │   ├── events.go
+│   │   │   └── repository.go       # interface
+│   │   └── order/
+│   │       └── ...
+│   ├── application/                # Usecases
+│   │   ├── user/
+│   │   │   ├── register.go
+│   │   │   ├── login.go
+│   │   │   └── dto.go
+│   │   └── order/
+│   │       └── ...
+│   ├── infrastructure/             # Implementations
+│   │   ├── persistence/
+│   │   │   ├── gorm/
+│   │   │   │   ├── user_repo.go
+│   │   │   │   └── models.go
+│   │   │   └── redis/
+│   │   ├── queue/
+│   │   └── email/
+│   └── interfaces/                 # Delivery
+│       ├── http/
+│       │   ├── handlers/
+│       │   ├── middleware/
+│       │   └── routes.go
+│       └── cli/
+├── pkg/                            # reusable packages
+├── configs/
+├── migrations/
+└── go.mod
 ```
 
-**คำอธิบายเพิ่มเติม:**  
-- Clean Architecture (บท 46) ให้หลักการออกแบบ  
-- Production Blueprint (บท 47) นำหลักการนั้นมาเป็นโครงสร้างไฟล์และส่วนประกอบสำเร็จรูป  
-- Workflow & Task Management (บท 48) ใช้โครงสร้างนั้นเพื่อกำหนดกระบวนการพัฒนาและการตรวจสอบคุณภาพ
+### ตัวอย่างโค้ดของแต่ละชั้น
+
+#### 1. Domain Layer (Entity)
+
+```go
+// internal/domain/user/entity.go
+package user
+
+import (
+    "errors"
+    "time"
+)
+
+type User struct {
+    id        uint
+    email     Email
+    password  Password
+    name      string
+    isActive  bool
+    createdAt time.Time
+    updatedAt time.Time
+    events    []DomainEvent
+}
+
+func NewUser(email, password, name string) (*User, error) {
+    emailVO, err := NewEmail(email)
+    if err != nil {
+        return nil, err
+    }
+    passwordVO, err := NewPassword(password)
+    if err != nil {
+        return nil, err
+    }
+    return &User{
+        id:        generateID(),
+        email:     *emailVO,
+        password:  *passwordVO,
+        name:      name,
+        isActive:  true,
+        createdAt: time.Now(),
+        updatedAt: time.Now(),
+        events:    []DomainEvent{},
+    }, nil
+}
+
+// Getters
+func (u *User) ID() uint         { return u.id }
+func (u *User) Email() string    { return u.email.String() }
+func (u *User) Name() string     { return u.name }
+func (u *User) IsActive() bool   { return u.isActive }
+
+// Business logic
+func (u *User) Deactivate() error {
+    if !u.isActive {
+        return errors.New("user already inactive")
+    }
+    u.isActive = false
+    u.updatedAt = time.Now()
+    u.addDomainEvent(NewUserDeactivatedEvent(u.id))
+    return nil
+}
+
+func (u *User) addDomainEvent(event DomainEvent) {
+    u.events = append(u.events, event)
+}
+
+func (u *User) Events() []DomainEvent { return u.events }
+func (u *User) ClearEvents()          { u.events = nil }
+```
+
+#### 2. Repository Interface
+
+```go
+// internal/domain/user/repository.go
+package user
+
+import "context"
+
+type Repository interface {
+    Save(ctx context.Context, user *User) error
+    FindByID(ctx context.Context, id uint) (*User, error)
+    FindByEmail(ctx context.Context, email string) (*User, error)
+    Update(ctx context.Context, user *User) error
+    Delete(ctx context.Context, id uint) error
+}
+```
+
+#### 3. Application Layer (Usecase)
+
+```go
+// internal/application/user/register.go
+package user
+
+import (
+    "context"
+    "fmt"
+
+    "myapp/internal/domain/user"
+)
+
+type RegisterUseCase struct {
+    userRepo user.Repository
+    eventBus EventBus
+}
+
+type RegisterInput struct {
+    Email    string `json:"email"`
+    Password string `json:"password"`
+    Name     string `json:"name"`
+}
+
+type RegisterOutput struct {
+    ID    uint   `json:"id"`
+    Email string `json:"email"`
+    Name  string `json:"name"`
+}
+
+func NewRegisterUseCase(repo user.Repository, bus EventBus) *RegisterUseCase {
+    return &RegisterUseCase{
+        userRepo: repo,
+        eventBus: bus,
+    }
+}
+
+func (uc *RegisterUseCase) Execute(ctx context.Context, input RegisterInput) (*RegisterOutput, error) {
+    // ตรวจสอบ email ซ้ำ
+    existing, _ := uc.userRepo.FindByEmail(ctx, input.Email)
+    if existing != nil {
+        return nil, fmt.Errorf("email already registered")
+    }
+
+    // สร้าง User entity
+    u, err := user.NewUser(input.Email, input.Password, input.Name)
+    if err != nil {
+        return nil, err
+    }
+
+    // บันทึก
+    if err := uc.userRepo.Save(ctx, u); err != nil {
+        return nil, err
+    }
+
+    // Dispatch domain events
+    for _, event := range u.Events() {
+        uc.eventBus.Publish(event)
+    }
+
+    return &RegisterOutput{
+        ID:    u.ID(),
+        Email: u.Email(),
+        Name:  u.Name(),
+    }, nil
+}
+```
+
+#### 4. Infrastructure Layer (Repository Implementation with GORM)
+
+```go
+// internal/infrastructure/persistence/gorm/user_repo.go
+package gormrepo
+
+import (
+    "context"
+
+    "gorm.io/gorm"
+    "myapp/internal/domain/user"
+)
+
+type userRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) user.Repository {
+    return &userRepository{db: db}
+}
+
+func (r *userRepository) Save(ctx context.Context, u *user.User) error {
+    model := &UserModel{
+        ID:        u.ID(),
+        Email:     u.Email(),
+        Name:      u.Name(),
+        IsActive:  u.IsActive(),
+        CreatedAt: u.CreatedAt,
+        UpdatedAt: u.UpdatedAt,
+    }
+    return r.db.WithContext(ctx).Create(model).Error
+}
+
+// ... other methods
+```
+
+#### 5. Delivery Layer (HTTP Handler)
+
+```go
+// internal/interfaces/http/handlers/user.go
+package handlers
+
+import (
+    "encoding/json"
+    "net/http"
+
+    "myapp/internal/application/user"
+)
+
+type UserHandler struct {
+    registerUC *user.RegisterUseCase
+}
+
+func NewUserHandler(registerUC *user.RegisterUseCase) *UserHandler {
+    return &UserHandler{registerUC: registerUC}
+}
+
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+    var input user.RegisterInput
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+        http.Error(w, "Invalid request", http.StatusBadRequest)
+        return
+    }
+
+    output, err := h.registerUC.Execute(r.Context(), input)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(output)
+}
+```
 
 ---
 
-แผนภาพและคำอธิบายนี้จะช่วยให้ผู้อ่านเห็นภาพรวมของภาคที่ 7 ได้อย่างชัดเจน สามารถนำไปปรับใช้กับโปรเจกต์จริงได้ทันที
+## บทที่ 47: Blueprint สำหรับโปรเจกต์ Go ระดับ Production
+
+### โครงสร้างโฟลเดอร์หลัก (Blueprint)
+
+```
+project-root/
+├── cmd/                         # Executable entry points
+│   ├── api/
+│   │   └── main.go              # REST API server
+│   └── worker/
+│       └── main.go              # Background worker
+├── internal/                    # Private code
+│   ├── config/                  # Configuration loading (viper)
+│   ├── domain/                  # Domain models (DDD)
+│   │   ├── user/
+│   │   │   ├── entity.go
+│   │   │   ├── value_objects.go
+│   │   │   ├── repository.go    # interface
+│   │   │   └── events.go
+│   │   └── order/
+│   ├── application/             # Usecases
+│   │   ├── user/
+│   │   │   ├── register.go
+│   │   │   ├── login.go
+│   │   │   └── dto.go
+│   │   └── order/
+│   ├── infrastructure/          # Implementations
+│   │   ├── persistence/
+│   │   │   ├── gorm/
+│   │   │   │   ├── user_repo.go
+│   │   │   │   └── models.go
+│   │   │   └── redis/
+│   │   ├── queue/               # RabbitMQ, Kafka
+│   │   ├── cache/
+│   │   └── email/
+│   └── interfaces/              # Delivery
+│       ├── http/
+│       │   ├── handlers/
+│       │   ├── middleware/
+│       │   └── routes.go
+│       └── cli/
+├── pkg/                         # Reusable packages
+│   ├── logger/                  # zap wrapper
+│   ├── jwt/
+│   ├── validator/
+│   └── errors/
+├── api/                         # API definitions (OpenAPI, Protobuf)
+│   └── openapi.yaml
+├── configs/                     # Configuration files
+│   ├── config.yaml
+│   └── config.example.yaml
+├── migrations/                  # Database migrations
+│   └── 001_create_users_table.sql
+├── scripts/                     # Build, deployment scripts
+├── test/                        # Integration tests
+│   └── integration/
+├── deploy/                      # Docker, k8s manifests
+│   ├── docker-compose.yaml
+│   └── k8s/
+├── go.mod
+└── go.sum
+```
+
+### คำอธิบายเพิ่มเติม
+
+- **cmd/**: มีไฟล์ `main.go` สำหรับแต่ละ executable (api, worker, cli) โดยปกติจะมีแค่ 2-3 ตัว
+- **internal/**: โค้ดที่ไม่อยากให้ package อื่น import ได้ (Go compiler จะบังคับ)
+  - `domain/`: แบ่งตาม bounded context (user, order) ภายในประกอบด้วย entity, value objects, repository interface, domain events
+  - `application/`: use cases แต่ละตัว (RegisterUser, CreateOrder) และ DTOs
+  - `infrastructure/`: การ implement repository (GORM, sqlx), cache (Redis), queue (RabbitMQ), email, etc.
+  - `interfaces/`: HTTP handlers, middleware, routes; CLI commands
+- **pkg/**: โค้ดที่ reusable ระหว่างโปรเจกต์ต่าง ๆ (เช่น logger, jwt, validator)
+- **api/**: OpenAPI/Swagger specs หรือ protobuf
+- **configs/**: ไฟล์คอนฟิก (YAML) และตัวอย่าง
+- **migrations/**: SQL scripts สำหรับ migration (อาจใช้ `golang-migrate` หรือ `atlas`)
+- **test/**: integration tests ที่ใช้ testcontainers หรือ environment จริง
+- **deploy/**: docker-compose และ Kubernetes YAMLs
+
 ---
+
+## บทที่ 48: การออกแบบ Workflow และ Task Management
+
+### 1. Workflow การพัฒนา Feature ใหม่
+
+```mermaid
+flowchart LR
+    A[Analyze<br/>Requirement] --> B[Design<br/>Domain Models]
+    B --> C[Implement Domain<br/>Entities, Interfaces]
+    C --> D[Implement Infrastructure<br/>Repository, Cache]
+    D --> E[Implement Usecase<br/>Business Logic]
+    E --> F[Implement Handler<br/>HTTP/CLI]
+    F --> G[Write Tests<br/>Unit, Integration]
+    G --> H[Document & Review]
+    H --> I[Deploy]
+```
+
+### 2. Task List Template
+
+**Phase 1: Analysis & Design**
+- [ ] เข้าใจ requirement, user stories
+- [ ] ระบุ bounded context และ aggregate
+- [ ] ออกแบบ entity, value objects
+- [ ] กำหนด repository interface methods
+- [ ] ระบุ domain events
+- [ ] ออกแบบ DTOs (request/response)
+
+**Phase 2: Implementation**
+- [ ] สร้าง entity struct และ business methods
+- [ ] สร้าง repository interface
+- [ ] สร้าง usecase struct และ method
+- [ ] สร้าง HTTP handler
+- [ ] ลงทะเบียน routes
+- [ ] เขียน unit tests (domain, usecase with mocks)
+- [ ] เขียน integration tests (repository with testcontainers)
+
+**Phase 3: Infrastructure**
+- [ ] Implement repository (GORM)
+- [ ] สร้าง migration scripts
+- [ ] ตั้งค่า connection pool
+- [ ] Implement cache (ถ้าจำเป็น)
+- [ ] ทดสอบ repository
+
+**Phase 4: Documentation & Review**
+- [ ] อัปเดต API docs (Swagger)
+- [ ] รัน linter (`golangci-lint run`)
+- [ ] รัน test coverage (`go test -cover`), ตั้งเป้า >80%
+- [ ] รัน race detector (`go test -race`)
+- [ ] Code review
+
+**Phase 5: Deployment**
+- [ ] สร้าง Docker image
+- [ ] อัปเดต docker-compose (ถ้ามี)
+- [ ] Deploy to staging
+- [ ] ทดสอบ end-to-end
+- [ ] Deploy to production
+
+### 3. Checklist Template
+
+**Code Quality**
+- [ ] All exported functions have comments
+- [ ] No unused imports/variables (`go vet`)
+- [ ] Code formatted with `go fmt`
+- [ ] Error handling explicit (no ignored errors)
+- [ ] No panic in library code (only main/init)
+- [ ] Context passed as first parameter
+- [ ] Interfaces are small and focused
+- [ ] No global state except configuration
+
+**Security**
+- [ ] Passwords hashed with bcrypt
+- [ ] JWT secret loaded from environment
+- [ ] CORS properly configured
+- [ ] Input validation on all endpoints
+- [ ] SQL injection prevented (parameterized queries)
+- [ ] No sensitive data in logs
+- [ ] HTTPS enforced in production
+- [ ] Rate limiting on auth endpoints
+
+**Performance**
+- [ ] Database indexes on frequently queried columns
+- [ ] Use of caching (Redis) for hot data
+- [ ] Connection pools configured for DB and Redis
+- [ ] Avoid N+1 queries (use Preload in GORM)
+- [ ] Benchmarks for critical paths
+
+**Testing**
+- [ ] Unit tests cover business logic (usecase)
+- [ ] Repository tests with testcontainers
+- [ ] HTTP handler tests with httptest
+- [ ] Mock external dependencies
+- [ ] Race condition tests with `-race`
+- [ ] Coverage >80%
+
+**Deployment**
+- [ ] Configurable via environment variables
+- [ ] Graceful shutdown implemented
+- [ ] Health check endpoints (/health, /ready)
+- [ ] Logging to stdout (for container)
+- [ ] Docker image built with non-root user
+- [ ] Secrets not baked into image
+- [ ] Database migration runs automatically on startup
+- [ ] Readiness and liveness probes configured
+- [ ] Monitoring metrics exposed (Prometheus)
+
+---
+
+## ตัวอย่างการนำไปใช้จริง: การเพิ่มโมดูล "Product"
+
+สมมติเราต้องเพิ่มฟีเจอร์จัดการสินค้า (Product) ในแอปพลิเคชัน e-commerce
+
+### ขั้นตอนตาม Workflow
+
+1. **Analyze**: Product มี fields: id, name, description, price, stock, status (active/inactive), created_at, updated_at. Use cases: create, get, list, update, delete, search.
+
+2. **Design**: 
+   - Entity `Product` (id, name, price, stock, ...) with business methods like `ReduceStock(quantity)`, `IncreaseStock(quantity)`, `IsAvailable()`.
+   - Repository interface: `Save`, `FindByID`, `FindAll`, `Update`, `Delete`, `Search`.
+   - Use cases: `CreateProduct`, `GetProduct`, `UpdateProduct`, `DeleteProduct`, `ListProducts`, `SearchProducts`.
+   - DTOs: `CreateProductRequest`, `ProductResponse`, `ListProductsRequest`, etc.
+
+3. **Implement Domain**:
+   ```go
+   // internal/domain/product/entity.go
+   type Product struct {
+       id        uint
+       name      string
+       price     Money
+       stock     int
+       status    ProductStatus
+       createdAt time.Time
+       updatedAt time.Time
+   }
+   // business methods...
+   ```
+
+4. **Implement Infrastructure**:
+   - GORM model with tags
+   - Repository implementation using GORM
+
+5. **Implement Usecase**:
+   - `CreateProductUseCase` that validates and saves product
+
+6. **Implement Handler**:
+   - HTTP handlers with validation
+
+7. **Write Tests**:
+   - Unit tests for entity business logic
+   - Usecase tests with mock repository
+   - Repository tests with testcontainers
+
+8. **Document & Review**:
+   - Update OpenAPI spec
+   - Run linter and coverage
+
+9. **Deploy**:
+   - Create migration for `products` table
+   - Update Docker image
+
+### ผลลัพธ์: โครงสร้างไฟล์ใหม่
+
+```
+internal/
+├── domain/
+│   └── product/
+│       ├── entity.go
+│       ├── repository.go
+│       └── events.go
+├── application/
+│   └── product/
+│       ├── create.go
+│       ├── get.go
+│       ├── list.go
+│       ├── update.go
+│       ├── delete.go
+│       └── dto.go
+├── infrastructure/
+│   └── persistence/
+│       └── gorm/
+│           ├── product_repo.go
+│           └── product_model.go
+└── interfaces/
+    └── http/
+        └── handlers/
+            └── product.go
+```
+
+---
+
+## สรุป
+
+ภาคที่ 7 ได้เสนอแนวทางในการออกแบบสถาปัตยกรรมและกระบวนการพัฒนาสำหรับโปรเจกต์ Go ระดับ Production:
+
+- **Clean Architecture** ช่วยแยกความรับผิดชอบและทำให้โค้ดทดสอบง่าย
+- **Blueprint** ที่นำเสนอเป็นโครงสร้างเริ่มต้นที่ผ่านการพิสูจน์แล้วจากโปรเจกต์จริง
+- **Workflow และ Task Management** ช่วยให้ทีมทำงานเป็นระบบ ลดความเสี่ยง และเพิ่มคุณภาพ
+
+การนำหลักการเหล่านี้ไปใช้จะช่วยให้แอปพลิเคชันมีความยืดหยุ่น บำรุงรักษาง่าย และสามารถขยายขนาดได้ตามความต้องการทางธุรกิจ
 
 ## ภาคที่ 8: Domain-Driven Design (DDD) (บทที่ 49–51)
 
