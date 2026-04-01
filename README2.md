@@ -13967,7 +13967,7 @@ myapp/
 
 เครื่องมือเหล่านี้ทำงานสอดคล้องกันตามแผนภาพ Data Flow ที่แสดงไว้ ช่วยให้การพัฒนาเป็นระบบ มีประสิทธิภาพ และบำรุงรักษาง่าย
 
-## # ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
+## ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
 
 ## แผนภาพ Data Flow (Flowchart TB)
 
@@ -14630,37 +14630,720 @@ internal/
 
 การนำหลักการเหล่านี้ไปใช้จะช่วยให้แอปพลิเคชันมีความยืดหยุ่น บำรุงรักษาง่าย และสามารถขยายขนาดได้ตามความต้องการทางธุรกิจ
 
-## ภาคที่ 8: Domain-Driven Design (DDD) (บทที่ 49–51)
+## # ภาคที่ 8: Domain-Driven Design (DDD) กับ Go (บทที่ 49–51)
 
-**แผนภาพ: Domain → Application → Infrastructure**
+## แผนภาพ Data Flow (Flowchart TB)
 
 ```mermaid
-graph LR
-    subgraph Domain[ชั้นโดเมน]
-        A[Entities & Value Objects] --> B[Aggregates]
-        B --> C[Domain Events]
-        C --> D[Repository Interface]
+flowchart TB
+    subgraph Ubiquitous["Ubiquitous Language (ภาษาร่วม)"]
+        U1["Domain Experts & Developers<br/>ใช้คำศัพท์เดียวกัน"]
     end
 
-    subgraph Application[ชั้นแอปพลิเคชัน]
-        E[Use Cases] --> F[DTOs]
-        F --> G[Service Orchestration]
+    subgraph BoundedContext["Bounded Contexts (บริบทที่จำกัด)"]
+        BC1["Order Context<br/>Order, OrderItem, Payment"]
+        BC2["User Context<br/>User, Profile, Authentication"]
+        BC3["Inventory Context<br/>Product, Stock, Warehouse"]
     end
 
-    subgraph Infrastructure[ชั้นโครงสร้างพื้นฐาน]
-        H[Repository Implementation] --> I[Event Bus]
-        I --> J[Message Broker]
+    subgraph DomainModel["Domain Model (โมเดลโดเมน)"]
+        direction TB
+        DM1["Entities<br/>- มี identity<br/>- mutable"]
+        DM2["Value Objects<br/>- ไม่มี identity<br/>- immutable"]
+        DM3["Aggregates<br/>- กลุ่มของ entities/value objects<br/>- Aggregate Root เป็นทางเข้า"]
+        DM4["Domain Events<br/>- เหตุการณ์สำคัญในโดเมน<br/>- ใช้สื่อสารระหว่าง aggregates"]
+        DM5["Repositories<br/>- abstraction สำหรับ aggregate roots<br/>- ซ่อน infrastructure"]
+        DM6["Domain Services<br/>- business logic ที่ไม่เหมาะกับ entity/value object"]
     end
 
-    A --> E
-    D --> H
-    C --> I
+    subgraph Application["Application Layer (Use Cases)"]
+        A1["Commands<br/>PlaceOrder, RegisterUser"]
+        A2["Queries<br/>GetOrder, ListUsers"]
+        A3["DTOs<br/>Request/Response objects"]
+        A4["Event Handlers<br/>- สนใจ domain events<br/>- ทำงาน async"]
+    end
+
+    subgraph Infrastructure["Infrastructure Layer"]
+        I1["Persistence<br/>PostgreSQL, GORM"]
+        I2["Event Store<br/>PostgreSQL JSONB, EventStoreDB"]
+        I3["Message Broker<br/>RabbitMQ, Kafka"]
+        I4["Cache<br/>Redis"]
+    end
+
+    Ubiquitous --> DomainModel
+    DomainModel --> Application
+    Application --> Infrastructure
+
+    subgraph EventStorming["Event Storming (Workshop)"]
+        ES1["Domain Events<br/>(orange)"]
+        ES2["Commands<br/>(blue)"]
+        ES3["Aggregates<br/>(yellow)"]
+        ES4["Policies / Rules<br/>(purple)"]
+        ES5["Read Models<br/>(green)"]
+        ES6["External Systems<br/>(pink)"]
+    end
+
+    subgraph CQRS["CQRS (Command Query Responsibility Segregation)"]
+        C1["Command Model<br/>- Write side<br/>- Domain logic, consistency"]
+        C2["Query Model<br/>- Read side<br/>- Optimized for queries, denormalized"]
+        C3["Event Sourcing<br/>- Store events as source of truth<br/>- Rebuild state from events"]
+        C4["Projections<br/>- Build read models from events"]
+    end
+
+    EventStorming --> DomainModel
+    CQRS --> Application
+    CQRS --> Infrastructure
 ```
 
-**คำอธิบาย:**  
-ชั้นโดเมน (Entities, Value Objects, Aggregates) กำหนดพฤติกรรมทางธุรกิจและสร้าง Domain Events ชั้นแอปพลิเคชันใช้ Use Cases ในการจัดลำดับการทำงาน โดยรับ DTO และเรียกใช้ Service Orchestration ชั้นโครงสร้างพื้นฐาน Implement Repository และ Event Bus เพื่อติดต่อกับฐานข้อมูลหรือ Message Broker
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 8 ครอบคลุมบทที่ 49–51 โดยมีเนื้อหาเกี่ยวกับ **Domain-Driven Design (DDD)** และการนำไปใช้ในภาษา Go:
+
+- **บทที่ 49:** หลักการ DDD และการนำไปใช้ใน Go
+- **บทที่ 50:** Aggregates, Event Storming และ CQRS
+- **บทที่ 51:** การออกแบบบริการด้วย Go-DDD
+
+DDD เป็นแนวทางในการออกแบบซอฟต์แวร์ที่เน้นการสร้างโมเดลที่สะท้อนความรู้ความเข้าใจ (domain knowledge) อย่างแท้จริง โดยใช้ภาษากลาง (Ubiquitous Language) ร่วมกันระหว่างนักพัฒนาและผู้เชี่ยวชาญโดเมน
 
 ---
+
+## บทที่ 49: หลักการ DDD และการนำไปใช้ใน Go
+
+### 1. หลักการสำคัญของ DDD
+
+- **Ubiquitous Language (ภาษาร่วม)**: สร้างภาษากลางที่ใช้ร่วมกันระหว่างนักพัฒนาและผู้เชี่ยวชาญโดเมน ใช้ศัพท์เดียวกันในโค้ด, การสนทนา, และเอกสาร
+- **Bounded Context (บริบทที่จำกัด)**: แบ่งโดเมนขนาดใหญ่ออกเป็นบริทย่อยที่มีขอบเขตชัดเจน แต่ละ Bounded Context มีโมเดลของตัวเองและภาษาร่วมของตัวเอง
+- **Entities**: วัตถุที่มีเอกลักษณ์ (identity) และสามารถเปลี่ยนแปลงได้ (mutable) เช่น `User`, `Order`
+- **Value Objects**: วัตถุที่ไม่มีเอกลักษณ์ในตัวเอง ถูกกำหนดโดยคุณสมบัติ (immutable) เช่น `Address`, `Money`
+- **Aggregates**: กลุ่มของ Entities และ Value Objects ที่ถูกจัดการเป็นหน่วยเดียวกัน มี Aggregate Root เป็นตัวควบคุมความสอดคล้องของข้อมูล
+- **Domain Events**: เหตุการณ์สำคัญในโดเมนที่เกิดขึ้น เช่น `OrderPlaced`, `UserRegistered`
+- **Repositories**: ให้ abstraction ในการเข้าถึง aggregate roots ซ่อนรายละเอียดของแหล่งข้อมูล
+- **Domain Services**: ใช้สำหรับ logic ที่ไม่เหมาะจะอยู่ใน entity หรือ value object เช่น `TransferService` ที่โอนเงินระหว่างบัญชี
+
+### 2. การนำ DDD ไปใช้ใน Go
+
+Go ไม่มี class และ inheritance แต่ใช้ **struct + method** และ **interface** เพื่อสร้าง abstraction การสืบทอดทำผ่าน **composition** (embedding) แทน
+
+#### 2.1 Entities และ Value Objects
+
+```go
+// internal/domain/user/entity.go
+package user
+
+import (
+    "errors"
+    "time"
+)
+
+// Entity: User (มี identity)
+type User struct {
+    id        uint
+    email     Email      // Value Object
+    password  Password   // Value Object
+    name      string
+    isActive  bool
+    createdAt time.Time
+    updatedAt time.Time
+    events    []DomainEvent
+}
+
+// Constructor (factory method)
+func NewUser(email, password, name string) (*User, error) {
+    emailVO, err := NewEmail(email)
+    if err != nil {
+        return nil, err
+    }
+    passwordVO, err := NewPassword(password)
+    if err != nil {
+        return nil, err
+    }
+    return &User{
+        id:        generateID(),
+        email:     *emailVO,
+        password:  *passwordVO,
+        name:      name,
+        isActive:  true,
+        createdAt: time.Now(),
+        updatedAt: time.Now(),
+        events:    []DomainEvent{},
+    }, nil
+}
+
+// Getters (exported)
+func (u *User) ID() uint         { return u.id }
+func (u *User) Email() string    { return u.email.String() }
+func (u *User) Name() string     { return u.name }
+func (u *User) IsActive() bool   { return u.isActive }
+
+// Business method
+func (u *User) Deactivate() error {
+    if !u.isActive {
+        return errors.New("user already inactive")
+    }
+    u.isActive = false
+    u.updatedAt = time.Now()
+    u.addDomainEvent(NewUserDeactivatedEvent(u.id))
+    return nil
+}
+
+func (u *User) addDomainEvent(event DomainEvent) {
+    u.events = append(u.events, event)
+}
+
+func (u *User) Events() []DomainEvent { return u.events }
+func (u *User) ClearEvents()          { u.events = nil }
+```
+
+```go
+// internal/domain/user/value_objects.go
+package user
+
+import (
+    "regexp"
+    "strings"
+
+    "golang.org/x/crypto/bcrypt"
+)
+
+// Value Object: Email (immutable)
+type Email struct {
+    value string
+}
+
+func NewEmail(email string) (*Email, error) {
+    email = strings.TrimSpace(email)
+    if !isValidEmail(email) {
+        return nil, errors.New("invalid email format")
+    }
+    return &Email{value: email}, nil
+}
+
+func (e Email) String() string { return e.value }
+
+// Value Object: Password (immutable, hashed)
+type Password struct {
+    hash string
+}
+
+func NewPassword(plain string) (*Password, error) {
+    if len(plain) < 8 {
+        return nil, errors.New("password must be at least 8 characters")
+    }
+    hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+    if err != nil {
+        return nil, err
+    }
+    return &Password{hash: string(hash)}, nil
+}
+
+func (p *Password) Compare(plain string) bool {
+    return bcrypt.CompareHashAndPassword([]byte(p.hash), []byte(plain)) == nil
+}
+```
+
+#### 2.2 Aggregates และ Aggregate Root
+
+```go
+// internal/domain/order/aggregate.go
+package order
+
+import (
+    "errors"
+    "time"
+)
+
+// Aggregate Root: Order
+type Order struct {
+    id         uint
+    customerID uint
+    items      []OrderItem   // slice of value objects
+    status     OrderStatus
+    total      Money
+    createdAt  time.Time
+    updatedAt  time.Time
+    events     []DomainEvent
+}
+
+func NewOrder(customerID uint) *Order {
+    o := &Order{
+        id:         generateID(),
+        customerID: customerID,
+        items:      []OrderItem{},
+        status:     StatusDraft,
+        total:      Money{},
+        createdAt:  time.Now(),
+        updatedAt:  time.Now(),
+    }
+    o.addDomainEvent(NewOrderCreatedEvent(o.id, customerID))
+    return o
+}
+
+func (o *Order) AddItem(productID uint, name string, price Money, quantity int) error {
+    if o.status != StatusDraft {
+        return errors.New("cannot add item to non-draft order")
+    }
+    if quantity <= 0 {
+        return errors.New("quantity must be positive")
+    }
+    // Create value object
+    item := NewOrderItem(productID, name, price, quantity)
+    o.items = append(o.items, item)
+    o.recalculateTotal()
+    o.updatedAt = time.Now()
+    o.addDomainEvent(NewOrderItemAddedEvent(o.id, productID, quantity))
+    return nil
+}
+
+func (o *Order) Submit() error {
+    if len(o.items) == 0 {
+        return errors.New("cannot submit empty order")
+    }
+    if o.status != StatusDraft {
+        return errors.New("order already submitted")
+    }
+    o.status = StatusSubmitted
+    o.updatedAt = time.Now()
+    o.addDomainEvent(NewOrderSubmittedEvent(o.id))
+    return nil
+}
+
+func (o *Order) recalculateTotal() {
+    var sum int64
+    for _, item := range o.items {
+        sum += item.Total().Cents()
+    }
+    o.total = NewMoneyFromCents(sum)
+}
+
+// Repository interface for Order aggregate root
+type OrderRepository interface {
+    Save(ctx context.Context, order *Order) error
+    FindByID(ctx context.Context, id uint) (*Order, error)
+    FindByCustomer(ctx context.Context, customerID uint) ([]*Order, error)
+}
+```
+
+#### 2.3 Domain Events
+
+```go
+// internal/domain/order/events.go
+package order
+
+import "time"
+
+type DomainEvent interface {
+    OccurredAt() time.Time
+}
+
+type OrderCreatedEvent struct {
+    OrderID    uint      `json:"order_id"`
+    CustomerID uint      `json:"customer_id"`
+    Occurred   time.Time `json:"occurred_at"`
+}
+
+func NewOrderCreatedEvent(orderID, customerID uint) OrderCreatedEvent {
+    return OrderCreatedEvent{
+        OrderID:    orderID,
+        CustomerID: customerID,
+        Occurred:   time.Now(),
+    }
+}
+
+func (e OrderCreatedEvent) OccurredAt() time.Time { return e.Occurred }
+
+type OrderSubmittedEvent struct {
+    OrderID  uint      `json:"order_id"`
+    Occurred time.Time `json:"occurred_at"`
+}
+
+func NewOrderSubmittedEvent(orderID uint) OrderSubmittedEvent {
+    return OrderSubmittedEvent{
+        OrderID:  orderID,
+        Occurred: time.Now(),
+    }
+}
+
+func (e OrderSubmittedEvent) OccurredAt() time.Time { return e.Occurred }
+```
+
+#### 2.4 Domain Services
+
+```go
+// internal/domain/order/transfer_service.go
+package order
+
+type TransferService interface {
+    Transfer(ctx context.Context, fromID, toID uint, amount Money) error
+}
+
+// Implementation in infrastructure layer
+type BankTransferService struct {
+    client *http.Client
+    // ...
+}
+
+func (s *BankTransferService) Transfer(ctx context.Context, fromID, toID uint, amount Money) error {
+    // Call external bank API
+    // ...
+}
+```
+
+#### 2.5 Repositories (interface ใน domain, implementation ใน infrastructure)
+
+```go
+// internal/domain/order/repository.go (interface)
+package order
+
+import "context"
+
+type OrderRepository interface {
+    Save(ctx context.Context, order *Order) error
+    FindByID(ctx context.Context, id uint) (*Order, error)
+}
+```
+
+```go
+// internal/infrastructure/persistence/gorm/order_repo.go (implementation)
+package gormrepo
+
+import (
+    "context"
+    "encoding/json"
+
+    "gorm.io/gorm"
+    "myapp/internal/domain/order"
+)
+
+type orderRepository struct {
+    db *gorm.DB
+}
+
+func NewOrderRepository(db *gorm.DB) order.OrderRepository {
+    return &orderRepository{db: db}
+}
+
+// GORM model for persistence
+type OrderModel struct {
+    ID         uint           `gorm:"primaryKey"`
+    CustomerID uint           `gorm:"index"`
+    Status     string         `gorm:"size:20"`
+    TotalCents int64
+    Items      json.RawMessage `gorm:"type:jsonb"`
+    CreatedAt  time.Time
+    UpdatedAt  time.Time
+}
+
+func (r *orderRepository) Save(ctx context.Context, o *order.Order) error {
+    // Convert domain Order to OrderModel
+    itemsJSON, _ := json.Marshal(o.Items()) // assume items are serializable
+    model := &OrderModel{
+        ID:         o.ID(),
+        CustomerID: o.CustomerID(),
+        Status:     o.Status().String(),
+        TotalCents: o.Total().Cents(),
+        Items:      itemsJSON,
+        CreatedAt:  o.CreatedAt(),
+        UpdatedAt:  o.UpdatedAt(),
+    }
+    return r.db.WithContext(ctx).Save(model).Error
+}
+```
+
+---
+
+## บทที่ 50: Aggregates, Event Storming และ CQRS
+
+### 1. Aggregates (กลุ่มวัตถุที่มีความสอดคล้อง)
+
+Aggregate คือกลุ่มของ Entities และ Value Objects ที่ถูกยึดเข้าด้วยกันโดย Aggregate Root ซึ่งเป็นตัวเดียวที่อนุญาตให้เข้าถึงหรือแก้ไขวัตถุอื่นภายในกลุ่มจากภายนอก
+
+**หลักการ:**
+- Aggregate Root มี identity และเป็นจุดเดียวที่ภายนอกเข้าถึงได้
+- การเปลี่ยนแปลงใด ๆ ภายใน Aggregate ต้องทำผ่าน Root เท่านั้น
+- ภายใน Aggregate เดียวกันต้องมีความสอดคล้องกันในทันที (consistency boundary)
+- ระหว่าง Aggregates ควรใช้ eventual consistency ผ่าน Domain Events
+
+### 2. Event Storming (เทคนิคค้นพบโดเมน)
+
+Event Storming เป็นเวิร์กช็อปแบบมีส่วนร่วมที่ช่วยให้ทีม (นักพัฒนา, นักธุรกิจ, ผู้เชี่ยวชาญโดเมน) ระบุและเข้าใจโดเมนผ่านเหตุการณ์สำคัญที่เกิดขึ้นในระบบ
+
+**สัญลักษณ์ทั่วไป:**
+- **สีส้ม** – Domain Events (สิ่งที่เกิดขึ้นแล้ว) เช่น `OrderPlaced`, `PaymentReceived`
+- **สีน้ำเงิน** – Commands (คำสั่งที่ทำให้เกิดเหตุการณ์) เช่น `PlaceOrder`, `RefundPayment`
+- **สีเหลือง** – Aggregates (กลุ่มข้อมูลที่ถูกคำสั่งเรียก) เช่น `Order`, `Customer`
+- **สีม่วง** – Policies / Rules (กฎที่ทำงานอัตโนมัติ)
+- **สีเขียว** – Read Models (ข้อมูลที่แสดงผล)
+- **สีชมพู** – External Systems (ระบบภายนอก)
+
+### 3. CQRS (Command Query Responsibility Segregation)
+
+CQRS แยกโมเดลการ **เขียน** (Command) และ **อ่าน** (Query) ออกจากกัน ทำให้สามารถปรับแต่งให้เหมาะสมกับแต่ละฝั่งได้
+
+**ตัวอย่างโครงสร้าง CQRS ใน Go:**
+
+```go
+// Command side (write model)
+type PlaceOrderCommand struct {
+    CustomerID uint
+    Items      []OrderItemDTO
+}
+
+type PlaceOrderHandler struct {
+    orderRepo order.OrderRepository
+    eventBus  EventBus
+}
+
+func (h *PlaceOrderHandler) Handle(ctx context.Context, cmd PlaceOrderCommand) error {
+    // Create order aggregate
+    ord := order.NewOrder(cmd.CustomerID)
+    for _, item := range cmd.Items {
+        ord.AddItem(item.ProductID, item.Name, item.Price, item.Quantity)
+    }
+    if err := ord.Submit(); err != nil {
+        return err
+    }
+    if err := h.orderRepo.Save(ctx, ord); err != nil {
+        return err
+    }
+    // Publish events
+    for _, evt := range ord.Events() {
+        h.eventBus.Publish(evt)
+    }
+    return nil
+}
+
+// Query side (read model)
+type OrderReadModel struct {
+    ID         uint
+    CustomerID uint
+    Status     string
+    Total      float64
+    Items      []OrderItemReadModel
+}
+
+type OrderQueryHandler struct {
+    db *sql.DB // หรือ repository อ่านอย่างเดียว
+}
+
+func (h *OrderQueryHandler) GetOrder(ctx context.Context, id uint) (*OrderReadModel, error) {
+    var order OrderReadModel
+    // query จาก read database (อาจเป็นตารางที่ denormalized)
+    // ...
+    return &order, nil
+}
+```
+
+#### Event Sourcing + Projections
+
+Event Sourcing คือการเก็บ event ทั้งหมดเป็น source of truth แล้วสร้าง state ปัจจุบันจากการ replay events
+
+```go
+// Event store
+type EventStore interface {
+    Save(ctx context.Context, streamID string, events []DomainEvent, expectedVersion int) error
+    Load(ctx context.Context, streamID string) ([]DomainEvent, error)
+}
+
+// Projection: สร้าง read model จาก events
+type OrderProjection struct {
+    db *sql.DB
+}
+
+func (p *OrderProjection) HandleEvent(event DomainEvent) {
+    switch e := event.(type) {
+    case OrderCreatedEvent:
+        p.db.Exec("INSERT INTO order_read_models (id, customer_id, status, total, created_at) VALUES ($1, $2, $3, $4, $5)",
+            e.OrderID, e.CustomerID, "Draft", 0, e.Occurred)
+    case OrderItemAddedEvent:
+        p.db.Exec("INSERT INTO order_item_read_models (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)",
+            e.OrderID, e.ProductID, e.Quantity, e.Price)
+        p.db.Exec("UPDATE order_read_models SET total = total + $1 WHERE id = $2", e.Price*float64(e.Quantity), e.OrderID)
+    case OrderSubmittedEvent:
+        p.db.Exec("UPDATE order_read_models SET status = 'Submitted' WHERE id = $1", e.OrderID)
+    }
+}
+```
+
+---
+
+## บทที่ 51: การออกแบบบริการด้วย Go-DDD
+
+### โครงสร้างโปรเจกต์แบบ DDD เต็มรูปแบบ
+
+```
+myapp/
+├── cmd/
+│   └── api/
+│       └── main.go
+├── internal/
+│   ├── config/               # configuration
+│   ├── domain/               # domain layer
+│   │   ├── user/
+│   │   │   ├── entity.go
+│   │   │   ├── value_objects.go
+│   │   │   ├── repository.go
+│   │   │   ├── events.go
+│   │   │   └── service.go (domain services)
+│   │   ├── order/
+│   │   │   ├── aggregate.go
+│   │   │   ├── repository.go
+│   │   │   └── events.go
+│   │   └── shared/          # shared value objects
+│   ├── application/          # use cases
+│   │   ├── user/
+│   │   │   ├── register.go
+│   │   │   ├── login.go
+│   │   │   └── dto.go
+│   │   └── order/
+│   │       ├── place_order.go
+│   │       ├── get_order.go
+│   │       └── dto.go
+│   ├── infrastructure/       # implementations
+│   │   ├── persistence/
+│   │   │   ├── gorm/
+│   │   │   │   ├── user_repo.go
+│   │   │   │   └── order_repo.go
+│   │   │   └── event_store/
+│   │   ├── bus/              # event bus
+│   │   └── mail/
+│   └── interfaces/           # delivery
+│       ├── http/
+│       │   ├── handlers/
+│       │   ├── middleware/
+│       │   └── routes.go
+│       └── cli/
+├── pkg/                      # reusable packages
+│   ├── logger/
+│   └── errors/
+├── migrations/
+└── go.mod
+```
+
+### ตัวอย่าง Use Case (Application Layer)
+
+```go
+// internal/application/order/place_order.go
+package order
+
+import (
+    "context"
+
+    "myapp/internal/domain/order"
+    "myapp/internal/domain/user"
+)
+
+type PlaceOrderUseCase struct {
+    orderRepo order.OrderRepository
+    userRepo  user.UserRepository
+    eventBus  EventBus
+}
+
+type PlaceOrderInput struct {
+    UserID uint
+    Items  []OrderItemInput
+}
+
+type OrderItemInput struct {
+    ProductID uint
+    Name      string
+    Price     float64
+    Quantity  int
+}
+
+type PlaceOrderOutput struct {
+    OrderID uint
+    Status  string
+}
+
+func NewPlaceOrderUseCase(
+    orderRepo order.OrderRepository,
+    userRepo user.UserRepository,
+    eventBus EventBus,
+) *PlaceOrderUseCase {
+    return &PlaceOrderUseCase{
+        orderRepo: orderRepo,
+        userRepo:  userRepo,
+        eventBus:  eventBus,
+    }
+}
+
+func (uc *PlaceOrderUseCase) Execute(ctx context.Context, input PlaceOrderInput) (*PlaceOrderOutput, error) {
+    // 1. Validate user exists and is active
+    u, err := uc.userRepo.FindByID(ctx, input.UserID)
+    if err != nil {
+        return nil, fmt.Errorf("user not found: %w", err)
+    }
+    if !u.IsActive() {
+        return nil, errors.New("inactive user cannot place order")
+    }
+
+    // 2. Create order aggregate
+    ord := order.NewOrder(input.UserID)
+    for _, item := range input.Items {
+        money := order.NewMoney(item.Price)
+        ord.AddItem(item.ProductID, item.Name, money, item.Quantity)
+    }
+
+    // 3. Submit order
+    if err := ord.Submit(); err != nil {
+        return nil, err
+    }
+
+    // 4. Persist
+    if err := uc.orderRepo.Save(ctx, ord); err != nil {
+        return nil, err
+    }
+
+    // 5. Dispatch events
+    for _, evt := range ord.Events() {
+        uc.eventBus.Publish(evt)
+    }
+
+    return &PlaceOrderOutput{
+        OrderID: ord.ID(),
+        Status:  ord.Status().String(),
+    }, nil
+}
+```
+
+### Dependency Injection (Wire)
+
+```go
+// internal/wire/wire.go
+package wire
+
+import (
+    "myapp/internal/application/order"
+    "myapp/internal/domain/order"
+    "myapp/internal/infrastructure/persistence/gorm"
+    "myapp/internal/interfaces/http/handlers"
+    "myapp/pkg/eventbus"
+)
+
+func InitializeOrderAPI(db *gorm.DB, bus eventbus.EventBus) *handlers.OrderHandler {
+    orderRepo := gorm.NewOrderRepository(db)
+    userRepo := gorm.NewUserRepository(db)
+
+    placeOrderUC := order.NewPlaceOrderUseCase(orderRepo, userRepo, bus)
+    getOrderUC := order.NewGetOrderUseCase(orderRepo)
+
+    return handlers.NewOrderHandler(placeOrderUC, getOrderUC)
+}
+```
+
+---
+
+## สรุป
+
+ภาคที่ 8 ได้แนะนำหลักการ Domain-Driven Design และการนำไปใช้ใน Go อย่างเป็นรูปธรรม:
+
+- **หลักการ DDD**: Ubiquitous Language, Bounded Context, Entities, Value Objects, Aggregates, Repositories, Domain Services, Domain Events
+- **Event Storming**: เทคนิคการวิเคราะห์โดเมนผ่านเหตุการณ์
+- **CQRS**: แยก command และ query models, event sourcing, projections
+
+การนำ DDD มาปรับใช้ใน Go ช่วยให้โค้ดสะท้อนภาษาธุรกิจ ทดสอบง่าย และปรับเปลี่ยน infrastructure ได้โดยไม่กระทบโดเมน
 
 ## ภาคที่ 9: การผสานระบบภายนอก (บทที่ 52–58)
 
