@@ -2255,7 +2255,6 @@ srv.ListenAndServe()
 ผ่าน goroutine ทำให้สามารถรับคำขอพร้อมกันได้โดยไม่ต้องพึ่งพา web framework ภายนอก
 
  
- 
 ```mermaid
 flowchart TB
     Client([Client]) -->|HTTP Request<br/>GET /api/users| Server
