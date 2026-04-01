@@ -2248,54 +2248,7 @@ srv := &http.Server{
 }
 srv.ListenAndServe()
 ```
-
-## พื้นฐานการสร้าง HTTP Server ด้วย Golang
-
-การสร้าง HTTP Server ในภาษา Go (Golang) เป็นเรื่องที่ทำได้ง่ายและมีประสิทธิภาพสูง เนื่องจากภาษา Go มีแพ็คเกจ `net/http` ในมาตรฐานที่ครบครัน รองรับการทำงานแบบ concurrent 
-ผ่าน goroutine ทำให้สามารถรับคำขอพร้อมกันได้โดยไม่ต้องพึ่งพา web framework ภายนอก
-
  
- 
-   [Client]
-       |
-       | HTTP Request (GET /api/users)
-       v
-+-----------------------------------------------+
-|               HTTP Server (Go)                |
-|  +-----------------------------------------+  |
-|  |           Router / ServeMux             |  |
-|  |  - จับคู่ path + method                  |  |
-|  |  - อาจมี middleware chain               |  |
-|  +-------------------+---------------------+  |
-|                      |                         |
-|                      v                         |
-|  +-----------------------------------------+  |
-|  |            Middleware (ถ้ามี)            |  |
-|  |  - Logging, Auth, Recovery, etc.        |  |
-|  +-------------------+---------------------+  |
-|                      |                         |
-|                      v                         |
-|  +-----------------------------------------+  |
-|  |              Handler Func               |  |
-|  |  - อ่าน request body/params             |  |
-|  |  - ประมวลผล (DB, external API, etc.)   |  |
-|  |  - เขียน response (JSON, HTML, etc.)    |  |
-|  +-------------------+---------------------+  |
-|                      |                         |
-|                      v                         |
-|  +-----------------------------------------+  |
-|  |              Response Writer            |  |
-|  |  - กำหนด Header, Status Code            |  |
-|  |  - เขียน response body                  |  |
-|  +-----------------------------------------+  |
-+-----------------------------------------------+
-       |
-       | HTTP Response (200 OK, JSON data)
-       v
-   [Client]
-
- 
-**คำอธิบายองค์ประกอบ** (เพื่อนำไปสร้างใน draw.io):
 
 - **Client**: ผู้ใช้หรือโปรแกรมที่ส่ง HTTP request (เช่น browser, mobile app, curl)
 - **HTTP Server (Go)**: กระบวนการที่รันด้วย `http.ListenAndServe` หรือ `http.Server` รับฟังพอร์ต
