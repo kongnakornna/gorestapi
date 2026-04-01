@@ -3979,17 +3979,649 @@ log.Printf("Server starting on port %d", cfg.Server.Port)
 - **Workflow Diagram** (บทที่ 62) อธิบายลำดับการทำงานด้วยแผนภาพ Mermaid
 - **mop Config** (บทที่ 63) จัดการ configuration อย่างมืออาชีพด้วย viper
 
-คู่มือนี้ครอบคลุมทุกขั้นตอนตั้งแต่การเริ่มต้นจนถึงการนำไปใช้งานจริง พร้อมเทมเพลตและโค้ดตัวอย่างที่สามารถนำไปปรับใช้ได้ทันที
+
+
+# GORM CRUD กับฐานข้อมูลหลายประเภท: PostgreSQL, MySQL, MongoDB, InfluxDB
+
+## แผนภาพ Data Flow (Flowchart TB)
+
+```mermaid
+flowchart TB
+    subgraph App["Go Application"]
+        A1["Business Logic / Use Cases"]
+        A2["GORM Models / Structs"]
+        A3["Repository Layer"]
+    end
+
+    subgraph ORM["ORM Layer (GORM)"]
+        G1["GORM ORM<br/>- Auto Migration<br/>- CRUD Operations<br/>- Associations<br/>- Hooks"]
+    end
+
+    subgraph SQL["SQL Databases"]
+        Pg[(PostgreSQL)]
+        My[(MySQL)]
+    end
+
+    subgraph NoSQL["NoSQL / Time‑Series"]
+        Mg[(MongoDB)]
+        Inf[(InfluxDB)]
+    end
+
+    subgraph Drivers["Database Drivers"]
+        D1["pgx / lib/pq"]
+        D2["go-sql-driver/mysql"]
+        D3["mongo-go-driver"]
+        D4["influxdb-client-go"]
+    end
+
+    A1 --> A2
+    A2 --> A3
+    A3 --> G1
+
+    G1 --> D1
+    D1 --> Pg
+
+    G1 --> D2
+    D2 --> My
+
+    A3 --> D3
+    D3 --> Mg
+
+    A3 --> D4
+    D4 --> Inf
+```
+
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ใน Go การทำ CRUD กับฐานข้อมูลสามารถใช้ไลบรารีที่เหมาะสมกับแต่ละประเภท:
+
+- **GORM** – ORM ที่ทรงพลัง เหมาะกับฐานข้อมูล SQL (PostgreSQL, MySQL, SQLite, SQL Server)
+- **MongoDB** – ใช้ official driver (`go.mongodb.org/mongo-driver`) สำหรับ document database
+- **InfluxDB** – ใช้ official client (`github.com/influxdata/influxdb-client-go`) สำหรับ time‑series database
+
+แผนภาพด้านบนแสดงการแยกชั้น: **Application** ใช้ **Repository Layer** ซึ่งเรียกใช้ ORM หรือ driver โดยตรง ตามชนิดของฐานข้อมูล
+
+---
+
+## 1. PostgreSQL + GORM
+
+### การติดตั้ง
+
+```bash
+go get -u gorm.io/gorm
+go get -u gorm.io/driver/postgres
+```
+
+### ตัวอย่าง Model และ CRUD
+
+```go
+package models
+
+import (
+    "time"
+    "gorm.io/gorm"
+)
+
+type User struct {
+    ID        uint           `gorm:"primaryKey" json:"id"`
+    Username  string         `gorm:"size:50;uniqueIndex;not null" json:"username"`
+    Email     string         `gorm:"size:100;uniqueIndex;not null" json:"email"`
+    Password  string         `gorm:"size:255;not null" json:"-"`
+    CreatedAt time.Time      `json:"created_at"`
+    UpdatedAt time.Time      `json:"updated_at"`
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+```
+
+```go
+package repository
+
+import (
+    "context"
+    "errors"
+    "gorm.io/gorm"
+    "myapp/models"
+)
+
+type UserRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+    return &UserRepository{db: db}
+}
+
+// Create
+func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+    return r.db.WithContext(ctx).Create(user).Error
+}
+
+// Read by ID
+func (r *UserRepository) GetByID(ctx context.Context, id uint) (*models.User, error) {
+    var user models.User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, nil
+    }
+    return &user, err
+}
+
+// Read by email
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+    var user models.User
+    err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, nil
+    }
+    return &user, err
+}
+
+// Update
+func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+    return r.db.WithContext(ctx).Save(user).Error
+}
+
+// Delete (soft delete)
+func (r *UserRepository) Delete(ctx context.Context, id uint) error {
+    return r.db.WithContext(ctx).Delete(&models.User{}, id).Error
+}
+
+// List with pagination
+func (r *UserRepository) List(ctx context.Context, page, limit int) ([]*models.User, int64, error) {
+    var users []*models.User
+    var total int64
+
+    offset := (page - 1) * limit
+    query := r.db.WithContext(ctx).Model(&models.User{})
+
+    if err := query.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+
+    err := query.Offset(offset).Limit(limit).Find(&users).Error
+    return users, total, err
+}
+```
+
+### การเชื่อมต่อ
+
+```go
+import (
+    "gorm.io/driver/postgres"
+    "gorm.io/gorm"
+)
+
+func ConnectPostgres(dsn string) (*gorm.DB, error) {
+    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    // Auto migrate
+    db.AutoMigrate(&models.User{})
+    return db, nil
+}
+```
+
+**DSN format:** `host=localhost user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Bangkok`
+
+---
+
+## 2. MySQL + GORM
+
+### การติดตั้ง
+
+```bash
+go get -u gorm.io/driver/mysql
+```
+
+### ตัวอย่าง Model และ CRUD (คล้ายกับ PostgreSQL)
+
+Model เหมือนกัน เพียงแต่ driver ต่างกัน
+
+```go
+import (
+    "gorm.io/driver/mysql"
+    "gorm.io/gorm"
+)
+
+func ConnectMySQL(dsn string) (*gorm.DB, error) {
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    db.AutoMigrate(&models.User{})
+    return db, nil
+}
+```
+
+**DSN format:** `user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local`
+
+### ความแตกต่างที่ควรระวัง
+
+- **Auto-increment**: MySQL ใช้ `AUTO_INCREMENT`, PostgreSQL ใช้ `SERIAL` หรือ `BIGSERIAL` – GORM จัดการให้อัตโนมัติ
+- **JSON type**: PostgreSQL รองรับ JSONB โดยตรง, MySQL ต้องใช้ `json` (เวอร์ชัน 5.7+) – GORM จะ map เป็น string หรือ struct ตาม tags
+- **Case sensitivity**: ชื่อตารางและคอลัมน์ใน MySQL บน Windows/Unix อาจ sensitive ขึ้นอยู่กับ configuration
+
+---
+
+## 3. MongoDB (NoSQL Document Database)
+
+MongoDB ไม่ใช้ GORM แต่ใช้ official driver `mongo-go-driver`
+
+### การติดตั้ง
+
+```bash
+go get go.mongodb.org/mongo-driver/mongo
+go get go.mongodb.org/mongo-driver/bson
+```
+
+### ตัวอย่าง Model และ CRUD
+
+```go
+package models
+
+import (
+    "time"
+    "go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type User struct {
+    ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+    Username  string             `bson:"username" json:"username"`
+    Email     string             `bson:"email" json:"email"`
+    Password  string             `bson:"password" json:"-"`
+    CreatedAt time.Time          `bson:"created_at" json:"created_at"`
+    UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
+}
+```
+
+```go
+package repository
+
+import (
+    "context"
+    "time"
+
+    "go.mongodb.org/mongo-driver/bson"
+    "go.mongodb.org/mongo-driver/bson/primitive"
+    "go.mongodb.org/mongo-driver/mongo"
+    "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+type UserRepository struct {
+    collection *mongo.Collection
+}
+
+func NewUserRepository(db *mongo.Database) *UserRepository {
+    return &UserRepository{
+        collection: db.Collection("users"),
+    }
+}
+
+// Create
+func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+    user.ID = primitive.NewObjectID()
+    user.CreatedAt = time.Now()
+    user.UpdatedAt = time.Now()
+    _, err := r.collection.InsertOne(ctx, user)
+    return err
+}
+
+// Read by ID
+func (r *UserRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return nil, err
+    }
+    var user models.User
+    err = r.collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&user)
+    if err == mongo.ErrNoDocuments {
+        return nil, nil
+    }
+    return &user, err
+}
+
+// Read by email
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+    var user models.User
+    err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+    if err == mongo.ErrNoDocuments {
+        return nil, nil
+    }
+    return &user, err
+}
+
+// Update
+func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+    user.UpdatedAt = time.Now()
+    filter := bson.M{"_id": user.ID}
+    update := bson.M{"$set": user}
+    _, err := r.collection.UpdateOne(ctx, filter, update)
+    return err
+}
+
+// Delete
+func (r *UserRepository) Delete(ctx context.Context, id string) error {
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return err
+    }
+    _, err = r.collection.DeleteOne(ctx, bson.M{"_id": objID})
+    return err
+}
+
+// List with pagination
+func (r *UserRepository) List(ctx context.Context, page, limit int) ([]*models.User, int64, error) {
+    var users []*models.User
+    skip := int64((page - 1) * limit)
+    limit64 := int64(limit)
+
+    opts := options.Find().SetSkip(skip).SetLimit(limit64)
+    cursor, err := r.collection.Find(ctx, bson.M{}, opts)
+    if err != nil {
+        return nil, 0, err
+    }
+    defer cursor.Close(ctx)
+
+    if err = cursor.All(ctx, &users); err != nil {
+        return nil, 0, err
+    }
+
+    total, err := r.collection.CountDocuments(ctx, bson.M{})
+    return users, total, err
+}
+```
+
+### การเชื่อมต่อ
+
+```go
+import (
+    "context"
+    "go.mongodb.org/mongo-driver/mongo"
+    "go.mongodb.org/mongo-driver/mongo/options"
+)
+
+func ConnectMongo(uri string) (*mongo.Database, error) {
+    client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
+    if err != nil {
+        return nil, err
+    }
+    // Ping to verify connection
+    if err = client.Ping(context.Background(), nil); err != nil {
+        return nil, err
+    }
+    return client.Database("myapp"), nil
+}
+```
+
+**URI format:** `mongodb://localhost:27017`
+
+---
+
+## 4. InfluxDB (Time‑Series Database)
+
+InfluxDB ใช้ client เฉพาะ `influxdb-client-go`
+
+### การติดตั้ง
+
+```bash
+go get github.com/influxdata/influxdb-client-go/v2
+```
+
+### ตัวอย่าง Model และ CRUD
+
+InfluxDB ไม่มีแนวคิดของ "document" เหมือน MongoDB แต่เป็น **measurement + tags + fields** เหมาะสำหรับข้อมูลอนุกรมเวลา (เช่น อุณหภูมิ, ความชื้น)
+
+```go
+package repository
+
+import (
+    "context"
+    "time"
+
+    influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+    "github.com/influxdata/influxdb-client-go/v2/api"
+)
+
+type SensorData struct {
+    DeviceID  string
+    Location  string
+    Temp      float64
+    Humidity  float64
+    Timestamp time.Time
+}
+
+type InfluxRepository struct {
+    client   influxdb2.Client
+    writeAPI api.WriteAPIBlocking
+    queryAPI api.QueryAPI
+    org      string
+    bucket   string
+}
+
+func NewInfluxRepository(url, token, org, bucket string) (*InfluxRepository, error) {
+    client := influxdb2.NewClient(url, token)
+    writeAPI := client.WriteAPIBlocking(org, bucket)
+    queryAPI := client.QueryAPI(org)
+
+    // Test connection
+    _, err := queryAPI.Query(context.Background(), `buckets()`)
+    if err != nil {
+        return nil, err
+    }
+
+    return &InfluxRepository{
+        client:   client,
+        writeAPI: writeAPI,
+        queryAPI: queryAPI,
+        org:      org,
+        bucket:   bucket,
+    }, nil
+}
+
+// Create (Write point)
+func (r *InfluxRepository) WriteSensorData(ctx context.Context, data SensorData) error {
+    p := influxdb2.NewPoint(
+        "sensor_data",
+        map[string]string{
+            "device_id": data.DeviceID,
+            "location":  data.Location,
+        },
+        map[string]interface{}{
+            "temperature": data.Temp,
+            "humidity":    data.Humidity,
+        },
+        data.Timestamp,
+    )
+    return r.writeAPI.WritePoint(ctx, p)
+}
+
+// Read (Query) – example: get average temperature per device for last hour
+func (r *InfluxRepository) GetAverageTemp(ctx context.Context, deviceID string, duration time.Duration) (float64, error) {
+    start := time.Now().Add(-duration)
+    flux := `from(bucket:"` + r.bucket + `")
+        |> range(start: ` + start.Format(time.RFC3339) + `)
+        |> filter(fn: (r) => r._measurement == "sensor_data")
+        |> filter(fn: (r) => r.device_id == "` + deviceID + `")
+        |> filter(fn: (r) => r._field == "temperature")
+        |> mean()`
+
+    result, err := r.queryAPI.Query(ctx, flux)
+    if err != nil {
+        return 0, err
+    }
+
+    var avg float64
+    for result.Next() {
+        record := result.Record()
+        if v, ok := record.Value().(float64); ok {
+            avg = v
+        }
+    }
+    return avg, result.Err()
+}
+
+// Delete (hard delete) – InfluxDB does not support single point deletion easily; usually you drop data by time range.
+func (r *InfluxRepository) DeleteByTimeRange(ctx context.Context, start, stop time.Time) error {
+    deleteAPI := r.client.DeleteAPI()
+    return deleteAPI.Delete(ctx, r.org, r.bucket, start, stop, "")
+}
+
+// Close
+func (r *InfluxRepository) Close() {
+    r.client.Close()
+}
+```
+
+### การเชื่อมต่อ
+
+```go
+func main() {
+    repo, err := NewInfluxRepository(
+        "http://localhost:8086",
+        "my-token",
+        "my-org",
+        "my-bucket",
+    )
+    if err != nil {
+        panic(err)
+    }
+    defer repo.Close()
+}
+```
+
+---
+
+## สรุปตารางเปรียบเทียบ
+
+| ฐานข้อมูล | ไดรเวอร์ / ORM | CRUD วิธีหลัก | เหมาะกับงาน |
+|----------|---------------|--------------|------------|
+| PostgreSQL | GORM + `gorm.io/driver/postgres` | `Create`, `First`, `Where`, `Save`, `Delete` | ระบบที่มีความสัมพันธ์ซับซ้อน ต้องการ ACID |
+| MySQL | GORM + `gorm.io/driver/mysql` | เช่นเดียวกับ PostgreSQL | Web application ขนาดเล็กถึงกลาง |
+| MongoDB | `mongo-go-driver` | `InsertOne`, `FindOne`, `UpdateOne`, `DeleteOne` | Document store, schema-less, scaling สูง |
+| InfluxDB | `influxdb-client-go` | `WritePoint`, `Query` (Flux) | Time‑series data, IoT, metrics |
+
+**ข้อแนะนำในการเลือกใช้:**
+- หากต้องการ ORM ที่ครบฟีเจอร์และใช้ SQL → **GORM + PostgreSQL/MySQL**
+- หากต้องการความยืดหยุ่นของ schema และ scale แนวนอน → **MongoDB**
+- หากต้องการเก็บข้อมูลอนุกรมเวลา (เช่น ค่าเซ็นเซอร์) → **InfluxDB**
+
+---
+
+## เทมเพลตและตัวอย่างโค้ดเพิ่มเติม
+
+### Repository Interface แบบรวมสำหรับทุกฐานข้อมูล (เพื่อให้ application layer ไม่ขึ้นกับ DB)
+
+```go
+type UserRepository interface {
+    Create(ctx context.Context, user *User) error
+    GetByID(ctx context.Context, id string) (*User, error)
+    GetByEmail(ctx context.Context, email string) (*User, error)
+    Update(ctx context.Context, user *User) error
+    Delete(ctx context.Context, id string) error
+    List(ctx context.Context, page, limit int) ([]*User, int64, error)
+}
+```
+
+จากนั้น implement สำหรับแต่ละฐานข้อมูลตามตัวอย่างที่ให้ไว้
+
+### การทดสอบด้วย Mock (ตัวอย่างสำหรับ GORM)
+
+```go
+// ใช้ gorm.io/driver/sqlite สำหรับทดสอบ
+func TestUserRepository(t *testing.T) {
+    db, _ := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+    db.AutoMigrate(&models.User{})
+    repo := NewUserRepository(db)
+
+    // ทดสอบ Create
+    user := &models.User{Username: "test", Email: "test@example.com", Password: "pass"}
+    err := repo.Create(context.Background(), user)
+    assert.NoError(t, err)
+    assert.NotZero(t, user.ID)
+}
+```
+---
+
+แผนภาพและตัวอย่างโค้ดนี้ครอบคลุมการทำ CRUD กับฐานข้อมูลหลัก 4 ประเภทที่ใช้บ่อยใน Go โดยเน้นการใช้ GORM สำหรับ SQL และไดรเวอร์เฉพาะสำหรับ NoSQL/Time‑series พร้อมแนวทางการแยก repository layer เพื่อให้แอปพลิเคชันสามารถเปลี่ยนฐานข้อมูลได้ง่ายในอนาคต
+
+
+
+
+
+
+
 
 
 ## 📚 บทสรุป
-
+ 
 คู่มือนี้ครอบคลุมเนื้อหาตั้งแต่พื้นฐานภาษา Go ไปจนถึงการออกแบบสถาปัตยกรรมระดับองค์กรและการผสานระบบภายนอกที่ใช้ในโลกแห่งความจริง โดยมุ่งเน้นให้ผู้อ่านสามารถนำไปประยุกต์ใช้ได้ทันที
 
 **หวังว่าคู่มือนี้จะเป็นประโยชน์สำหรับผู้ที่ต้องการเริ่มต้นและพัฒนาทักษะการเขียนโปรแกรมด้วย Go อย่างจริงจัง ขอให้สนุกกับการเขียนโปรแกรม!**
 
 ---
-
 **ผู้เขียน:** คงนคร จันทะคุณ  
 **อีเมล:** kongnakornjantakun@gmail.com  
 **วันที่:** เมษายน 2026
+** ประวัติของผู้เขียน:**
+จากข้อมูลที่คุณให้มา ฉันจะเรียบเรียงเป็น **ประวัติสำหรับหนังสือ** ในรูปแบบ narration ที่อ่านง่าย มีชีวิตชีวา เหมาะสำหรับการเล่าเรื่องราวเส้นทางอาชีพของบุคคล โดยคงรายละเอียดทางเทคนิคและความสำเร็จไว้อย่างครบถ้วน
+
+---
+
+## เส้นทางนักพัฒนาซอฟต์แวร์: จากโค้ดบรรทัดแรกสู่ผู้นำทางเทคนิค
+
+ทุกเส้นทางของนักพัฒนาซอฟต์แวร์มักเริ่มต้นจากความอยากรู้อยากเห็น และสำหรับผม เส้นทางนั้นเริ่มขึ้นเมื่อราว 15 ปีก่อน ด้วยพื้นฐานด้านวิทยาการคอมพิวเตอร์จากมหาวิทยาลัยราชภัฏพิบูลสงคราม ก่อนจะขยับขยายขอบเขตความรู้ไปสู่ศาสตร์อีกด้านอย่างนิติศาสตร์ จากมหาวิทยาลัยสุโขทัยธรรมาธิราช และประกาศนียบัตรทนายความจากสภาทนายความ ความรู้ด้านกฎหมายนี้เองที่กลายเป็นจุดแข็งสำคัญ ช่วยให้ผมมองเห็นภาพรวมของธุรกิจ เข้าใจข้อกำหนด และสื่อสารกับผู้ใช้งานได้อย่างมีประสิทธิภาพมากขึ้นในเวลาต่อมา
+
+### จุดเริ่มต้นของนักปฏิบัติ
+
+ปี 2549 ผมเริ่มต้นเส้นทางสายไอทีในฐานะ IT Support และ PHP Web Developer ที่บริษัท คอนโทรล ดาต้า (ประเทศไทย) จำกัด ช่วงเวลานั้นเป็นช่วงของการเรียนรู้พื้นฐานอย่างแท้จริง ทั้งการดูแล Data Center การให้บริการลูกค้า และการพัฒนาเว็บไซต์ด้วย PHP ซึ่งเป็นรากฐานสำคัญที่ทำให้เข้าใจทั้งด้านเทคนิคและความต้องการของผู้ใช้ไปพร้อมกัน
+
+### ก้าวสู่โลกของเนื้อหาคุณภาพ
+
+ปี 2552 ผมได้ร่วมงานกับบริษัท สยามสปอร์ต ซินดิเคท จำกัด (มหาชน) ในตำแหน่ง Senior Developer นี่คือช่วงเวลาที่ได้พัฒนาทักษะการเขียน PHP และจัดการฐานข้อมูล MySQL, MSSQL ในการขับเคลื่อนเว็บไซต์ข่าวกีฬาชื่อดังอย่าง siamsport.co.th ซึ่งต้องรองรับผู้เข้าชมจำนวนมากและต้องการประสิทธิภาพสูง การดูแลระบบ การทดสอบซอฟต์แวร์ และการฝึกอบรมผู้ใช้ในช่วงนี้ ทำให้เข้าใจความสำคัญของซอฟต์แวร์ที่เสถียรและใช้งานง่าย
+
+### ขยายขอบเขตกับองค์กรใหญ่
+
+ปี 2559 ถือเป็นอีกหนึ่งจุดเปลี่ยนสำคัญ เมื่อผมเข้าร่วมงานกับบริษัท ทรู คอร์ปอเรชั่น จำกัด (มหาชน) ในตำแหน่ง Senior Full Stack Developer ที่นี่ผมได้ขยายขีดความสามารถจากการใช้ PHP ไปสู่ Node.js, TypeScript และการจัดการฐานข้อมูลที่หลากหลาย ทั้ง MySQL, MSSQL รวมถึงการใช้ ORM อย่าง TypeORM อย่างมืออาชีพ
+
+ผลงานสำคัญในช่วงนี้คือการมีส่วนร่วมพัฒนาและปรับปรุงระบบการศึกษาระดับประเทศอย่าง connexted.org และ trueplookpanya.com ซึ่งเป็นแพลตฟอร์มที่เข้าถึงผู้ใช้จำนวนมาก การได้ร่วมกับทีมออกแบบกระบวนการทางธุรกิจ วางแผนพัฒนา ทำ UAT และให้การสนับสนุนผู้ใช้ เปิดมุมมองว่าการพัฒนาซอฟต์แวร์ไม่ได้จบที่การเขียนโค้ด แต่ต้องทำให้ผู้ใช้ใช้งานได้จริงและเกิดประโยชน์สูงสุด
+
+### พลิกโฉมด้วยเทคโนโลยีใหม่
+
+ปัจจุบัน ผมดำรงตำแหน่ง Technical Lead / Full Stack Software Engineer ที่บริษัท ชีทีชี โกลบอล (ประเทศไทย) จำกัด บทบาทนี้ท้าทายกว่าเดิมมาก เพราะนอกจากจะต้องพัฒนาระบบด้วย Node.js, TypeScript, Python แล้ว ยังต้องวางสถาปัตยกรรมซอฟต์แวร์ กำหนดมาตรฐานการเขียนโค้ด และดูแลทีมพัฒนา ทั้ง Developer, Application Support และ DevOps
+
+สิ่งที่ทำให้ช่วงเวลานี้พิเศษคือการได้นำเทคโนโลยีสมัยใหม่มาประยุกต์ใช้อย่างจริงจัง:
+- **ระบบอัตโนมัติ** ด้วย n8n และ UiPath RPA ช่วยลดงานซ้ำซ้อนและเพิ่มประสิทธิภาพการทำงาน
+- **Generative AI** ผสาน OpenAI API เข้ากับแอปพลิเคชันเพื่อสร้างฟีเจอร์อัจฉริยะ
+- **CI/CD Pipeline** ตั้งค่า Jenkins, GitHub Actions พร้อม Quality Gates (SonarQube, ESLint, Test Coverage) เพื่อให้การ deploy มั่นใจและปลอดภัย
+- **ระบบ Monitoring** ด้วย Grafana และ ELK Stack เพื่อให้เห็นภาพรวมของระบบแบบ Real-time
+
+### ความสำเร็จที่ภูมิใจ
+
+ตลอดเส้นทางที่ผ่านมา มีผลงานหลายอย่างที่สร้างความภูมิใจ:
+- **PoC ระบบซ่อมรถออนไลน์** (carsolpf.com/repair) ที่นำ IoT มาติดตามอุณหภูมิ น้ำรั่ว และควัน พร้อม Dashboard แจ้งเตือนแบบ Real-time
+- **การเป็นวิทยากรและที่ปรึกษา** ถ่ายทอดความรู้ด้าน DevOps, การเขียนโค้ดคุณภาพ, Design Thinking และ Business Model Canvas ให้ทีมพัฒนาทั้งภายในและภายนอกองค์กร
+- **การลดข้อผิดพลาดในการ deploy** จากการนำ Branch Protection และ CI/CD มาบังคับใช้ เพิ่มความมั่นใจให้ทีม
+
+### จุดแข็งที่สร้างความแตกต่าง
+
+นอกเหนือจากทักษะทางเทคนิคที่หลากหลาย จุดแข็งที่ทำให้การทำงานประสบความสำเร็จคือ:
+- **การสื่อสารที่มีประสิทธิภาพ** สามารถอธิบายเรื่องเทคนิคให้คนที่ไม่ใช่สายเทคนิคเข้าใจ และทำงานร่วมกับทีมธุรกิจได้อย่างราบรื่น
+- **การแก้ปัญหาอย่างเป็นระบบ** วิเคราะห์หาสาเหตุที่แท้จริง และเสนอแนวทางที่เหมาะสม ไม่ใช่แค่แก้ปัญหาที่ปลายเหตุ
+- **การเรียนรู้เร็วและปรับตัวเก่ง** ติดตามเทคโนโลยีใหม่อย่างสม่ำเสมอ และพร้อมนำมาประยุกต์ใช้เมื่อเห็นว่าจะเกิดประโยชน์
+- **ภาวะผู้นำและการทำงานเป็นทีม** ให้คำปรึกษา สนับสนุนสมาชิก และสร้างบรรยากาศที่ทุกคนเติบโตไปด้วยกัน
+
+### สายธารแห่งการเรียนรู้ที่ไม่สิ้นสุด
+
+ความมุ่งมั่นในการพัฒนาตนเองสะท้อนผ่านการเรียนคอร์สออนไลน์มากมาย ตั้งแต่ Data Science, Machine Learning, Docker & Kubernetes ไปจนถึง DevOps และการพัฒนา Full Stack ด้วย Angular & Nest JS รวมถึงการอบรม Business Model Canvas, Design Thinking, Agile & Scrum จาก True Digital Academy และ General Assembly
+
+เส้นทางกว่าสิบห้าปีที่ผ่านมา สอนให้รู้ว่านักพัฒนาซอฟต์แวร์ที่ดีไม่ได้มีแค่ทักษะการเขียนโค้ด แต่ต้องเข้าใจธุรกิจ มีวิสัยทัศน์ในการออกแบบระบบ มีทักษะการนำทีม และที่สำคัญคือต้องมีใจที่อยากเรียนรู้และแบ่งปันเสมอ ผมเชื่อว่าทุกโครงการ ทุกบรรทัดโค้ด ที่เขียนขึ้น ล้วนเป็นส่วนหนึ่งในการขับเคลื่อนองค์กรและสร้างประสบการณ์ที่ดีให้ผู้ใช้ และนั่นคือความภาคภูมิใจของนักพัฒนาทุกคน
+
+---
+
+ Ref: http://cmoniot.trueddns.com:52160
+ 
+ 
+
