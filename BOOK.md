@@ -1,9 +1,808 @@
-# คู่มือเรียนภาษา Go (Go Lessons)
+# คู่มือภาษา Golang แบบเรียบง่าย โดย  คงนคร จันทะคุณ  
+---
+ 
+```mermaid
+graph TB
+    subgraph CompileTime [คอมไพล์]
+        A[source.go] --> B[Go Compiler<br/>gc + linker]
+        B --> C[Static Binary<br/>executable]
+    end
 
-คู่มือการเรียนรู้ภาษา Go อย่างครอบคลุม ตั้งแต่พื้นฐานจนถึงระดับสูง
+    subgraph Runtime [รันไทม์]
+        C --> D[Go Runtime]
+        D --> E[Goroutine Scheduler<br/>M:P:G Model]
+        D --> F[Garbage Collector<br/>concurrent tri-color]
+        D --> G[Memory Allocator<br/>mcache / mspan / mheap]
+    end
+
+    subgraph SchedulerDetail [Goroutine Scheduler]
+        E --> H[G - Goroutine<br/>lightweight thread]
+        E --> I[P - Processor<br/>logical CPU]
+        E --> J[M - Machine<br/>OS thread]
+        H -.-> I
+        I -.-> J
+        J --> K[CPU Cores]
+    end
+
+    subgraph Communication [การสื่อสาร]
+        L[Goroutine A] -->|ch <- data| M[Channel<br/>chan T]
+        M -->|data <- ch| N[Goroutine B]
+        O[select] --> M
+        P[sync.Mutex] --> L
+        P --> N
+    end
+
+    subgraph GC [Garbage Collector]
+        F --> Q[Mark phase<br/>concurrent]
+        Q --> R[Sweep phase<br/>concurrent]
+        R --> S[STW only short<br/> pause]
+    end
+
+    Runtime --> Communication
+    Runtime --> GC
+```
+
+### หรือหากต้องการ ASCII Art แบบขยายเพิ่มเติม
+
+```
++-----------------------+        +------------------------+
+|      source.go        |        |   Go Runtime (exec)    |
++----------+------------+        +-----------+------------+
+           |                                 |
+           v                                 v
++----------+------------+        +-----------+------------+
+|   Go Compiler (gc)    |        |  Goroutine Scheduler   |
+|   + static linking    |        |  (M:P:G Model)         |
++----------+------------+        +-----------+------------+
+           |                                 |
+           v                                 v
++----------+------------+        +-----------+------------+
+|   Static Binary       |------->|   M (OS Threads)       |
+|   (single executable) |        |   P (Logical Processors)|
++-----------------------+        |   G (Goroutines)       |
+                                 +------------------------+
+                                          |
+                                          v
++---------------------------------------------------------+
+|               Concurrency & Sync                         |
+|  +------------+    +------------+    +------------+     |
+|  | Goroutine  |--->|  Channel   |--->| Goroutine  |     |
+|  +------------+    |  (buffered/|    +------------+     |
+|                    |   unbuff)  |                       |
+|                    +------------+                       |
+|  +---------------------------------------------------+  |
+|  | select, sync.Mutex, WaitGroup                     |  |
+|  +---------------------------------------------------+  |
++---------------------------------------------------------+
+                                          |
+                                          v
++---------------------------------------------------------+
+|            Garbage Collector (concurrent)               |
+|  Tri-color marking + concurrent sweep, short STW        |
++---------------------------------------------------------+
+```
 
 ---
 
+ 
+ 
+## แผนภาพรวมหลักการทำงานของ Go (First-class functions, defer, panic/recover)
+
+```mermaid
+graph 
+    subgraph FCF[First-Class Functions]
+        direction TB
+        A1["func add(x int) int { return x+1 }"]
+        A2["var fn func(int) int = add"]
+        A3["result := fn(5)  // 6"]
+        A4["higher-order: รับฟังก์ชันเป็นพารามิเตอร์"]
+        A5["higher-order: คืนค่าฟังก์ชัน"]
+        A6["apply := func(f func(int) int, v int) int { return f(v) }"]
+        A7["makeMult := func(f int) func(int) int { return func(x int) int { return x*f } }"]
+        
+        A1 --> A2 --> A3
+        A4 --> A6
+        A5 --> A7
+    end
+
+    subgraph DEF[Defer Mechanism]
+        direction TB
+        B1["defer fmt.Println('first')"]
+        B2["defer fmt.Println('second')"]
+        B3["stack: second (top), first"]
+        B4["เมื่อฟังก์ชันจบ → execute LIFO"]
+        B5["second → first"]
+        B6["การประเมินค่าพารามิเตอร์ทันทีที่เจอ defer"]
+        B7["i := 0; defer fmt.Println(i)  // 0 ไม่ใช่ 1"]
+        
+        B1 --> B3
+        B2 --> B3
+        B3 --> B4 --> B5
+        B6 --> B7
+    end
+
+    subgraph PAN[Panic & Recover]
+        direction TB
+        C1["panic('error')"]
+        C2["เริ่ม stack unwinding"]
+        C3["execute defer ทั้งหมดในฟังก์ชันปัจจุบัน (LIFO)"]
+        C4{ใน defer มี recover?}
+        C5["recover() จับ panic value"]
+        C6["หยุด unwinding ที่ฟังก์ชันนี้"]
+        C7["ฟังก์ชัน return ปกติ"]
+        C8["ส่ง panic ขึ้น caller"]
+        C9{caller == main?}
+        C10["โปรแกรมหยุด แสดง stack trace"]
+        
+        C1 --> C2 --> C3 --> C4
+        C4 -->|มี| C5 --> C6 --> C7
+        C4 -->|ไม่มี| C8 --> C9
+        C9 -->|ใช่| C10
+        C9 -->|ไม่ใช่| C2
+    end
+
+    subgraph UNW[Stack Unwinding Flow]
+        direction LR
+        D1["main()"]
+        D2["level1()"]
+        D3["level2()"]
+        D4["level3()"]
+        D5["panic ที่ level3"]
+        
+        D1 --> D2 --> D3 --> D4
+        D5 -.->|unwind| D3
+        D3 -.->|unwind| D2
+        D2 -.->|unwind| D1
+    end
+
+    FCF --> DEF
+    DEF --> PAN
+    PAN --> UNW
+
+    style FCF fill:#e1f5fe
+    style DEF fill:#fff3e0
+    style PAN fill:#ffebee
+    style UNW fill:#e8f5e9
+```
+---
+## คำอธิบายแต่ละส่วน
+
+### 1. First-Class Functions (ซ้ายบน)
+- **ฟังก์ชันเป็น first-class citizen** สามารถกำหนดให้ตัวแปร (`fn := add`) ส่งเป็น argument และคืนค่าเป็นผลลัพธ์
+- **Higher-order functions** รับฟังก์ชันอื่นเป็นพารามิเตอร์ หรือคืนค่าฟังก์ชัน (closure)
+- ช่วยให้เขียนโค้ดที่ยืดหยุ่น (callback, decorator pattern)
+
+### 2. Defer Mechanism (ขวาบน)
+- `defer` จะเลื่อนการทำงานของฟังก์ชันจนกว่าฟังก์ชันรอบนอกจะจบ
+- ลำดับการเรียกเป็น **LIFO** (Last In, First Out) – ประกาศหลังถูกเรียกก่อน
+- **การประเมินค่าพารามิเตอร์** เกิดขึ้นทันทีที่เจอ `defer` ไม่ใช่ตอนเรียกจริง
+- เหมาะสำหรับ cleanup (ปิดไฟล์, unlock mutex)
+
+### 3. Panic & Recover (กลาง)
+- `panic` หยุดการทำงานปกติและเริ่ม **stack unwinding**
+- ทุก `defer` ในฟังก์ชันที่ถูก unwind จะถูก执行 (execute) ตามลำดับ LIFO
+- ถ้าใน `defer` มี `recover()` panic จะถูกจับ และ **unwind หยุดทันที** ฟังก์ชันจะ return ปกติ
+- หากไม่มี `recover` panic จะถูกส่งขึ้นไปยัง caller จนถึง `main` แล้วโปรแกรมหยุด
+
+### 4. Stack Unwinding Flow (ล่าง)
+- แสดงลำดับการเรียกฟังก์ชัน (main → level1 → level2 → level3)
+- เมื่อเกิด panic ที่ level3 จะ unwind กลับขึ้นไปทีละระดับ (level3 → level2 → level1 → main)
+- แต่ละระดับ执行 deferred functions ก่อนส่ง panic ขึ้นไป
+
+---
+
+## ตัวอย่างโค้ดประกอบแผนภาพ
+
+```go
+// First-class functions
+var square func(int) int = func(n int) int { return n * n }
+fmt.Println(square(5)) // 25
+
+// Defer + Panic + Recover
+func safeDivision(a, b int) {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("recovered:", r)
+        }
+    }()
+    if b == 0 {
+        panic("division by zero")
+    }
+    fmt.Println(a / b)
+}
+
+func main() {
+    safeDivision(10, 2) // 5
+    safeDivision(10, 0) // recovered: division by zero → โปรแกรมไม่ crash
+}
+```
+---
+
+## แผนภาพรวมหลักการทำงานของ Go (เพิ่ม Closure และ Goroutine)
+
+```mermaid
+graph TB
+    subgraph FCF[First-Class Functions]
+        direction TB
+        A1["func add(x int) int { return x+1 }"]
+        A2["var fn func(int) int = add"]
+        A3["result := fn(5)  // 6"]
+        A4["higher-order: รับฟังก์ชันเป็นพารามิเตอร์"]
+        A5["higher-order: คืนค่าฟังก์ชัน"]
+        A6["apply := func(f func(int) int, v int) int { return f(v) }"]
+        A7["makeMult := func(f int) func(int) int { return func(x int) int { return x*f } }"]
+        
+        A1 --> A2 --> A3
+        A4 --> A6
+        A5 --> A7
+    end
+
+    subgraph CLOS[Closure - ฟังก์ชันที่จับตัวแปรภายนอก]
+        direction TB
+        CL1["outer := func(msg string) func() {"] 
+        CL2["    return func() { fmt.Println(msg) }"]
+        CL3["}"]
+        CL4["hello := outer('Hello')"]
+        CL5["hello()  // Hello"]
+        CL6["ตัวแปร msg ถูก capture ไว้ใน closure"]
+        CL7["แม้ outer จบไปแล้ว ตัวแปร msg ยังคงอยู่"]
+        
+        CL1 --> CL2 --> CL3 --> CL4 --> CL5
+        CL6 --> CL7
+    end
+
+    subgraph DEF[Defer Mechanism]
+        direction TB
+        B1["defer fmt.Println('first')"]
+        B2["defer fmt.Println('second')"]
+        B3["stack: second (top), first"]
+        B4["เมื่อฟังก์ชันจบ → execute LIFO"]
+        B5["second → first"]
+        B6["การประเมินค่าพารามิเตอร์ทันทีที่เจอ defer"]
+        B7["i := 0; defer fmt.Println(i)  // 0 ไม่ใช่ 1"]
+        
+        B1 --> B3
+        B2 --> B3
+        B3 --> B4 --> B5
+        B6 --> B7
+    end
+
+    subgraph GOR[Goroutine - การทำงาน]
+        direction TB
+        G1["go func() {"] 
+        G2["    fmt.Println('Hello from goroutine')"]
+        G3["}()"]
+        G4["goroutine ทำงานแยกจาก main"]
+        G5["ใช้ sync.WaitGroup หรือ channel เพื่อรอ"]
+        G6["defer ภายใน goroutine ทำงานเมื่อ goroutine จบ"]
+        G7["panic ใน goroutine: ถ้าไม่ recover จะทำให้โปรแกรมหยุด"]
+        
+        G1 --> G2 --> G3
+        G4 --> G5
+        G6 --> G7
+    end
+
+    subgraph PAN[Panic & Recover]
+        direction TB
+        C1["panic('error')"]
+        C2["เริ่ม stack unwinding"]
+        C3["execute defer ทั้งหมดในฟังก์ชันปัจจุบัน (LIFO)"]
+        C4{ใน defer มี recover?}
+        C5["recover() จับ panic value"]
+        C6["หยุด unwinding ที่ฟังก์ชันนี้"]
+        C7["ฟังก์ชัน return ปกติ"]
+        C8["ส่ง panic ขึ้น caller"]
+        C9{caller == main?}
+        C10["โปรแกรมหยุด แสดง stack trace"]
+        
+        C1 --> C2 --> C3 --> C4
+        C4 -->|มี| C5 --> C6 --> C7
+        C4 -->|ไม่มี| C8 --> C9
+        C9 -->|ใช่| C10
+        C9 -->|ไม่ใช่| C2
+    end
+
+    subgraph UNW[Stack Unwinding Flow]
+        direction LR
+        D1["main()"]
+        D2["level1()"]
+        D3["level2()"]
+        D4["level3()"]
+        D5["panic ที่ level3"]
+        
+        D1 --> D2 --> D3 --> D4
+        D5 -.->|unwind| D3
+        D3 -.->|unwind| D2
+        D2 -.->|unwind| D1
+    end
+
+    %% ความสัมพันธ์ระหว่างส่วนต่างๆ
+    FCF --> CLOS
+    CLOS --> DEF
+    DEF --> GOR
+    GOR --> PAN
+    PAN --> UNW
+    
+    GOR -.->|สามารถใช้ defer/panic/recover ภายใน| PAN
+    CLOS -.->|มักใช้กับ goroutine และ defer| GOR
+
+    style FCF fill:#e1f5fe
+    style CLOS fill:#e1f5fe
+    style DEF fill:#fff3e0
+    style GOR fill:#f3e5f5
+    style PAN fill:#ffebee
+    style UNW fill:#e8f5e9
+```
+
+---
+
+## คำอธิบายส่วนที่เพิ่ม
+
+### 1. Closure (ฟังก์ชันที่จับตัวแปรภายนอก)
+- **Closure** คือฟังก์ชันที่สามารถเข้าถึงตัวแปรที่ประกาศอยู่นอกฟังก์ชันตัวเอง แม้ว่าฟังก์ชันรอบนอกจะจบการทำงานไปแล้ว
+- ตัวแปรเหล่านั้นจะถูก **capture** และมีอายุตลอดที่ closure ยังถูกอ้างอิงอยู่
+- ใช้บ่อยในการสร้าง factory function, callback ที่มีสถานะ, และใช้ร่วมกับ goroutine เพื่อส่ง context
+
+**ตัวอย่างโค้ด:**
+```go
+func counter() func() int {
+    count := 0
+    return func() int {
+        count++
+        return count
+    }
+}
+
+c := counter()
+fmt.Println(c()) // 1
+fmt.Println(c()) // 2
+// count ยังคงอยู่แม้ counter() จบไปแล้ว
+```
+
+### 2. Goroutine (การทำงาน)
+- **Goroutine** คือ lightweight thread ที่ทำงานกัน ใช้ `go` ตามด้วยฟังก์ชัน
+- Goroutine มี stack ขนาดเล็ก (เริ่มต้น ~2KB) และ scheduler จัดการโดย Go runtime
+- ภายใน goroutine สามารถใช้ `defer`, `panic`, `recover` ได้เหมือนฟังก์ชันปกติ
+- **ข้อควรระวัง:** ถ้าเกิด panic ใน goroutine และไม่มี recover โปรแกรมจะ crash ทั้งหมด (ไม่ใช่แค่ goroutine นั้น)
+
+**ตัวอย่างโค้ด:**
+```go
+func safeGoroutine() {
+    go func() {
+        defer func() {
+            if r := recover(); r != nil {
+                fmt.Println("recovered in goroutine:", r)
+            }
+        }()
+        panic("something wrong")
+    }()
+    time.Sleep(time.Second) // ให้ goroutine มีเวลาทำงาน
+}
+```
+
+### 3. ความสัมพันธ์ระหว่าง Closure, Goroutine, Defer, Panic
+- **Closure + Goroutine:** ใช้ closure เพื่อ capture ตัวแปรแล้วส่งเข้า goroutine ช่วยให้เข้าถึง context ได้โดยไม่ต้องส่งผ่าน channel
+- **Goroutine + Defer:** ใช้ defer ภายใน goroutine เพื่อทำ cleanup (ปิด channel, unlock) เมื่อ goroutine จบ
+- **Goroutine + Recover:** ต้องทำ recover **ภายใน** goroutine เท่านั้น ถ้าทำใน main goroutine จะจับ panic ของ goroutine อื่นไม่ได้
+
+**ตัวอย่างการทำงานร่วมกัน:**
+```go
+func worker(id int, jobs <-chan int, wg *sync.WaitGroup) {
+    defer wg.Done() // ลดเมื่อ goroutine จบ
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Printf("worker %d recovered: %v\n", id, r)
+        }
+    }()
+    
+    for job := range jobs {
+        if job == 0 {
+            panic("invalid job")
+        }
+        fmt.Printf("worker %d processing %d\n", id, job)
+    }
+}
+```
+
+## Domain-Driven Design with Go
+----
+```mermaid
+graph TD
+    subgraph Presentation
+        A[HTTP Handlers<br/>gin/echo]
+        B[gRPC Services]
+        C[CLI Commands]
+    end
+
+    subgraph Application
+        D[Application Services<br/>/application]
+        E[DTOs / Commands / Queries]
+        F[Use Case Orchestration]
+    end
+
+    subgraph Domain
+        G[Entities<br/>struct with behavior]
+        H[Value Objects<br/>immutable structs]
+        I[Aggregates<br/>root entity + invariants]
+        J[Domain Services<br/>stateless operations]
+        K[Domain Events<br/>event recording/dispatch]
+        L[Repository Interfaces<br/>domain layer contracts]
+    end
+
+    subgraph Infrastructure
+        M[Repository Implementations<br/>SQL, MongoDB, etc.]
+        N[Event Bus<br/>pub/sub, Kafka, etc.]
+        O[External Services<br/>HTTP clients, SDKs]
+        P[Persistence<br/>GORM, sqlx, mongodb driver]
+    end
+
+    A --> D
+    B --> D
+    C --> D
+    D --> F
+    F --> G
+    F --> J
+    G --> I
+    H --> I
+    I --> L
+    I -->|fires| K
+    K --> N
+    L -.->|implements| M
+    M --> P
+    D --> E
+    D -->|uses| O
+```
+
+---
+
+### คำอธิบายโครงสร้าง DDD ใน Go
+
+#### 1. **Presentation Layer** (ชั้นนำเสนอ)
+- **บทบาท**: จัดการการรับส่งข้อมูลจากผู้ใช้ (HTTP, gRPC, CLI) และแปลงเป็นคำสั่งหรือแบบสอบถามที่ Application Layer เข้าใจ
+- **ใน Go**: มักใช้ไลบรารี เช่น `net/http`, `gin`, `echo`, `grpc-go`  
+- **หลักการ**: ไม่มีตรรกะทางธุรกิจ เน้นการแปลง request → DTO และเรียก Application Service
+
+#### 2. **Application Layer** (ชั้นแอปพลิเคชัน)
+- **บทบาท**: ประสานงานระหว่าง Presentation กับ Domain ควบคุม workflow ของ Use Case  
+- **ใน Go**: แพ็กเกจ `application` หรือ `usecase` ประกอบด้วย **Application Services**  
+  - รับ DTO/Command  
+  - เรียก Domain Services / Aggregates  
+  - จัดการ Unit of Work (Transaction)  
+  - ส่ง Domain Events ผ่าน Event Bus  
+- **ตัวอย่าง**:  
+  ```go
+  type OrderService struct {
+      repo      domain.OrderRepository
+      payment   domain.PaymentService
+      eventBus  domain.EventBus
+  }
+
+  func (s *OrderService) PlaceOrder(ctx context.Context, cmd PlaceOrderCommand) error {
+      // load aggregate
+      order, _ := s.repo.FindByID(cmd.OrderID)
+      // domain logic
+      order.Place(cmd.Items)
+      // persist
+      s.repo.Save(order)
+      // publish events
+      s.eventBus.Publish(order.Events()...)
+      return nil
+  }
+  ```
+
+#### 3. **Domain Layer** (ชั้นโดเมน) — **หัวใจของ DDD**
+- **Entities**: struct ที่มี identity และพฤติกรรม เช่น  
+  ```go
+  type Order struct {
+      id      OrderID
+      status  OrderStatus
+      items   []OrderItem
+      // behavior
+      func (o *Order) Cancel() { ... }
+      func (o *Order) AddItem(item OrderItem) error { ... }
+  }
+  ```
+- **Value Objects**: struct ไม่มี identity เปรียบเทียบด้วยค่า เช่น `Address`, `Money`  
+- **Aggregates**: กลุ่มของ entities/value objects ที่มี root entity (aggregate root) เป็นตัวควบคุมความสอดคล้อง  
+- **Domain Services**: มีพฤติกรรมที่ไม่ผูกกับ aggregate หรือ entity ใดโดยเฉพาะ  
+- **Domain Events**: ใช้ record การเปลี่ยนแปลงที่สำคัญ  
+- **Repository Interfaces**: กำหนด interface สำหรับการเก็บและค้นหา aggregate root อยู่ใน domain layer
+
+#### 4. **Infrastructure Layer** (ชั้นโครงสร้างพื้นฐาน)
+- **Repository Implementations**: ใช้ GORM, sqlx, MongoDB driver เพื่อ implement interface ที่ domain กำหนด  
+- **Event Bus**: ใช้ระบบเช่น Kafka, RabbitMQ หรือ in‑memory bus  
+- **External Services**: HTTP clients, SDKs ต่างๆ  
+- **หลักการ**: Infrastructure ต้องขึ้นกับ domain (Dependency Inversion) ไม่ใช่ในทางกลับกัน
+
+---
+
+### การนำ DDD ไปใช้กับ Go: ข้อแนะนำเฉพาะภาษา
+
+1. **จัดโครงสร้างโปรเจกต์ตามโมดูล**  
+   ```
+   /cmd
+     /myapp
+       main.go
+   /internal
+     /domain
+       /order
+         order.go (entity, value objects)
+         repository.go (interface)
+         events.go
+     /application
+       order_service.go
+     /infrastructure
+       /persistence
+         order_repo_mysql.go
+       /bus
+         event_bus_kafka.go
+     /presentation
+       /http
+         order_handler.go
+   /pkg
+     /shared
+       errors.go, uuid.go, etc.
+   ```
+
+2. **ใช้ interface เพื่อ Dependency Inversion**  
+   - Application layer รับ domain interface  
+   - Infrastructure ถูก inject ผ่าน constructor  
+   - ใช้ `wire` (Google Wire) หรือ manual DI สำหรับการประกอบ dependencies
+
+3. **จัดการ Transaction**  
+   - นิยมใช้ `Unit of Work` pattern: application service เริ่ม transaction ผ่าน interface เช่น  
+     ```go
+     type UnitOfWork interface {
+         Begin(ctx context.Context) error
+         Commit() error
+         Rollback() error
+         OrderRepository() OrderRepository
+     }
+     ```
+   - ใน Go มักใช้ `context` เพื่อส่ง transaction object (เช่น `*sql.Tx`) ไปยัง repository methods
+
+4. **Domain Events**  
+   - ใช้ channel หรือ event bus ภายใน memory ก่อน แล้วค่อยเพิ่ม infrastructure  
+   - ตัวอย่าง:
+     ```go
+     type DomainEvent interface {
+         OccurredAt() time.Time
+     }
+
+     type OrderPlaced struct { ... }
+
+     type EventBus interface {
+         Publish(event DomainEvent) error
+         Subscribe(handler func(DomainEvent)) error
+     }
+     ```
+
+5. **Value Objects กับ immutability**  
+   - ใช้ struct พร้อม private fields และ constructor functions  
+   - เปรียบเทียบด้วย `==` หรือ implement `Equals` method
+
+---
+
+### สรุปประโยชน์ของการใช้ DDD ร่วมกับ Go
+
+- **ความชัดเจนของโดเมน**: โค้ดสะท้อนภาษาธุรกิจ (Ubiquitous Language)  
+- **การแยกหน้าที่**: แต่ละ layer มีความรับผิดชอบชัดเจน ลด coupling  
+- **ทดสอบง่าย**: domain layer ไม่ขึ้นกับ infrastructure สามารถ unit test ด้วย mock  
+- **ปรับเปลี่ยน infrastructure ได้**: เปลี่ยนฐานข้อมูลหรือ event bus โดยไม่กระทบโดเมน  
+- **Go เหมาะสม**: struct, interface, package system ช่วยให้จัดระเบียบตาม bounded context ได้ดี และการทำงาน concurrency ผ่าน goroutine ช่วยให้จัดการ domain events ได้มีประสิทธิภาพ
+
+ 
+
+---
+
+### 1. Aggregate (กลุ่มวัตถุที่มีความสอดคล้อง)
+
+**Aggregate** คือกลุ่มของวัตถุ (Entities + Value Objects) ที่ถูกยึดเข้าด้วยกันโดย **Aggregate Root** (รูท) ซึ่งเป็นตัวเดียวที่อนุญาตให้เข้าถึงหรือแก้ไขวัตถุอื่นภายในกลุ่มจากภายนอก การออกแบบ Aggregate ช่วยรักษาความถูกต้องของข้อมูล (invariants) และลดความซับซ้อนในการจัดการธุรกรรม
+
+**หลักการสำคัญ:**
+- **Aggregate Root** มี identity และเป็นจุดเดียวที่ภายนอกเข้าถึงได้
+- การเปลี่ยนแปลงใด ๆ ภายใน Aggregate ต้องทำผ่าน Root เท่านั้น
+- ภายใน Aggregate เดียวกันต้องมีความสอดคล้องกันในทันที (consistency boundary)
+- ระหว่าง Aggregates ควรใช้ **eventual consistency** ผ่าน Domain Events
+
+**ตัวอย่างใน Go:**
+
+```go
+// aggregate root: Order
+type Order struct {
+    id      OrderID
+    status  OrderStatus
+    items   []OrderItem   // value object
+    total   Money
+}
+
+func (o *Order) AddItem(product Product, quantity int) error {
+    if o.status != Draft {
+        return errors.New("cannot add item to non-draft order")
+    }
+    // invariant: total must not exceed limit
+    newTotal := o.total.Add(product.Price.Mul(quantity))
+    if newTotal.GreaterThan(MaxOrderTotal) {
+        return errors.New("order total exceeds limit")
+    }
+    o.items = append(o.items, NewOrderItem(product, quantity))
+    o.total = newTotal
+    o.addDomainEvent(OrderItemAdded{OrderID: o.id, ProductID: product.ID})
+    return nil
+}
+
+// repository interface รับเฉพาะ aggregate root
+type OrderRepository interface {
+    Save(order *Order) error
+    FindByID(id OrderID) (*Order, error)
+}
+```
+
+---
+
+### 2. Event Storming (เทคนิคค้นพบโดเมน)
+
+**Event Storming** เป็นเวิร์กช็อปแบบมีส่วนร่วมที่ช่วยให้ทีม (นักพัฒนา, นักธุรกิจ, ผู้เชี่ยวชาญโดเมน) ระบุและเข้าใจโดเมนผ่านเหตุการณ์สำคัญที่เกิดขึ้นในระบบ โดยใช้โน้ตสีต่าง ๆ บนกระดาน
+
+**สัญลักษณ์ทั่วไป:**
+- **สีส้ม** – Domain Events (สิ่งที่เกิดขึ้นแล้ว) เช่น `OrderPlaced`, `PaymentReceived`
+- **สีน้ำเงิน** – Commands (คำสั่งที่ทำให้เกิดเหตุการณ์) เช่น `PlaceOrder`, `RefundPayment`
+- **สีเหลือง** – Aggregates (กลุ่มข้อมูลที่ถูกคำสั่งเรียก) เช่น `Order`, `Customer`
+- **สีม่วง** – External Systems / Policies (ระบบภายนอกหรือกฎ)
+- **สีเขียว** – Read Models / Views (ข้อมูลที่แสดงผล)
+
+**ขั้นตอนคร่าว ๆ:**
+1. ระบุ Domain Events (อดีต) โดยเรียงตามลำดับเวลา
+2. ระบุ Commands ที่ทำให้เกิดเหตุการณ์นั้น
+3. จับคู่ Command กับ Aggregate (ผู้รับผิดชอบ)
+4. เพิ่ม Policies / Rules และ External Systems
+5. ระบุ Read Models ที่จำเป็นต่อการแสดงผล
+
+Event Storming นำไปสู่การกำหนด **Bounded Context** และ **Aggregates** ที่ชัดเจน ก่อนเริ่มเขียนโค้ด
+
+---
+
+### 3. CQRS (Command Query Responsibility Segregation)
+
+CQRS แยกโมเดลการ **เขียน** (Command) และ **อ่าน** (Query) ออกจากกัน ทำให้สามารถปรับแต่งให้เหมาะสมกับแต่ละฝั่งได้ เช่น ใช้ฐานข้อมูลแบบ Event Sourcing สำหรับ Command และฐานข้อมูลแบบ Materialized View สำหรับ Query
+
+**โครงสร้างทั่วไป:**
+
+```mermaid
+graph LR
+    subgraph Client
+        A[User Interface]
+    end
+
+    subgraph Command Side
+        B[Command Handler]
+        C[Aggregate]
+        D[Event Store]
+        E[Event Bus]
+    end
+
+    subgraph Query Side
+        F[Query Handler]
+        G[Read Database]
+        H[Projection]
+    end
+
+    A -->|Command| B
+    B --> C
+    C -->|produces events| D
+    D --> E
+    E -->|project| H
+    H --> G
+    A -->|Query| F
+    F --> G
+    G -->|result| A
+```
+
+**ใน Go สามารถจัดโครงสร้างได้ดังนี้:**
+
+#### แยก Command และ Query Models
+```go
+// Command models (เขียน)
+type PlaceOrderCommand struct {
+    OrderID string
+    Items   []OrderItemDTO
+}
+
+// Query models (อ่าน)
+type OrderView struct {
+    OrderID    string
+    Status     string
+    TotalPrice float64
+    Items      []OrderItemView
+}
+```
+
+#### Command Handlers
+```go
+type PlaceOrderHandler struct {
+    repo      domain.OrderRepository
+    eventBus  domain.EventBus
+}
+
+func (h *PlaceOrderHandler) Handle(ctx context.Context, cmd PlaceOrderCommand) error {
+    order, err := domain.NewOrder(cmd.OrderID)
+    if err != nil {
+        return err
+    }
+    for _, item := range cmd.Items {
+        order.AddItem(item.ProductID, item.Quantity)
+    }
+    if err := h.repo.Save(order); err != nil {
+        return err
+    }
+    // Publish events for projection
+    for _, event := range order.Events() {
+        h.eventBus.Publish(event)
+    }
+    return nil
+}
+```
+
+#### Query Handlers (อ่านจาก Read Database)
+```go
+type OrderQueryHandler struct {
+    db *sql.DB // หรือ ORM
+}
+
+func (h *OrderQueryHandler) GetOrder(ctx context.Context, orderID string) (*OrderView, error) {
+    var view OrderView
+    err := h.db.QueryRowContext(ctx, "SELECT ... FROM order_views WHERE id = ?", orderID).Scan(&view)
+    return &view, err
+}
+```
+
+#### Projection (สร้าง Read Model จาก Events)
+```go
+type OrderProjection struct {
+    db *sql.DB
+}
+
+func (p *OrderProjection) HandleEvent(event domain.DomainEvent) {
+    switch e := event.(type) {
+    case OrderPlaced:
+        p.db.Exec("INSERT INTO order_views (id, status, total) VALUES (?, ?, ?)", e.OrderID, "Placed", e.Total)
+    case OrderItemAdded:
+        p.db.Exec("INSERT INTO order_items_view ...")
+    }
+}
+```
+
+---
+
+### 4. การนำ CQRS ไปใช้ใน Go อย่างมีประสิทธิภาพ
+
+- **ใช้ Interface ในการแยก**: Command handlers, Query handlers, Projection handlers แต่ละตัวเป็น struct ที่ implements interface ต่างกัน ทำให้ test และ replace ได้ง่าย
+- **Event Store**: ใน Go สามารถใช้ database เช่น PostgreSQL พร้อม JSONB เก็บ events, หรือใช้ไลบรารี `github.com/eventials/goeventsourcing` แต่แนะนำให้เริ่มจาก in‑memory ก่อนค่อยเพิ่ม complexity
+- **Read Database**: อาจใช้ฐานข้อมูลแยก (SQL, NoSQL) หรือ cache เช่น Redis สำหรับการ query ที่รวดเร็ว
+- **Concurrency**: Goroutine + channel ใช้ในการประมวลผล projection แบบ asynchronous
+
+**ข้อควรระวัง:**
+- CQRS เพิ่มความซับซ้อน เหมาะสำหรับระบบที่ต้องการความยืดหยุ่นสูง (microservices, high scalability)
+- ไม่จำเป็นต้องใช้ Event Sourcing เสมอไป CQRS สามารถแยกโมเดลอ่าน-เขียนโดยใช้ฐานข้อมูลเดียวกันได้ (แต่แยกตารางหรือ schema)
+- การจัดการ eventual consistency ต้องออกแบบ UX ให้เหมาะสม
+
+---
+
+### สรุปการเพิ่มองค์ประกอบ
+
+| Concept | บทบาทใน DDD with Go |
+|---------|---------------------|
+| **Aggregate** | กลุ่มข้อมูลและพฤติกรรมที่มีความสอดคล้อง ใช้ interface repository ในการโหลด/บันทึกผ่าน aggregate root |
+| **Event Storming** | กระบวนการออกแบบร่วมกันเพื่อค้นหา domain events, commands, aggregates, read models ก่อนพัฒนา |
+| **CQRS** | แยก command (เขียน) และ query (อ่าน) ใช้ event bus และ projection เพื่อสร้าง read model |
+
+ทั้งสามแนวคิดช่วยให้การพัฒนา DDD ใน Go มีระเบียบแบบแผน รองรับความซับซ้อนของโดเมน และขยายขนาดได้ง่าย หากเริ่มต้นด้วย bounded context เล็ก ๆ ก่อนแล้วค่อยเพิ่ม CQRS เมื่อจำเป็นก็จะลดความเสี่ยงได้ดี
+
+---
+ 
+ 
+# คู่มือการเรียนรู้ภาษา Go อย่างครอบคลุม ตั้งแต่พื้นฐานจนถึงระดับสูง
+---
 ## 📚 สารบัญ
 
 ### ภาคที่ 1: ปฐมบทกับการเขียนโปรแกรม
