@@ -4592,42 +4592,774 @@ flowchart LR
 4. **บทที่ 13-16**: สร้าง struct, กำหนดเมธอด, ใช้ pointer, และออกแบบ interface
 
 พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 3** เพื่อจัดการโปรเจกต์, สร้าง test, และใช้ slice/map ในการจัดการข้อมูลจำนวนมาก
-## ภาคที่ 3: การจัดการโปรเจกต์และโครงสร้างข้อมูลขั้นสูง (บทที่ 17–23)
+ 
+# ภาคที่ 2: พื้นฐานภาษาและโครงสร้างข้อมูล (บทที่ 6–16)
 
-**แผนภาพ: การจัดการโปรเจกต์ → ทดสอบ → คอลเลกชัน → ข้อผิดพลาด**
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
 
 ```mermaid
-graph TD
-    subgraph Modules[โมดูล]
-        M1[go mod init] --> M2[go.mod]
-        M2 --> M3[go get / tidy]
-        M3 --> M4[go.sum]
+flowchart TD
+    subgraph DataRepresentation["1. การแทนข้อมูล (บทที่ 6-7)"]
+        direction TB
+        A1["เลขฐานสอง (Binary)<br/>0 และ 1<br/>หน่วยเก็บข้อมูลพื้นฐาน"]
+        A2["เลขฐานสิบ (Decimal)<br/>ที่มนุษย์ใช้"]
+        A3["เลขฐานสิบหก (Hex)<br/>0x0-0xF<br/>แสดงข้อมูลขนาดใหญ่"]
+        A4["เลขฐานแปด (Octal)<br/>0o0-0o7<br/>สิทธิ์ไฟล์ Unix"]
+        A5["ASCII / UTF-8 / Unicode<br/>การแทนข้อความ<br/>Rune: ตัวอักษรเดี่ยว"]
+        
+        A1 --> A3
+        A2 --> A3
+        A3 --> A5
+        A4 --> A5
     end
 
-    subgraph Testing[การทดสอบ]
-        T1[_test.go] --> T2[go test]
-        T2 --> T3[รายงาน coverage]
+    subgraph DataStorage["2. การจัดเก็บข้อมูล (บทที่ 8-9)"]
+        direction TB
+        B1["ตัวแปร (Variables)<br/>var, :=<br/>เก็บค่าที่เปลี่ยนได้"]
+        B2["ค่าคงที่ (Constants)<br/>const, iota<br/>ค่าที่ไม่เปลี่ยนแปลง"]
+        B3["ชนิดข้อมูลพื้นฐาน<br/>int, float, string, bool<br/>byte, rune"]
+        B4["โครงสร้างควบคุม<br/>if-else, for, switch<br/>ควบคุมการทำงาน"]
+        
+        B1 --> B4
+        B2 --> B4
+        B3 --> B4
     end
 
-    subgraph Collections[คอลเลกชัน]
-        C1[อาเรย์] --> C2[สไลซ์]
-        C2 --> C3[แมพ]
+    subgraph CodeOrganization["3. การจัดระเบียบโค้ด (บทที่ 10-12)"]
+        direction TB
+        C1["ฟังก์ชัน (Functions)<br/>func, return<br/>multiple returns<br/>defer, panic/recover"]
+        C2["แพคเกจ (Packages)<br/>package, import<br/>exported/unexported"]
+        C3["การเริ่มต้นแพคเกจ<br/>init()<br/>ลำดับการทำงาน"]
+        
+        C1 --> C2
+        C2 --> C3
     end
 
-    subgraph Errors[ข้อผิดพลาด]
-        E1[errors.New] --> E2[fmt.Errorf]
-        E2 --> E3[errors.Is / As]
+    subgraph AdvancedTypes["4. ชนิดข้อมูลขั้นสูง (บทที่ 13-16)"]
+        direction TB
+        D1["การสร้างชนิดใหม่<br/>type, struct<br/>type alias"]
+        D2["เมธอด (Methods)<br/>func (t T) method()<br/>value receiver<br/>pointer receiver"]
+        D3["พอยน์เตอร์ (Pointers)<br/>*, &<br/>การอ้างอิงที่อยู่<br/>ไม่มี pointer arithmetic"]
+        D4["อินเทอร์เฟซ (Interfaces)<br/>interface{}<br/>implicit implementation<br/>polymorphism"]
+        
+        D1 --> D2
+        D2 --> D3
+        D3 --> D4
     end
 
-    M4 --> T1
-    T3 --> C1
-    C3 --> E1
+    subgraph Flow["ลำดับการเรียนรู้"]
+        direction LR
+        F1[เข้าใจการแทนข้อมูล] --> F2[รู้จักการจัดเก็บ] --> F3[จัดระเบียบโค้ด] --> F4[สร้างโครงสร้างขั้นสูง]
+    end
+
+    DataRepresentation --> DataStorage
+    DataStorage --> CodeOrganization
+    CodeOrganization --> AdvancedTypes
+    Flow -.-> DataRepresentation
 ```
 
-**คำอธิบาย:**  
-เริ่มจากสร้างโมดูลด้วย `go mod init` ได้ไฟล์ `go.mod` และ `go.sum` จากนั้นเขียน test (`_test.go`) แล้วรัน `go test` เพื่อวัด coverage ข้อมูลที่ถูกต้องผ่านการทดสอบจะถูกนำไปใช้กับคอลเลกชัน (array, slice, map) และในที่สุดการจัดการข้อผิดพลาดจะเกิดขึ้นเมื่อพบ error
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 2 ครอบคลุมบทที่ 6–16 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งแสดงลำดับการเรียนรู้ที่ต่อเนื่องกัน
 
 ---
+
+### 1. การแทนข้อมูล (บทที่ 6–7)
+
+**เป้าหมาย:** เข้าใจว่าคอมพิวเตอร์เก็บข้อมูลอย่างไร
+
+#### บทที่ 6: ระบบเลขฐานสองและฐานสิบ
+
+คอมพิวเตอร์ทำงานด้วยไฟฟ้า รู้จักแค่สถานะ "เปิด" (1) และ "ปิด" (0) ดังนั้นข้อมูลทุกชนิดจึงถูกแปลงเป็นเลขฐานสอง (Binary)
+
+| ฐาน | คำอธิบาย | ตัวอย่าง |
+|-----|---------|---------|
+| **ฐานสอง (Binary)** | ตัวเลข 0 และ 1 เท่านั้น<br/>ใช้แสดงข้อมูลระดับเครื่อง | `1010₂` = 10₁₀ |
+| **ฐานสิบ (Decimal)** | ตัวเลข 0-9 ตามที่มนุษย์ใช้ | `10₁₀` |
+| **การแปลง** | ฐานสอง → ฐานสิบ: นำแต่ละหลักคูณ 2^(ตำแหน่ง)<br/>ฐานสิบ → ฐานสอง: หาร 2 ซ้ำๆ เอาเศษ | `1010₂ = 1×8 + 0×4 + 1×2 + 0×1 = 10` |
+
+**Bit, Byte, และหน่วยความจำ**
+- **Bit**: หน่วยย่อยที่สุด (0 หรือ 1)
+- **Byte**: 8 bits = 1 byte (ใช้แทนตัวอักษร 1 ตัวใน ASCII)
+- **หน่วยที่ใหญ่กว่า**: KB (1024 bytes), MB (1024 KB), GB (1024 MB)
+
+#### บทที่ 7: เลขฐานสิบหก, ฐานแปด, ASCII, UTF-8, Unicode, Rune
+
+| หัวข้อ | คำอธิบาย | ตัวอย่าง |
+|-------|---------|---------|
+| **เลขฐานสิบหก (Hexadecimal)** | ใช้เลข 0-9 และตัวอักษร A-F (10-15)<br/>นิยมเขียนนำหน้าด้วย `0x`<br/>1 hex digit = 4 bits (ครึ่ง byte) | `0xFF` = 255₁₀<br/>`0x1A` = 26₁₀ |
+| **เลขฐานแปด (Octal)** | ใช้เลข 0-7<br/>นิยมเขียนนำหน้าด้วย `0o`<br/>ใช้กำหนดสิทธิ์ไฟล์ใน Unix | `0o755` = รหัสสิทธิ์ไฟล์ |
+| **ASCII** | ตารางรหัส 7 bits (0-127)<br/>ครอบคลุมตัวอักษรอังกฤษ, ตัวเลข, เครื่องหมาย | `A` = 65, `a` = 97, `0` = 48 |
+| **Unicode** | มาตรฐานสากลสำหรับตัวอักษรทุกภาษา<br/>มีมากกว่า 140,000 ตัวอักษร | U+0E01 = "ก" (ไทย)<br/>U+4E2D = "中" (จีน) |
+| **UTF-8** | การเข้ารหัส Unicode แบบ variable-length<br/>ใช้ 1-4 bytes ต่อตัวอักษร<br/>เข้ากันได้กับ ASCII | ภาษาอังกฤษ: 1 byte<br/>ภาษาไทย: 3 bytes |
+| **Rune** | ชนิดข้อมูลใน Go สำหรับแทน Unicode code point<br/>`rune` = `int32` alias<br/>ใช้ `'a'` (single quote) | `'ก'` = U+0E01 (3585)<br/>`'A'` = 65 |
+
+**ตัวอย่างใน Go**
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // ตัวเลขฐานต่างๆ
+    binary := 0b1010   // 10
+    octal  := 0o12     // 10
+    hex    := 0xA      // 10
+    
+    fmt.Println(binary, octal, hex)
+    
+    // Rune และ UTF-8
+    text := "Hello, โลก"
+    fmt.Println("Length in bytes:", len(text))        // 11 bytes
+    fmt.Println("Number of runes:", len([]rune(text))) // 8 runes
+    
+    // แสดงแต่ละ rune
+    for i, r := range text {
+        fmt.Printf("Position %d: %c (U+%04X)\n", i, r, r)
+    }
+}
+```
+
+**ความสำคัญของ rune ใน Go**
+- `string` ใน Go เป็น sequence ของ bytes (UTF-8)
+- การวนลูปด้วย `for range` จะได้ rune อัตโนมัติ
+- ใช้ `[]rune(str)` เพื่อจัดการทีละตัวอักษร
+
+---
+
+### 2. การจัดเก็บข้อมูล (บทที่ 8–9)
+
+**เป้าหมาย:** เรียนรู้การประกาศตัวแปรและควบคุมการทำงาน
+
+#### บทที่ 8: ตัวแปร, ค่าคงที่, และชนิดข้อมูลพื้นฐาน
+
+**ตัวแปร (Variables)**
+```go
+// วิธีประกาศ
+var name string = "Go"     // ระบุชนิด
+var version = 1.23          // type inference
+lang := "Golang"            // short declaration (ใช้ภายในฟังก์ชัน)
+
+// ประกาศหลายตัว
+var x, y int = 10, 20
+a, b := "hello", true
+
+// zero value (ค่าเริ่มต้น)
+var i int       // 0
+var s string    // "" (empty string)
+var b bool      // false
+var p *int      // nil
+```
+
+**ค่าคงที่ (Constants)**
+```go
+const Pi = 3.14159
+const (
+    StatusOK    = 200
+    StatusNotFound = 404
+)
+
+// iota: ตัวนับอัตโนมัติ (เริ่มที่ 0)
+const (
+    Sunday = iota     // 0
+    Monday            // 1
+    Tuesday           // 2
+    // ... ไปเรื่อยๆ
+)
+```
+
+**ชนิดข้อมูลพื้นฐาน**
+
+| ชนิด | ขนาด (bit) | ช่วงค่า | ตัวอย่าง |
+|------|-----------|---------|---------|
+| `bool` | 1 | true/false | `var ok bool = true` |
+| `int` | 32/64 | ขึ้นอยู่กับระบบ | `var age int = 30` |
+| `int8` | 8 | -128 ถึง 127 | `var score int8 = 100` |
+| `int16` | 16 | -32768 ถึง 32767 | - |
+| `int32` (rune) | 32 | -2³¹ ถึง 2³¹-1 | `var char rune = 'A'` |
+| `int64` | 64 | -9×10¹⁸ ถึง 9×10¹⁸ | - |
+| `uint` | 32/64 | 0 ถึง 2^n-1 | `var count uint = 100` |
+| `float32` | 32 | ~1.4×10⁻⁴⁵ ถึง 3.4×10³⁸ | `var pi float32 = 3.14` |
+| `float64` | 64 | ~4.9×10⁻³²⁴ ถึง 1.8×10³⁰⁸ | `var price float64 = 99.99` |
+| `string` | - | sequence of bytes | `var name string = "Go"` |
+| `byte` | 8 | alias of uint8 | `var b byte = 'A'` |
+| `rune` | 32 | alias of int32 | `var r rune = 'ก'` |
+
+#### บทที่ 9: คำสั่งควบคุมการทำงาน
+
+**if-else**
+```go
+// if พื้นฐาน
+if x > 0 {
+    fmt.Println("positive")
+} else if x < 0 {
+    fmt.Println("negative")
+} else {
+    fmt.Println("zero")
+}
+
+// if พร้อม short statement
+if err := doSomething(); err != nil {
+    fmt.Println("Error:", err)
+    return
+}
+```
+
+**for loop** (Go มีแค่ `for` ไม่มี `while`)
+```go
+// แบบคลาสสิก (for i := 0; i < 10; i++)
+for i := 0; i < 10; i++ {
+    fmt.Println(i)
+}
+
+// while-style (for condition {})
+count := 0
+for count < 10 {
+    count++
+}
+
+// infinite loop
+for {
+    // ใช้ break ออก
+}
+
+// range (iterating over slices, maps, strings)
+numbers := []int{1, 2, 3}
+for index, value := range numbers {
+    fmt.Printf("index=%d, value=%d\n", index, value)
+}
+
+// range บน string ได้ rune
+for i, r := range "Go" {
+    fmt.Printf("%d: %c\n", i, r)
+}
+```
+
+**switch** (ไม่ต้องใช้ `break`)
+```go
+// switch กับค่า
+switch day := time.Now().Weekday(); day {
+case time.Saturday, time.Sunday:
+    fmt.Println("Weekend")
+default:
+    fmt.Println("Weekday")
+}
+
+// switch แบบไม่มี expression (ใช้แทน if-else chain)
+score := 85
+switch {
+case score >= 90:
+    fmt.Println("A")
+case score >= 80:
+    fmt.Println("B")
+case score >= 70:
+    fmt.Println("C")
+default:
+    fmt.Println("F")
+}
+
+// fallthrough (ไปตรวจ case ถัดไป)
+switch 2 {
+case 1:
+    fmt.Println("1")
+case 2:
+    fmt.Println("2")
+    fallthrough
+case 3:
+    fmt.Println("3")  // จะพิมพ์ "2" และ "3"
+}
+```
+
+---
+
+### 3. การจัดระเบียบโค้ด (บทที่ 10–12)
+
+**เป้าหมาย:** เขียนโค้ดที่เป็นระเบียบ แบ่งเป็นฟังก์ชันและแพคเกจ
+
+#### บทที่ 10: ฟังก์ชัน (Functions)
+
+```go
+// ฟังก์ชันพื้นฐาน
+func add(x int, y int) int {
+    return x + y
+}
+
+// การประกาศแบบสั้น
+func add(x, y int) int {
+    return x + y
+}
+
+// คืนค่าหลายค่า
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    return a / b, nil
+}
+
+// named return values
+func split(sum int) (x, y int) {
+    x = sum * 4 / 9
+    y = sum - x
+    return  // naked return
+}
+
+// variadic parameters (รับพารามิเตอร์จำนวนไม่แน่นอน)
+func sum(numbers ...int) int {
+    total := 0
+    for _, n := range numbers {
+        total += n
+    }
+    return total
+}
+// เรียกใช้: sum(1, 2, 3) หรือ sum([]int{1,2,3}...)
+
+// defer: ทำงานก่อนออกจากฟังก์ชัน
+func readFile(filename string) error {
+    f, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer f.Close()  // จะถูกเรียกเมื่อฟังก์ชันจบ
+    
+    // อ่านไฟล์...
+    return nil
+}
+
+// panic และ recover
+func safeDivide(a, b int) (result int) {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Recovered from panic:", r)
+            result = 0
+        }
+    }()
+    
+    if b == 0 {
+        panic("division by zero")
+    }
+    return a / b
+}
+```
+
+#### บทที่ 11: แพคเกจและการนำเข้า (Packages and Imports)
+
+**หลักการ**
+- โค้ด Go จัดกลุ่มเป็นแพคเกจ (package)
+- `package main` คือ executable program
+- แพคเกจอื่นๆ คือ reusable libraries
+
+**การตั้งชื่อและ visibility**
+- ตัวพิมพ์ใหญ่: **exported** (สามารถเข้าถึงจากภายนอกแพคเกจได้)
+- ตัวพิมพ์เล็ก: **unexported** (ใช้ภายในแพคเกจเท่านั้น)
+
+**ตัวอย่างโครงสร้างโปรเจกต์**
+```
+myproject/
+├── go.mod
+├── main.go
+└── math/
+    └── math.go
+```
+
+**math/math.go**
+```go
+package math
+
+// Exported function (ขึ้นต้นด้วยตัวพิมพ์ใหญ่)
+func Add(a, b int) int {
+    return a + b
+}
+
+// Unexported function (ใช้ภายในแพคเกจ)
+func subtract(a, b int) int {
+    return a - b
+}
+```
+
+**main.go**
+```go
+package main
+
+import (
+    "fmt"
+    "myproject/math"  // import แพคเกจ custom
+)
+
+func main() {
+    result := math.Add(5, 3)
+    fmt.Println(result)  // 8
+    
+    // math.subtract(5, 3)  // ERROR: ไม่สามารถเข้าถึงได้
+}
+```
+
+#### บทที่ 12: การเริ่มต้นทำงานของแพคเกจ (Package Initialization)
+
+**ลำดับการทำงาน**
+1. ตัวแปรระดับแพคเกจถูกกำหนดค่า
+2. ฟังก์ชัน `init()` ถูกเรียก (เรียงตามลำดับในไฟล์ และข้ามแพคเกจ)
+3. ฟังก์ชัน `main()` ถูกเรียก (เฉพาะแพคเกจ main)
+
+```go
+package main
+
+import "fmt"
+
+var globalVar = initGlobal()
+
+func initGlobal() string {
+    fmt.Println("1. Initializing global variable")
+    return "ready"
+}
+
+func init() {
+    fmt.Println("2. First init function")
+}
+
+func init() {
+    fmt.Println("3. Second init function")
+}
+
+func main() {
+    fmt.Println("4. Main function")
+}
+
+// ผลลัพธ์:
+// 1. Initializing global variable
+// 2. First init function
+// 3. Second init function
+// 4. Main function
+```
+
+**การใช้ init() เพื่อตั้งค่า**
+```go
+package database
+
+import (
+    "database/sql"
+    _ "github.com/lib/pq"  // blank import: เรียกเฉพาะ init()
+)
+
+var DB *sql.DB
+
+func init() {
+    // ตั้งค่า connection pool
+    var err error
+    DB, err = sql.Open("postgres", "connection string")
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+---
+
+### 4. ชนิดข้อมูลขั้นสูง (บทที่ 13–16)
+
+**เป้าหมาย:** สร้างโครงสร้างข้อมูลที่ซับซ้อนและเขียนโค้ดที่ยืดหยุ่น
+
+#### บทที่ 13: การสร้างชนิดข้อมูลใหม่ (Types)
+
+```go
+// type alias
+type MyInt int
+type UserID string
+
+// struct (โครงสร้างข้อมูล)
+type Person struct {
+    Name    string
+    Age     int
+    Address string
+}
+
+// struct พร้อม tags (ใช้กับ JSON, validation)
+type User struct {
+    ID        uint   `json:"id"`
+    Email     string `json:"email" validate:"required,email"`
+    Password  string `json:"-"`  // ไม่ถูกส่งใน JSON
+    CreatedAt time.Time `json:"created_at"`
+}
+
+// embedded struct
+type Employee struct {
+    Person      // embedded field (ไม่ต้องมีชื่อ)
+    Position string
+    Salary   float64
+}
+
+func main() {
+    var id MyInt = 100
+    var uid UserID = "user-123"
+    
+    // สร้าง struct
+    p1 := Person{Name: "Alice", Age: 30}
+    p2 := Person{
+        Name: "Bob",
+        Age:  25,
+    }
+    
+    // เข้าถึง field
+    fmt.Println(p1.Name)
+    p1.Age = 31
+    
+    // embedded struct
+    emp := Employee{
+        Person:   Person{Name: "Charlie", Age: 35},
+        Position: "Developer",
+        Salary:   75000,
+    }
+    fmt.Println(emp.Name)  // เข้าถึง field จาก Person โดยตรง
+}
+```
+
+#### บทที่ 14: เมธอด (Methods)
+
+เมธอดคือฟังก์ชันที่ผูกกับ type (receiver)
+
+```go
+// กำหนด type
+type Rectangle struct {
+    Width, Height float64
+}
+
+// Value receiver (รับสำเนา)
+func (r Rectangle) Area() float64 {
+    return r.Width * r.Height
+}
+
+// Pointer receiver (รับ reference)
+func (r *Rectangle) Scale(factor float64) {
+    r.Width *= factor
+    r.Height *= factor
+}
+
+// ใช้ pointer receiver เมื่อต้องการแก้ไข struct
+func (r *Rectangle) SetWidth(w float64) {
+    r.Width = w
+}
+
+// เมธอดบนชนิดอื่นๆ (ไม่ใช่แค่ struct)
+type Counter int
+
+func (c *Counter) Increment() {
+    *c++
+}
+
+func (c Counter) Value() int {
+    return int(c)
+}
+
+func main() {
+    rect := Rectangle{Width: 10, Height: 5}
+    
+    // value receiver (ไม่แก้ไขต้นฉบับ)
+    area := rect.Area()  // 50
+    
+    // pointer receiver (แก้ไขต้นฉบับ)
+    rect.Scale(2)  // rect เปลี่ยนเป็น Width=20, Height=10
+    
+    // counter
+    var cnt Counter = 5
+    cnt.Increment()
+    fmt.Println(cnt.Value())  // 6
+}
+```
+
+**เมื่อใช้ value receiver vs pointer receiver**
+
+| Value Receiver | Pointer Receiver |
+|----------------|------------------|
+| รับสำเนา ไม่แก้ไขต้นฉบับ | รับ reference แก้ไขต้นฉบับได้ |
+| เหมาะกับ struct เล็ก | เหมาะกับ struct ใหญ่ |
+| เรียกใช้กับ value หรือ pointer ก็ได้ | เรียกใช้กับ value หรือ pointer ก็ได้ |
+| ไม่เปลี่ยนค่าในเมธอด | เปลี่ยนค่าในเมธอดได้ |
+
+#### บทที่ 15: พอยน์เตอร์ (Pointers)
+
+พอยน์เตอร์คือตัวแปรที่เก็บ **ที่อยู่หน่วยความจำ** (memory address)
+
+```go
+func main() {
+    x := 10
+    p := &x  // p ชี้ไปที่ x (เก็บ address)
+    
+    fmt.Println(x)   // 10
+    fmt.Println(p)   // 0xc0000120a0 (address)
+    fmt.Println(*p)  // 10 (dereference: อ่านค่า)
+    
+    // เปลี่ยนค่าผ่าน pointer
+    *p = 20
+    fmt.Println(x)   // 20 (เปลี่ยนแล้ว)
+    
+    // zero value ของ pointer คือ nil
+    var q *int
+    fmt.Println(q)  // nil
+    
+    // สร้าง pointer ใหม่ด้วย new
+    r := new(int)
+    *r = 100
+    fmt.Println(*r)  // 100
+}
+
+// ฟังก์ชันที่รับ pointer
+func increment(p *int) {
+    *p++
+}
+
+// ฟังก์ชันที่คืน pointer
+func newInt(value int) *int {
+    return &value
+}
+
+// เปรียบเทียบ: pass by value vs pass by pointer
+func byValue(x int) {
+    x = 100  // ไม่มีผลนอกฟังก์ชัน
+}
+
+func byPointer(x *int) {
+    *x = 100  // มีผลนอกฟังก์ชัน
+}
+```
+
+**ข้อควรรู้เกี่ยวกับ pointer ใน Go**
+- Go มี pointer แต่ **ไม่มี pointer arithmetic** (ต่างจาก C)
+- ใช้ `&` เพื่อ get address, `*` เพื่อ dereference
+- `nil` pointer dereference ทำให้เกิด panic
+- ใช้ pointer กับ struct ขนาดใหญ่เพื่อประหยัดหน่วยความจำ
+
+#### บทที่ 16: อินเทอร์เฟซ (Interfaces)
+
+Interface กำหนด **พฤติกรรม** (method set) ที่ type ต้องมี
+
+```go
+// ประกาศ interface
+type Speaker interface {
+    Speak() string
+}
+
+type Animal interface {
+    Speak() string
+    Move() string
+}
+
+// type ที่ implement interface
+type Dog struct {
+    Name string
+}
+
+func (d Dog) Speak() string {
+    return "Woof!"
+}
+
+func (d Dog) Move() string {
+    return "Running on 4 legs"
+}
+
+type Cat struct {
+    Name string
+}
+
+func (c Cat) Speak() string {
+    return "Meow!"
+}
+
+func (c Cat) Move() string {
+    return "Walking gracefully"
+}
+
+// ฟังก์ชันที่รับ interface
+func MakeSound(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+func main() {
+    dog := Dog{Name: "Max"}
+    cat := Cat{Name: "Luna"}
+    
+    // Dog และ Cat implement Speaker
+    MakeSound(dog)  // Woof!
+    MakeSound(cat)  // Meow!
+    
+    // empty interface (interface{}) สามารถเก็บค่าใดก็ได้
+    var anything interface{}
+    anything = 42
+    anything = "hello"
+    anything = Dog{Name: "Buddy"}
+    
+    // type assertion (ตรวจสอบชนิด)
+    val, ok := anything.(Dog)
+    if ok {
+        fmt.Println(val.Speak())
+    }
+    
+    // type switch
+    switch v := anything.(type) {
+    case int:
+        fmt.Println("int:", v)
+    case string:
+        fmt.Println("string:", v)
+    case Dog:
+        fmt.Println("Dog:", v.Name)
+    default:
+        fmt.Println("unknown type")
+    }
+}
+```
+
+**Interface Composition** (การรวม interface)
+```go
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+// ประกอบ interface
+type ReadWriter interface {
+    Reader
+    Writer
+}
+```
+
+**ข้อดีของ interface**
+- **Polymorphism**: เขียนโค้ดที่ทำงานกับ type ต่างๆ ที่มีพฤติกรรมเดียวกัน
+- **Decoupling**: แยก implementation ออกจาก contract
+- **Testability**: สร้าง mock ได้ง่าย
+
+**Interface ใน Go ต่างจากภาษา OOP อื่น**
+- Go interface **implement implicitly** (ไม่ต้องประกาศ implements)
+- Interface เป็น **ค่าที่มี 2 ส่วน**: dynamic type + dynamic value
+- Interface สามารถเป็น `nil` (ถ้า type เป็น nil และ value เป็น nil)
+
+---
+
+## สรุปภาคที่ 2: ความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart LR
+    subgraph Knowledge["องค์ความรู้"]
+        K1[การแทนข้อมูล<br/>บทที่ 6-7] --> K2[การจัดเก็บ<br/>บทที่ 8-9]
+        K2 --> K3[การจัดระเบียบ<br/>บทที่ 10-12]
+        K3 --> K4[ชนิดข้อมูลขั้นสูง<br/>บทที่ 13-16]
+    end
+    
+    subgraph Skills["ทักษะที่ได้"]
+        S1[เข้าใจการทำงาน<br/>ระดับบิต/ไบต์]
+        S2[เขียนโปรแกรม<br/>แบบมีเงื่อนไข]
+        S3[แบ่งโค้ดเป็น<br/>ฟังก์ชัน/แพคเกจ]
+        S4[สร้าง struct,<br/>methods, interfaces]
+    end
+    
+    K1 --> S1
+    K2 --> S2
+    K3 --> S3
+    K4 --> S4
+```
 # ภาคที่ 3: การจัดการโปรเจกต์และโครงสร้างข้อมูลขั้นสูง (บทที่ 17–23)
 
 ## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
@@ -6359,6 +7091,3190 @@ flowchart LR
 
 พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 4** เพื่อพัฒนาแอปพลิเคชันเชิงปฏิบัติ เช่น HTTP server, concurrency, JSON handling, และการบันทึกข้อมูล
 
+**สิ่งที่ได้เรียนรู้**
+1. **บทที่ 6-7**: รู้ว่าคอมพิวเตอร์จัดเก็บข้อมูลอย่างไร (Binary, Hex, UTF-8, Rune)
+2. **บทที่ 8-9**: ประกาศตัวแปรและควบคุมการทำงานด้วย if, for, switch
+3. **บทที่ 10-12**: จัดระเบียบโค้ดด้วยฟังก์ชันและแพคเกจ
+4. **บทที่ 13-16**: สร้าง struct, กำหนดเมธอด, ใช้ pointer, และออกแบบ interface
+
+พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 3** เพื่อจัดการโปรเจกต์, สร้าง test, และใช้ slice/map ในการจัดการข้อมูลจำนวนมาก
+
+# ภาคที่ 4: การพัฒนาแอปพลิเคชันเชิงปฏิบัติ (บทที่ 24–33)
+
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart TB
+    subgraph Input["1. การรับข้อมูล (Input Layer)"]
+        direction TB
+        A1["HTTP Server (บทที่ 26)<br/>net/http, chi, gin<br/>routing, middleware, handlers"]
+        A2["JSON/XML Handling (บทที่ 25)<br/>encoding/json, xml<br/>Marshal/Unmarshal, tags"]
+        A3["Enum/Iota/Bitmask (บทที่ 27)<br/>iota, bit operations<br/>status flags, permissions"]
+        A4["Date & Time (บทที่ 28)<br/>time package, duration<br/>parsing, formatting, timezone"]
+        
+        A1 --> A2
+        A2 --> A3
+        A3 --> A4
+    end
+
+    subgraph Processing["2. การประมวลผล (Processing Layer)"]
+        direction TB
+        B1["Anonymous Functions & Closure (บทที่ 24)<br/>func literals, closures<br/>capturing variables, callbacks"]
+        B2["Concurrency (บทที่ 30)<br/>goroutines, channels, select<br/>sync, worker pools, patterns"]
+        B3["Error Handling (from บทที่ 23)<br/>error wrapping, custom errors<br/>panic recovery, retry"]
+        
+        B1 --> B2
+        B2 --> B3
+    end
+
+    subgraph Storage["3. การจัดเก็บ (Storage Layer)"]
+        direction TB
+        C1["Files & Database (บทที่ 29)<br/>os, io, bufio<br/>SQL, migrations, transactions"]
+        C2["Logging (บทที่ 31)<br/>slog, zap, logrus<br/>structured logging, levels"]
+        
+        C1 --> C2
+    end
+
+    subgraph Output["4. การส่งออก (Output Layer)"]
+        direction TB
+        D1["Templates (บทที่ 32)<br/>html/template, text/template<br/>layout, partials, functions"]
+        D2["Configuration (บทที่ 33)<br/>viper, env, flags<br/>multiple sources, defaults"]
+        
+        D1 --> D2
+    end
+
+    Input --> Processing
+    Processing --> Storage
+    Storage --> Output
+
+    subgraph Example["ตัวอย่างแอปพลิเคชัน"]
+        E1["REST API Server<br/>+ Authentication<br/>+ Database<br/>+ Logging"]
+        E2["Web Application<br/>+ Templates<br/>+ Session<br/>+ Configuration"]
+    end
+
+    Output --> E1
+    Output --> E2
+```
+
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 4 ครอบคลุมบทที่ 24–33 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งแสดงการไหลของข้อมูลจาก Input → Processing → Storage → Output
+
+---
+
+## 1. การรับข้อมูล (Input Layer)
+
+### บทที่ 24: ฟังก์ชันนิรนาม (Anonymous Functions) และ Closure
+
+**เป้าหมาย:** เข้าใจการสร้างฟังก์ชันแบบไม่มีชื่อและการใช้งาน closure
+
+#### Anonymous Functions
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // 1. ประกาศ anonymous function และเรียกใช้ทันที
+    func() {
+        fmt.Println("Hello from anonymous")
+    }()
+    
+    // 2. ประกาศและเก็บไว้ในตัวแปร
+    add := func(a, b int) int {
+        return a + b
+    }
+    result := add(3, 5)
+    fmt.Println(result) // 8
+    
+    // 3. ส่ง anonymous function เป็น argument
+    numbers := []int{1, 2, 3, 4, 5}
+    
+    // filter function
+    evens := filter(numbers, func(n int) bool {
+        return n%2 == 0
+    })
+    fmt.Println(evens) // [2, 4]
+    
+    // 4. คืนค่าเป็น function
+    multiplier := createMultiplier(3)
+    fmt.Println(multiplier(5)) // 15
+    fmt.Println(multiplier(10)) // 30
+}
+
+func filter(nums []int, predicate func(int) bool) []int {
+    result := make([]int, 0)
+    for _, n := range nums {
+        if predicate(n) {
+            result = append(result, n)
+        }
+    }
+    return result
+}
+
+func createMultiplier(factor int) func(int) int {
+    return func(x int) int {
+        return x * factor
+    }
+}
+```
+
+#### Closures (การปิดล้อมตัวแปร)
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // 1. Closure จับตัวแปรภายนอก
+    counter := func() func() int {
+        count := 0
+        return func() int {
+            count++
+            return count
+        }
+    }()
+    
+    fmt.Println(counter()) // 1
+    fmt.Println(counter()) // 2
+    fmt.Println(counter()) // 3
+    
+    // 2. Closure ใน loop (ข้อควรระวัง!)
+    funcs := make([]func(), 3)
+    
+    // ❌ Wrong: capture by reference
+    for i := 0; i < 3; i++ {
+        funcs[i] = func() {
+            fmt.Println(i) // i is captured by reference
+        }
+    }
+    
+    for _, f := range funcs {
+        f() // prints 3, 3, 3 (all the same!)
+    }
+    
+    // ✅ Correct: capture by value
+    funcs2 := make([]func(), 3)
+    for i := 0; i < 3; i++ {
+        i := i // create new variable
+        funcs2[i] = func() {
+            fmt.Println(i)
+        }
+    }
+    
+    for _, f := range funcs2 {
+        f() // prints 0, 1, 2
+    }
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. Middleware Pattern**
+
+```go
+// HTTP middleware with closure
+type Middleware func(http.Handler) http.Handler
+
+// Logger middleware
+func Logger(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        
+        // สร้าง response wrapper เพื่อ capture status
+        rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+        
+        next.ServeHTTP(rw, r)
+        
+        duration := time.Since(start)
+        log.Printf("%s %s %d %v", r.Method, r.URL.Path, rw.status, duration)
+    })
+}
+
+// Auth middleware
+func Auth(requiredRole string) Middleware {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            token := r.Header.Get("Authorization")
+            
+            user, err := validateToken(token)
+            if err != nil {
+                http.Error(w, "unauthorized", http.StatusUnauthorized)
+                return
+            }
+            
+            if user.Role != requiredRole {
+                http.Error(w, "forbidden", http.StatusForbidden)
+                return
+            }
+            
+            // ใส่ user info ลงใน context
+            ctx := context.WithValue(r.Context(), "user", user)
+            next.ServeHTTP(w, r.WithContext(ctx))
+        })
+    }
+}
+
+// Apply middlewares
+func applyMiddlewares(handler http.Handler, middlewares ...Middleware) http.Handler {
+    for _, m := range middlewares {
+        handler = m(handler)
+    }
+    return handler
+}
+
+// ใช้งาน
+func main() {
+    handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte("Hello, World!"))
+    })
+    
+    // chain middlewares
+    wrapped := applyMiddlewares(
+        handler,
+        Logger,
+        Auth("admin"),
+    )
+    
+    http.ListenAndServe(":8080", wrapped)
+}
+```
+
+**2. Callback Pattern**
+
+```go
+// Event handler with callbacks
+type EventHandler struct {
+    onSuccess func(data interface{})
+    onError   func(err error)
+    onComplete func()
+}
+
+func (h *EventHandler) OnSuccess(fn func(interface{})) *EventHandler {
+    h.onSuccess = fn
+    return h
+}
+
+func (h *EventHandler) OnError(fn func(error)) *EventHandler {
+    h.onError = fn
+    return h
+}
+
+func (h *EventHandler) OnComplete(fn func()) *EventHandler {
+    h.onComplete = fn
+    return h
+}
+
+func (h *EventHandler) Execute(task func() (interface{}, error)) {
+    go func() {
+        defer func() {
+            if h.onComplete != nil {
+                h.onComplete()
+            }
+        }()
+        
+        result, err := task()
+        if err != nil && h.onError != nil {
+            h.onError(err)
+            return
+        }
+        
+        if h.onSuccess != nil {
+            h.onSuccess(result)
+        }
+    }()
+}
+
+// ใช้งาน
+func main() {
+    handler := &EventHandler{}
+    
+    handler.
+        OnSuccess(func(data interface{}) {
+            fmt.Printf("Success: %v\n", data)
+        }).
+        OnError(func(err error) {
+            fmt.Printf("Error: %v\n", err)
+        }).
+        OnComplete(func() {
+            fmt.Println("Task completed")
+        }).
+        Execute(func() (interface{}, error) {
+            // simulate work
+            time.Sleep(2 * time.Second)
+            return map[string]string{"status": "ok"}, nil
+        })
+    
+    time.Sleep(3 * time.Second)
+}
+```
+
+**3. Factory Pattern with Closure**
+
+```go
+// Database connection factory
+type DBConfig struct {
+    Host     string
+    Port     int
+    User     string
+    Password string
+    Database string
+}
+
+func NewDBConnection(config DBConfig) (*sql.DB, error) {
+    dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+        config.User, config.Password, config.Host, config.Port, config.Database)
+    
+    db, err := sql.Open("mysql", dsn)
+    if err != nil {
+        return nil, err
+    }
+    
+    db.SetMaxOpenConns(25)
+    db.SetMaxIdleConns(25)
+    db.SetConnMaxLifetime(5 * time.Minute)
+    
+    return db, nil
+}
+
+// Repository factory with closure
+type RepositoryFactory struct {
+    db *sql.DB
+}
+
+func (f *RepositoryFactory) NewUserRepository() *UserRepository {
+    return &UserRepository{db: f.db}
+}
+
+func (f *RepositoryFactory) NewOrderRepository() *OrderRepository {
+    return &OrderRepository{db: f.db}
+}
+
+// ใช้งาน
+func main() {
+    config := DBConfig{
+        Host:     "localhost",
+        Port:     3306,
+        User:     "root",
+        Password: "password",
+        Database: "myapp",
+    }
+    
+    db, _ := NewDBConnection(config)
+    factory := &RepositoryFactory{db: db}
+    
+    userRepo := factory.NewUserRepository()
+    orderRepo := factory.NewOrderRepository()
+    
+    // use repositories...
+}
+```
+
+---
+
+### บทที่ 25: การจัดการข้อมูล JSON และ XML
+
+**เป้าหมาย:** แปลงข้อมูลระหว่าง Go struct กับ JSON/XML
+
+#### JSON Handling
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "time"
+)
+
+// struct with JSON tags
+type User struct {
+    ID        int       `json:"id"`
+    Name      string    `json:"name"`
+    Email     string    `json:"email,omitempty"`
+    Password  string    `json:"-"`  // ไม่ถูก serialize
+    CreatedAt time.Time `json:"created_at"`
+    Tags      []string  `json:"tags,omitempty"`
+    Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// custom marshaling
+type CustomTime struct {
+    time.Time
+}
+
+func (ct CustomTime) MarshalJSON() ([]byte, error) {
+    return []byte(fmt.Sprintf("\"%s\"", ct.Format("2006-01-02 15:04:05"))), nil
+}
+
+func (ct *CustomTime) UnmarshalJSON(data []byte) error {
+    str := string(data)
+    str = str[1 : len(str)-1] // remove quotes
+    t, err := time.Parse("2006-01-02 15:04:05", str)
+    if err != nil {
+        return err
+    }
+    ct.Time = t
+    return nil
+}
+
+func main() {
+    // 1. Marshal (struct -> JSON)
+    user := User{
+        ID:        1,
+        Name:      "John Doe",
+        Email:     "john@example.com",
+        CreatedAt: time.Now(),
+        Tags:      []string{"golang", "developer"},
+        Metadata: map[string]interface{}{
+            "role": "admin",
+            "active": true,
+        },
+    }
+    
+    jsonData, err := json.Marshal(user)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(string(jsonData))
+    
+    // 2. Marshal with indentation (pretty print)
+    prettyJSON, _ := json.MarshalIndent(user, "", "  ")
+    fmt.Println(string(prettyJSON))
+    
+    // 3. Unmarshal (JSON -> struct)
+    jsonString := `{"id":2,"name":"Jane Doe","email":"jane@example.com"}`
+    var user2 User
+    err = json.Unmarshal([]byte(jsonString), &user2)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("%+v\n", user2)
+    
+    // 4. Unmarshal to map
+    var data map[string]interface{}
+    err = json.Unmarshal([]byte(jsonString), &data)
+    fmt.Printf("name: %v\n", data["name"])
+    
+    // 5. Streaming JSON (for large data)
+    decoder := json.NewDecoder(strings.NewReader(jsonString))
+    var user3 User
+    decoder.Decode(&user3)
+    fmt.Printf("%+v\n", user3)
+    
+    // 6. Encoder for streaming output
+    encoder := json.NewEncoder(os.Stdout)
+    encoder.SetIndent("", "  ")
+    encoder.Encode(user)
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. API Response Wrapper**
+
+```go
+type APIResponse struct {
+    Success bool        `json:"success"`
+    Data    interface{} `json:"data,omitempty"`
+    Error   *APIError   `json:"error,omitempty"`
+    Meta    *APIMeta    `json:"meta,omitempty"`
+}
+
+type APIError struct {
+    Code    int    `json:"code"`
+    Message string `json:"message"`
+    Details string `json:"details,omitempty"`
+}
+
+type APIMeta struct {
+    Page       int `json:"page"`
+    PerPage    int `json:"per_page"`
+    Total      int `json:"total"`
+    TotalPages int `json:"total_pages"`
+}
+
+func JSONResponse(w http.ResponseWriter, status int, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    
+    response := APIResponse{
+        Success: status >= 200 && status < 300,
+        Data:    data,
+    }
+    
+    json.NewEncoder(w).Encode(response)
+}
+
+func JSONError(w http.ResponseWriter, status int, code int, message string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    
+    response := APIResponse{
+        Success: false,
+        Error: &APIError{
+            Code:    code,
+            Message: message,
+        },
+    }
+    
+    json.NewEncoder(w).Encode(response)
+}
+
+// ใช้งาน
+func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+    user, err := userService.GetUser(1)
+    if err != nil {
+        JSONError(w, http.StatusNotFound, 404, "User not found")
+        return
+    }
+    
+    JSONResponse(w, http.StatusOK, user)
+}
+```
+
+**2. JSON Validation with Struct Tags**
+
+```go
+type RegisterRequest struct {
+    Username string `json:"username" validate:"required,min=3,max=50"`
+    Email    string `json:"email" validate:"required,email"`
+    Password string `json:"password" validate:"required,min=8"`
+    Age      int    `json:"age" validate:"gte=18,lte=99"`
+    Phone    string `json:"phone" validate:"omitempty,e164"`
+}
+
+func (r *RegisterRequest) Validate() error {
+    validate := validator.New()
+    return validate.Struct(r)
+}
+
+// ใช้งาน
+func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+    var req RegisterRequest
+    
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        JSONError(w, http.StatusBadRequest, 400, "Invalid JSON")
+        return
+    }
+    
+    if err := req.Validate(); err != nil {
+        JSONError(w, http.StatusBadRequest, 400, err.Error())
+        return
+    }
+    
+    // process registration...
+}
+```
+
+**3. XML Handling**
+
+```go
+package main
+
+import (
+    "encoding/xml"
+    "fmt"
+)
+
+// XML struct with tags
+type Person struct {
+    XMLName   xml.Name `xml:"person"`
+    ID        int      `xml:"id,attr"`
+    Name      string   `xml:"name"`
+    Age       int      `xml:"age"`
+    Address   Address  `xml:"address"`
+    Phones    []Phone  `xml:"phones>phone"`
+}
+
+type Address struct {
+    Street  string `xml:"street"`
+    City    string `xml:"city"`
+    Country string `xml:"country"`
+}
+
+type Phone struct {
+    Type  string `xml:"type,attr"`
+    Number string `xml:",chardata"`
+}
+
+func main() {
+    // Marshal struct -> XML
+    person := Person{
+        ID:   1,
+        Name: "John Doe",
+        Age:  30,
+        Address: Address{
+            Street:  "123 Main St",
+            City:    "Bangkok",
+            Country: "Thailand",
+        },
+        Phones: []Phone{
+            {Type: "home", Number: "02-123-4567"},
+            {Type: "mobile", Number: "081-234-5678"},
+        },
+    }
+    
+    xmlData, _ := xml.MarshalIndent(person, "", "  ")
+    fmt.Println(string(xmlData))
+    
+    // Unmarshal XML -> struct
+    xmlString := `<?xml version="1.0" encoding="UTF-8"?>
+    <person id="2">
+        <name>Jane Doe</name>
+        <age>25</age>
+        <address>
+            <street>456 Oak Ave</street>
+            <city>Chiang Mai</city>
+            <country>Thailand</country>
+        </address>
+        <phones>
+            <phone type="mobile">082-987-6543</phone>
+        </phones>
+    </person>`
+    
+    var person2 Person
+    xml.Unmarshal([]byte(xmlString), &person2)
+    fmt.Printf("%+v\n", person2)
+}
+```
+
+---
+
+### บทที่ 26: พื้นฐานการสร้าง HTTP Server
+
+**เป้าหมาย:** สร้าง HTTP server ที่มีประสิทธิภาพและปลอดภัย
+
+#### Basic HTTP Server
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+)
+
+func main() {
+    // 1. Basic handler
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
+    })
+    
+    // 2. Different HTTP methods
+    http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+        switch r.Method {
+        case http.MethodGet:
+            // get users
+            w.Write([]byte("GET users"))
+        case http.MethodPost:
+            // create user
+            w.Write([]byte("POST users"))
+        case http.MethodPut:
+            // update user
+            w.Write([]byte("PUT users"))
+        case http.MethodDelete:
+            // delete user
+            w.Write([]byte("DELETE users"))
+        default:
+            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        }
+    })
+    
+    // 3. Server configuration
+    server := &http.Server{
+        Addr:         ":8080",
+        ReadTimeout:  15 * time.Second,
+        WriteTimeout: 15 * time.Second,
+        IdleTimeout:  60 * time.Second,
+        Handler:      nil, // use default ServeMux
+    }
+    
+    // 4. Graceful shutdown
+    go func() {
+        log.Printf("Server starting on %s", server.Addr)
+        if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("Server failed: %v", err)
+        }
+    }()
+    
+    // Wait for interrupt signal
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    log.Println("Shutting down server...")
+    
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    
+    if err := server.Shutdown(ctx); err != nil {
+        log.Fatalf("Server forced to shutdown: %v", err)
+    }
+    
+    log.Println("Server exited")
+}
+```
+
+#### Using chi Router
+
+```go
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "net/http"
+    "time"
+    
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/chi/v5/middleware"
+    "github.com/go-chi/cors"
+    "github.com/go-chi/httprate"
+)
+
+func main() {
+    r := chi.NewRouter()
+    
+    // Global middlewares
+    r.Use(middleware.Logger)          // log requests
+    r.Use(middleware.Recoverer)       // recover from panics
+    r.Use(middleware.RealIP)          // get real IP
+    r.Use(middleware.RequestID)       // add request ID
+    r.Use(middleware.Timeout(60 * time.Second)) // timeout
+    
+    // CORS
+    r.Use(cors.Handler(cors.Options{
+        AllowedOrigins:   []string{"https://*", "http://*"},
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+        ExposedHeaders:   []string{"Link"},
+        AllowCredentials: false,
+        MaxAge:           300,
+    }))
+    
+    // Rate limiting
+    r.Use(httprate.LimitByIP(100, 1*time.Minute))
+    
+    // Routes
+    r.Get("/", homeHandler)
+    
+    r.Route("/api/v1", func(r chi.Router) {
+        r.Get("/health", healthHandler)
+        
+        r.Route("/users", func(r chi.Router) {
+            r.Get("/", listUsersHandler)
+            r.Post("/", createUserHandler)
+            
+            r.Route("/{userID}", func(r chi.Router) {
+                r.Use(userContext)
+                r.Get("/", getUserHandler)
+                r.Put("/", updateUserHandler)
+                r.Delete("/", deleteUserHandler)
+            })
+        })
+    })
+    
+    // Static files
+    r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+    
+    // Start server
+    http.ListenAndServe(":8080", r)
+}
+
+// Middleware to load user from database
+func userContext(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        userID := chi.URLParam(r, "userID")
+        
+        // Load user from database
+        user, err := loadUser(userID)
+        if err != nil {
+            http.Error(w, "User not found", http.StatusNotFound)
+            return
+        }
+        
+        ctx := context.WithValue(r.Context(), "user", user)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+
+func getUserHandler(w http.ResponseWriter, r *http.Request) {
+    user := r.Context().Value("user").(*User)
+    json.NewEncoder(w).Encode(user)
+}
+```
+
+#### ตัวอย่างการใช้งานจริง: REST API Server
+
+```go
+// models/user.go
+package models
+
+import (
+    "time"
+    "golang.org/x/crypto/bcrypt"
+)
+
+type User struct {
+    ID        int       `json:"id"`
+    Username  string    `json:"username"`
+    Email     string    `json:"email"`
+    Password  string    `json:"-"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (u *User) HashPassword() error {
+    hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+    if err != nil {
+        return err
+    }
+    u.Password = string(hashed)
+    return nil
+}
+
+func (u *User) CheckPassword(password string) bool {
+    err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+    return err == nil
+}
+
+// handlers/user_handler.go
+package handlers
+
+import (
+    "encoding/json"
+    "net/http"
+    "strconv"
+    
+    "github.com/go-chi/chi/v5"
+    "github.com/go-playground/validator/v10"
+)
+
+type UserHandler struct {
+    userService UserService
+    validate    *validator.Validate
+}
+
+func NewUserHandler(userService UserService) *UserHandler {
+    return &UserHandler{
+        userService: userService,
+        validate:    validator.New(),
+    }
+}
+
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+    var req CreateUserRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        JSONError(w, http.StatusBadRequest, "Invalid request body")
+        return
+    }
+    
+    if err := h.validate.Struct(req); err != nil {
+        JSONError(w, http.StatusBadRequest, err.Error())
+        return
+    }
+    
+    user, err := h.userService.CreateUser(r.Context(), &req)
+    if err != nil {
+        JSONError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    
+    JSONResponse(w, http.StatusCreated, user)
+}
+
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        JSONError(w, http.StatusBadRequest, "Invalid user ID")
+        return
+    }
+    
+    user, err := h.userService.GetUserByID(r.Context(), id)
+    if err != nil {
+        JSONError(w, http.StatusNotFound, "User not found")
+        return
+    }
+    
+    JSONResponse(w, http.StatusOK, user)
+}
+
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, _ := strconv.Atoi(idStr)
+    
+    var req UpdateUserRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        JSONError(w, http.StatusBadRequest, "Invalid request body")
+        return
+    }
+    
+    user, err := h.userService.UpdateUser(r.Context(), id, &req)
+    if err != nil {
+        JSONError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    
+    JSONResponse(w, http.StatusOK, user)
+}
+
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, _ := strconv.Atoi(idStr)
+    
+    if err := h.userService.DeleteUser(r.Context(), id); err != nil {
+        JSONError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    
+    w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+    page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+    if page < 1 {
+        page = 1
+    }
+    
+    limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+    if limit < 1 || limit > 100 {
+        limit = 20
+    }
+    
+    users, total, err := h.userService.ListUsers(r.Context(), page, limit)
+    if err != nil {
+        JSONError(w, http.StatusInternalServerError, err.Error())
+        return
+    }
+    
+    response := &ListUsersResponse{
+        Data:       users,
+        Total:      total,
+        Page:       page,
+        PerPage:    limit,
+        TotalPages: (total + limit - 1) / limit,
+    }
+    
+    JSONResponse(w, http.StatusOK, response)
+}
+```
+
+---
+
+### บทที่ 27: Enum, Iota และ Bitmask
+
+**เป้าหมาย:** ใช้ iota สำหรับสร้าง enum และ bitmask
+
+#### Basic Iota
+
+```go
+package main
+
+import "fmt"
+
+// 1. Basic enum
+type Weekday int
+
+const (
+    Sunday Weekday = iota  // 0
+    Monday                 // 1
+    Tuesday                // 2
+    Wednesday              // 3
+    Thursday               // 4
+    Friday                 // 5
+    Saturday               // 6
+)
+
+// 2. Skip values
+const (
+    _ = iota              // 0 (skip)
+    KB = 1 << (10 * iota) // 1 << 10 = 1024
+    MB                    // 1 << 20 = 1048576
+    GB                    // 1 << 30 = 1073741824
+    TB                    // 1 << 40 = 1099511627776
+)
+
+// 3. Enum with string representation
+type Status int
+
+const (
+    StatusPending Status = iota
+    StatusApproved
+    StatusRejected
+    StatusCancelled
+)
+
+func (s Status) String() string {
+    return [...]string{"Pending", "Approved", "Rejected", "Cancelled"}[s]
+}
+
+// 4. Enum with JSON marshaling
+type OrderStatus int
+
+const (
+    OrderStatusCreated OrderStatus = iota + 1  // start from 1
+    OrderStatusPaid
+    OrderStatusShipped
+    OrderStatusDelivered
+    OrderStatusCancelled
+)
+
+func (s OrderStatus) MarshalJSON() ([]byte, error) {
+    return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
+}
+
+func (s OrderStatus) String() string {
+    return [...]string{"", "Created", "Paid", "Shipped", "Delivered", "Cancelled"}[s]
+}
+
+func main() {
+    fmt.Println(Sunday)    // 0
+    fmt.Println(Monday)    // 1
+    fmt.Println(KB)        // 1024
+    fmt.Println(StatusPending) // 0
+    fmt.Println(StatusPending.String()) // "Pending"
+}
+```
+
+#### Bitmask with Iota
+
+```go
+package main
+
+import "fmt"
+
+// Permission flags (bitmask)
+type Permission int
+
+const (
+    PermRead   Permission = 1 << iota  // 1 (001)
+    PermWrite                          // 2 (010)
+    PermExecute                        // 4 (100)
+    PermDelete                         // 8 (1000)
+    PermAdmin   = PermRead | PermWrite | PermExecute | PermDelete  // 15 (1111)
+)
+
+func (p Permission) String() string {
+    if p == 0 {
+        return "None"
+    }
+    
+    var flags []string
+    if p&PermRead != 0 {
+        flags = append(flags, "Read")
+    }
+    if p&PermWrite != 0 {
+        flags = append(flags, "Write")
+    }
+    if p&PermExecute != 0 {
+        flags = append(flags, "Execute")
+    }
+    if p&PermDelete != 0 {
+        flags = append(flags, "Delete")
+    }
+    
+    return strings.Join(flags, "|")
+}
+
+func (p *Permission) Add(perm Permission) {
+    *p |= perm
+}
+
+func (p *Permission) Remove(perm Permission) {
+    *p &^= perm
+}
+
+func (p Permission) Has(perm Permission) bool {
+    return p&perm != 0
+}
+
+// ตัวอย่างการใช้งาน
+type User struct {
+    Name        string
+    Permissions Permission
+}
+
+func main() {
+    user := User{
+        Name:        "john",
+        Permissions: PermRead | PermWrite,
+    }
+    
+    fmt.Println(user.Permissions) // Read|Write
+    fmt.Println(user.Permissions.Has(PermRead))   // true
+    fmt.Println(user.Permissions.Has(PermDelete)) // false
+    
+    user.Permissions.Add(PermDelete)
+    fmt.Println(user.Permissions) // Read|Write|Delete
+    
+    user.Permissions.Remove(PermWrite)
+    fmt.Println(user.Permissions) // Read|Delete
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. Order Status Management**
+
+```go
+type OrderStatus int
+
+const (
+    OrderStatusDraft OrderStatus = iota + 1
+    OrderStatusPending
+    OrderStatusConfirmed
+    OrderStatusProcessing
+    OrderStatusShipped
+    OrderStatusDelivered
+    OrderStatusCancelled
+    OrderStatusRefunded
+)
+
+var orderStatusTransitions = map[OrderStatus][]OrderStatus{
+    OrderStatusDraft:      {OrderStatusPending, OrderStatusCancelled},
+    OrderStatusPending:    {OrderStatusConfirmed, OrderStatusCancelled},
+    OrderStatusConfirmed:  {OrderStatusProcessing, OrderStatusCancelled},
+    OrderStatusProcessing: {OrderStatusShipped, OrderStatusCancelled},
+    OrderStatusShipped:    {OrderStatusDelivered},
+    OrderStatusDelivered:  {OrderStatusRefunded},
+    OrderStatusCancelled:  {},
+    OrderStatusRefunded:   {},
+}
+
+func (s OrderStatus) CanTransitionTo(target OrderStatus) bool {
+    allowed := orderStatusTransitions[s]
+    for _, allowedStatus := range allowed {
+        if allowedStatus == target {
+            return true
+        }
+    }
+    return false
+}
+
+func (s OrderStatus) IsFinal() bool {
+    return s == OrderStatusDelivered || 
+           s == OrderStatusCancelled || 
+           s == OrderStatusRefunded
+}
+
+func (s OrderStatus) String() string {
+    return [...]string{
+        "", "Draft", "Pending", "Confirmed", 
+        "Processing", "Shipped", "Delivered", 
+        "Cancelled", "Refunded",
+    }[s]
+}
+
+// ใช้งาน
+type Order struct {
+    ID     int
+    Status OrderStatus
+}
+
+func (o *Order) TransitionTo(newStatus OrderStatus) error {
+    if !o.Status.CanTransitionTo(newStatus) {
+        return fmt.Errorf("cannot transition from %s to %s", 
+            o.Status, newStatus)
+    }
+    
+    o.Status = newStatus
+    return nil
+}
+```
+
+**2. HTTP Status Code Group**
+
+```go
+type HTTPStatusGroup int
+
+const (
+    StatusGroupInfo HTTPStatusGroup = iota + 1
+    StatusGroupSuccess
+    StatusGroupRedirect
+    StatusGroupClientError
+    StatusGroupServerError
+)
+
+func GetStatusGroup(code int) HTTPStatusGroup {
+    switch {
+    case code >= 100 && code < 200:
+        return StatusGroupInfo
+    case code >= 200 && code < 300:
+        return StatusGroupSuccess
+    case code >= 300 && code < 400:
+        return StatusGroupRedirect
+    case code >= 400 && code < 500:
+        return StatusGroupClientError
+    case code >= 500 && code < 600:
+        return StatusGroupServerError
+    default:
+        return 0
+    }
+}
+
+func (g HTTPStatusGroup) String() string {
+    return [...]string{
+        "", "Informational", "Success", 
+        "Redirection", "Client Error", "Server Error",
+    }[g]
+}
+```
+
+---
+
+### บทที่ 28: วันที่และเวลา (Time)
+
+**เป้าหมาย:** จัดการ date, time, duration, timezone อย่างถูกต้อง
+
+#### Time Basics
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // 1. Current time
+    now := time.Now()
+    fmt.Printf("Now: %v\n", now)
+    fmt.Printf("Unix: %d\n", now.Unix())
+    fmt.Printf("UnixNano: %d\n", now.UnixNano())
+    
+    // 2. Creating time
+    t1 := time.Date(2024, time.December, 25, 10, 30, 0, 0, time.UTC)
+    fmt.Println(t1)
+    
+    // 3. Parsing time
+    t2, _ := time.Parse("2006-01-02 15:04:05", "2024-12-25 10:30:00")
+    fmt.Println(t2)
+    
+    // 4. Formatting time
+    fmt.Println(now.Format("2006-01-02 15:04:05"))
+    fmt.Println(now.Format("Monday, 02 Jan 2006"))
+    fmt.Println(now.Format(time.RFC3339))
+    
+    // 5. Time components
+    fmt.Printf("Year: %d, Month: %d, Day: %d\n", now.Year(), now.Month(), now.Day())
+    fmt.Printf("Hour: %d, Minute: %d, Second: %d\n", now.Hour(), now.Minute(), now.Second())
+    fmt.Printf("Weekday: %s\n", now.Weekday())
+    
+    // 6. Time arithmetic
+    tomorrow := now.Add(24 * time.Hour)
+    yesterday := now.Add(-24 * time.Hour)
+    oneWeekLater := now.AddDate(0, 0, 7)
+    
+    fmt.Printf("Tomorrow: %v\n", tomorrow)
+    fmt.Printf("Yesterday: %v\n", yesterday)
+    
+    // 7. Time difference
+    duration := tomorrow.Sub(now)
+    fmt.Printf("Duration: %v\n", duration)
+    fmt.Printf("Hours: %.2f\n", duration.Hours())
+    fmt.Printf("Minutes: %.2f\n", duration.Minutes())
+    
+    // 8. Compare times
+    fmt.Println(now.Before(tomorrow))  // true
+    fmt.Println(now.After(yesterday))  // true
+    fmt.Println(now.Equal(now))        // true
+}
+```
+
+#### Timezone Handling
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // 1. Load location
+    loc, _ := time.LoadLocation("Asia/Bangkok")
+    nyLoc, _ := time.LoadLocation("America/New_York")
+    
+    // 2. Create time with location
+    t := time.Date(2024, 12, 25, 10, 30, 0, 0, loc)
+    fmt.Println(t)
+    
+    // 3. Convert between timezones
+    tUTC := t.UTC()
+    tNY := t.In(nyLoc)
+    
+    fmt.Printf("Bangkok: %v\n", t)
+    fmt.Printf("UTC: %v\n", tUTC)
+    fmt.Printf("New York: %v\n", tNY)
+    
+    // 4. Parse with timezone
+    t2, _ := time.ParseInLocation(
+        "2006-01-02 15:04:05",
+        "2024-12-25 10:30:00",
+        loc,
+    )
+    fmt.Println(t2)
+    
+    // 5. Get current time in different timezone
+    nowBKK := time.Now().In(loc)
+    nowNY := time.Now().In(nyLoc)
+    fmt.Printf("Bangkok now: %v\n", nowBKK)
+    fmt.Printf("New York now: %v\n", nowNY)
+}
+```
+
+#### Duration and Ticker
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // 1. Duration parsing
+    duration, _ := time.ParseDuration("1h30m")
+    fmt.Println(duration) // 1h30m0s
+    
+    duration2, _ := time.ParseDuration("2h15m30s")
+    fmt.Println(duration2.Hours())   // 2.2583333333333333
+    fmt.Println(duration2.Minutes()) // 135.5
+    
+    // 2. Sleep
+    fmt.Println("Sleeping...")
+    time.Sleep(2 * time.Second)
+    fmt.Println("Awake!")
+    
+    // 3. Timer (one-shot)
+    timer := time.NewTimer(3 * time.Second)
+    <-timer.C
+    fmt.Println("Timer expired")
+    
+    // 4. Timer with stop
+    timer2 := time.NewTimer(5 * time.Second)
+    go func() {
+        <-timer2.C
+        fmt.Println("Timer expired")
+    }()
+    
+    time.Sleep(2 * time.Second)
+    if timer2.Stop() {
+        fmt.Println("Timer stopped")
+    }
+    
+    // 5. Ticker (repeating)
+    ticker := time.NewTicker(1 * time.Second)
+    done := make(chan bool)
+    
+    go func() {
+        for {
+            select {
+            case t := <-ticker.C:
+                fmt.Printf("Tick at %v\n", t)
+            case <-done:
+                ticker.Stop()
+                return
+            }
+        }
+    }()
+    
+    time.Sleep(5 * time.Second)
+    done <- true
+    fmt.Println("Ticker stopped")
+    
+    // 6. After (timeout pattern)
+    timeout := time.After(3 * time.Second)
+    select {
+    case <-timeout:
+        fmt.Println("Timeout!")
+    }
+    
+    // 7. AfterFunc
+    time.AfterFunc(2*time.Second, func() {
+        fmt.Println("AfterFunc executed")
+    })
+    
+    time.Sleep(3 * time.Second)
+}
+```
+
+#### ตัวอย่างการใช้งานจริง
+
+**1. Date Range Validation**
+
+```go
+type DateRange struct {
+    Start time.Time
+    End   time.Time
+}
+
+func (r *DateRange) Validate() error {
+    if r.Start.IsZero() {
+        return errors.New("start date is required")
+    }
+    if r.End.IsZero() {
+        return errors.New("end date is required")
+    }
+    if r.End.Before(r.Start) {
+        return errors.New("end date must be after start date")
+    }
+    return nil
+}
+
+func (r *DateRange) Contains(t time.Time) bool {
+    return (t.Equal(r.Start) || t.After(r.Start)) && 
+           (t.Equal(r.End) || t.Before(r.End))
+}
+
+func (r *DateRange) Overlaps(other *DateRange) bool {
+    return r.Start.Before(other.End) && r.End.After(other.Start)
+}
+
+func (r *DateRange) Duration() time.Duration {
+    return r.End.Sub(r.Start)
+}
+
+// ใช้งาน
+func GetBookingsForDateRange(db *sql.DB, start, end time.Time) ([]Booking, error) {
+    range := &DateRange{Start: start, End: end}
+    if err := range.Validate(); err != nil {
+        return nil, err
+    }
+    
+    query := `SELECT id, user_id, start_time, end_time 
+              FROM bookings 
+              WHERE start_time >= ? AND end_time <= ?`
+    
+    rows, err := db.Query(query, start, end)
+    // ... process rows
+}
+```
+
+**2. Rate Limiter with Time Window**
+
+```go
+type RateLimiter struct {
+    limit     int
+    window    time.Duration
+    requests  map[string][]time.Time
+    mu        sync.RWMutex
+}
+
+func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
+    return &RateLimiter{
+        limit:    limit,
+        window:   window,
+        requests: make(map[string][]time.Time),
+    }
+}
+
+func (rl *RateLimiter) Allow(key string) bool {
+    rl.mu.Lock()
+    defer rl.mu.Unlock()
+    
+    now := time.Now()
+    cutoff := now.Add(-rl.window)
+    
+    // เก็บเฉพาะ requests ที่อยู่ใน window
+    requests := rl.requests[key]
+    valid := []time.Time{}
+    for _, t := range requests {
+        if t.After(cutoff) {
+            valid = append(valid, t)
+        }
+    }
+    
+    if len(valid) >= rl.limit {
+        return false
+    }
+    
+    valid = append(valid, now)
+    rl.requests[key] = valid
+    return true
+}
+
+func (rl *RateLimiter) Cleanup() {
+    rl.mu.Lock()
+    defer rl.mu.Unlock()
+    
+    cutoff := time.Now().Add(-rl.window)
+    for key, requests := range rl.requests {
+        valid := []time.Time{}
+        for _, t := range requests {
+            if t.After(cutoff) {
+                valid = append(valid, t)
+            }
+        }
+        if len(valid) == 0 {
+            delete(rl.requests, key)
+        } else {
+            rl.requests[key] = valid
+        }
+    }
+}
+
+// ใช้งาน
+func main() {
+    limiter := NewRateLimiter(100, time.Minute)
+    
+    // Cleanup every hour
+    ticker := time.NewTicker(time.Hour)
+    go func() {
+        for range ticker.C {
+            limiter.Cleanup()
+        }
+    }()
+    
+    // Use in handler
+    http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+        ip := r.RemoteAddr
+        
+        if !limiter.Allow(ip) {
+            http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+            return
+        }
+        
+        // process request
+    })
+}
+```
+
+**3. Schedule Job with Cron-like**
+
+```go
+type Scheduler struct {
+    jobs   []*Job
+    stopCh chan struct{}
+}
+
+type Job struct {
+    Name     string
+    Schedule string  // "0 9 * * *" = every day at 9am
+    Task     func()
+    LastRun  time.Time
+    NextRun  time.Time
+}
+
+func NewScheduler() *Scheduler {
+    return &Scheduler{
+        jobs:   []*Job{},
+        stopCh: make(chan struct{}),
+    }
+}
+
+func (s *Scheduler) AddJob(job *Job) {
+    s.jobs = append(s.jobs, job)
+    s.calculateNextRun(job)
+}
+
+func (s *Scheduler) calculateNextRun(job *Job) {
+    // Simplified cron parsing (use robfig/cron for production)
+    now := time.Now()
+    job.NextRun = now.Add(24 * time.Hour) // placeholder
+}
+
+func (s *Scheduler) Start() {
+    ticker := time.NewTicker(1 * time.Minute)
+    go func() {
+        for {
+            select {
+            case <-ticker.C:
+                s.checkJobs()
+            case <-s.stopCh:
+                ticker.Stop()
+                return
+            }
+        }
+    }()
+}
+
+func (s *Scheduler) checkJobs() {
+    now := time.Now()
+    for _, job := range s.jobs {
+        if now.After(job.NextRun) {
+            go job.Task()
+            job.LastRun = now
+            s.calculateNextRun(job)
+        }
+    }
+}
+
+func (s *Scheduler) Stop() {
+    close(s.stopCh)
+}
+```
+
+---
+
+## 2. การประมวลผล (Processing Layer)
+
+### บทที่ 30: การทำงานพร้อมกัน (Concurrency)
+
+**เป้าหมาย:** ใช้ goroutines และ channels ในการเขียนโปรแกรม concurrent
+
+#### Goroutines Basics
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+    "time"
+)
+
+func main() {
+    // 1. Start a goroutine
+    go func() {
+        fmt.Println("Hello from goroutine")
+    }()
+    
+    // 2. Wait for goroutine (bad way)
+    time.Sleep(100 * time.Millisecond)
+    
+    // 3. Use WaitGroup
+    var wg sync.WaitGroup
+    
+    for i := 1; i <= 5; i++ {
+        wg.Add(1)
+        go func(id int) {
+            defer wg.Done()
+            fmt.Printf("Worker %d done\n", id)
+        }(i)
+    }
+    
+    wg.Wait()
+    fmt.Println("All workers done")
+    
+    // 4. Goroutine with panic recovery
+    var wg2 sync.WaitGroup
+    wg2.Add(1)
+    
+    go func() {
+        defer wg2.Done()
+        defer func() {
+            if r := recover(); r != nil {
+                fmt.Printf("Recovered from panic: %v\n", r)
+            }
+        }()
+        
+        panic("something went wrong")
+    }()
+    
+    wg2.Wait()
+}
+```
+
+#### Channels
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // 1. Unbuffered channel
+    ch := make(chan int)
+    
+    go func() {
+        ch <- 42  // send
+    }()
+    
+    value := <-ch  // receive
+    fmt.Println(value)
+    
+    // 2. Buffered channel
+    buffered := make(chan string, 3)
+    buffered <- "one"
+    buffered <- "two"
+    buffered <- "three"
+    // buffered <- "four" // would block
+    
+    fmt.Println(<-buffered)
+    fmt.Println(<-buffered)
+    fmt.Println(<-buffered)
+    
+    // 3. Channel with close
+    ch2 := make(chan int, 5)
+    
+    go func() {
+        for i := 0; i < 5; i++ {
+            ch2 <- i
+        }
+        close(ch2)
+    }()
+    
+    // Range over channel (auto stops when closed)
+    for v := range ch2 {
+        fmt.Println(v)
+    }
+    
+    // 4. Select statement
+    ch3 := make(chan string)
+    ch4 := make(chan string)
+    
+    go func() {
+        time.Sleep(1 * time.Second)
+        ch3 <- "from channel 3"
+    }()
+    
+    go func() {
+        time.Sleep(2 * time.Second)
+        ch4 <- "from channel 4"
+    }()
+    
+    for i := 0; i < 2; i++ {
+        select {
+        case msg1 := <-ch3:
+            fmt.Println(msg1)
+        case msg2 := <-ch4:
+            fmt.Println(msg2)
+        case <-time.After(3 * time.Second):
+            fmt.Println("timeout")
+        }
+    }
+    
+    // 5. Non-blocking channel operations
+    ch5 := make(chan int, 1)
+    
+    select {
+    case ch5 <- 42:
+        fmt.Println("Sent")
+    default:
+        fmt.Println("Channel is full")
+    }
+    
+    select {
+    case v := <-ch5:
+        fmt.Printf("Received: %d\n", v)
+    default:
+        fmt.Println("Channel is empty")
+    }
+}
+```
+
+#### Worker Pool Pattern
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "sync"
+    "time"
+)
+
+type Job struct {
+    ID    int
+    Data  interface{}
+}
+
+type Result struct {
+    JobID   int
+    Output  interface{}
+    Error   error
+}
+
+type WorkerPool struct {
+    numWorkers int
+    jobQueue   chan Job
+    resultQueue chan Result
+    wg         sync.WaitGroup
+    ctx        context.Context
+    cancel     context.CancelFunc
+}
+
+func NewWorkerPool(numWorkers int, queueSize int) *WorkerPool {
+    ctx, cancel := context.WithCancel(context.Background())
+    
+    return &WorkerPool{
+        numWorkers:  numWorkers,
+        jobQueue:    make(chan Job, queueSize),
+        resultQueue: make(chan Result, queueSize),
+        ctx:         ctx,
+        cancel:      cancel,
+    }
+}
+
+func (wp *WorkerPool) Start(workerFunc func(Job) Result) {
+    // Start workers
+    for i := 0; i < wp.numWorkers; i++ {
+        wp.wg.Add(1)
+        go wp.worker(i, workerFunc)
+    }
+    
+    // Wait for all workers to finish in background
+    go func() {
+        wp.wg.Wait()
+        close(wp.resultQueue)
+    }()
+}
+
+func (wp *WorkerPool) worker(id int, workerFunc func(Job) Result) {
+    defer wp.wg.Done()
+    
+    for {
+        select {
+        case <-wp.ctx.Done():
+            fmt.Printf("Worker %d stopping\n", id)
+            return
+        case job, ok := <-wp.jobQueue:
+            if !ok {
+                return
+            }
+            result := workerFunc(job)
+            select {
+            case wp.resultQueue <- result:
+            case <-wp.ctx.Done():
+                return
+            }
+        }
+    }
+}
+
+func (wp *WorkerPool) Submit(job Job) {
+    select {
+    case wp.jobQueue <- job:
+    case <-wp.ctx.Done():
+    }
+}
+
+func (wp *WorkerPool) Results() <-chan Result {
+    return wp.resultQueue
+}
+
+func (wp *WorkerPool) Stop() {
+    wp.cancel()
+    close(wp.jobQueue)
+    wp.wg.Wait()
+}
+
+// ตัวอย่างการใช้งาน
+func main() {
+    // Create worker pool with 3 workers
+    pool := NewWorkerPool(3, 100)
+    
+    // Define worker function
+    workerFunc := func(job Job) Result {
+        // Simulate work
+        time.Sleep(time.Duration(job.ID) * 100 * time.Millisecond)
+        
+        return Result{
+            JobID:  job.ID,
+            Output: fmt.Sprintf("Processed job %d", job.ID),
+        }
+    }
+    
+    pool.Start(workerFunc)
+    
+    // Submit 10 jobs
+    for i := 1; i <= 10; i++ {
+        pool.Submit(Job{ID: i, Data: fmt.Sprintf("data-%d", i)})
+    }
+    
+    // Collect results
+    for result := range pool.Results() {
+        if result.Error != nil {
+            fmt.Printf("Job %d failed: %v\n", result.JobID, result.Error)
+        } else {
+            fmt.Printf("Job %d: %s\n", result.JobID, result.Output)
+        }
+    }
+    
+    pool.Stop()
+}
+```
+
+#### Pipeline Pattern
+
+```go
+package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+func main() {
+    // Pipeline: numbers -> square -> filter -> sum
+    numbers := generate(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    
+    squared := square(numbers)
+    filtered := filter(squared, func(n int) bool {
+        return n%2 == 0 // even numbers
+    })
+    
+    sum := sum(filtered)
+    
+    fmt.Println("Sum of squares of even numbers:", <-sum)
+}
+
+func generate(nums ...int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for _, n := range nums {
+            out <- n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func square(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            out <- n * n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func filter(in <-chan int, predicate func(int) bool) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            if predicate(n) {
+                out <- n
+            }
+        }
+        close(out)
+    }()
+    return out
+}
+
+func sum(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        total := 0
+        for n := range in {
+            total += n
+        }
+        out <- total
+        close(out)
+    }()
+    return out
+}
+```
+
+#### Fan-Out / Fan-In Pattern
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+    "time"
+)
+
+func main() {
+    // Generate numbers
+    numbers := generateNumbers(100)
+    
+    // Fan-out: create multiple workers
+    worker1 := squareWorker(numbers)
+    worker2 := squareWorker(numbers)
+    worker3 := squareWorker(numbers)
+    
+    // Fan-in: merge results from all workers
+    results := merge(worker1, worker2, worker3)
+    
+    // Collect results
+    for result := range results {
+        fmt.Println(result)
+    }
+}
+
+func generateNumbers(n int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for i := 1; i <= n; i++ {
+            out <- i
+        }
+        close(out)
+    }()
+    return out
+}
+
+func squareWorker(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            time.Sleep(10 * time.Millisecond) // simulate work
+            out <- n * n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func merge(channels ...<-chan int) <-chan int {
+    var wg sync.WaitGroup
+    out := make(chan int)
+    
+    // Start a goroutine for each input channel
+    output := func(c <-chan int) {
+        for n := range c {
+            out <- n
+        }
+        wg.Done()
+    }
+    
+    wg.Add(len(channels))
+    for _, c := range channels {
+        go output(c)
+    }
+    
+    // Close output channel when all workers done
+    go func() {
+        wg.Wait()
+        close(out)
+    }()
+    
+    return out
+}
+```
+
+---
+
+### บทที่ 31: การบันทึกเหตุการณ์ (Logging)
+
+**เป้าหมาย:** ใช้ structured logging สำหรับการ debug และ monitoring
+
+#### Using slog (Go 1.21+)
+
+```go
+package main
+
+import (
+    "context"
+    "log/slog"
+    "os"
+    "time"
+)
+
+func main() {
+    // 1. Basic logging
+    slog.Info("Application started")
+    slog.Warn("Low memory", "usage", 85)
+    slog.Error("Database connection failed", "error", "timeout")
+    
+    // 2. Structured logging with attributes
+    slog.Info("User logged in",
+        "user_id", 123,
+        "username", "john_doe",
+        "ip", "192.168.1.1",
+    )
+    
+    // 3. Log with group
+    slog.Info("Request processed",
+        slog.Group("request",
+            "method", "GET",
+            "path", "/api/users",
+            "duration_ms", 150,
+        ),
+        slog.Group("response",
+            "status", 200,
+            "size", 1024,
+        ),
+    )
+    
+    // 4. Log with context
+    ctx := context.WithValue(context.Background(), "request_id", "abc-123")
+    slog.InfoContext(ctx, "Processing request", "user_id", 123)
+    
+    // 5. Set log level
+    opts := &slog.HandlerOptions{
+        Level: slog.LevelDebug,
+    }
+    handler := slog.NewJSONHandler(os.Stdout, opts)
+    logger := slog.New(handler)
+    slog.SetDefault(logger)
+    
+    logger.Debug("Debug message", "detail", "only shown in debug mode")
+    
+    // 6. Custom handler with fields
+    handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+        Level: slog.LevelInfo,
+        ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+            // Rename timestamp to time
+            if a.Key == slog.TimeKey {
+                a.Key = "timestamp"
+            }
+            return a
+        },
+    })
+    slog.SetDefault(slog.New(handler))
+    
+    slog.Info("With custom timestamp key", "value", 42)
+}
+```
+
+#### Production Logging Setup
+
+```go
+package logger
+
+import (
+    "io"
+    "log/slog"
+    "os"
+    "time"
+)
+
+type Config struct {
+    Level      string `yaml:"level"`   // debug, info, warn, error
+    Format     string `yaml:"format"`  // json, text
+    OutputPath string `yaml:"output"`  // stdout, stderr, file path
+}
+
+func NewLogger(cfg Config) (*slog.Logger, error) {
+    // Parse log level
+    var level slog.Level
+    switch cfg.Level {
+    case "debug":
+        level = slog.LevelDebug
+    case "info":
+        level = slog.LevelInfo
+    case "warn":
+        level = slog.LevelWarn
+    case "error":
+        level = slog.LevelError
+    default:
+        level = slog.LevelInfo
+    }
+    
+    // Setup output
+    var writer io.Writer
+    switch cfg.OutputPath {
+    case "stdout":
+        writer = os.Stdout
+    case "stderr":
+        writer = os.Stderr
+    default:
+        file, err := os.OpenFile(cfg.OutputPath, 
+            os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+        if err != nil {
+            return nil, err
+        }
+        writer = file
+    }
+    
+    // Create handler
+    var handler slog.Handler
+    opts := &slog.HandlerOptions{
+        Level: level,
+        ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+            // Add service name to all logs
+            if a.Key == slog.TimeKey {
+                a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
+            }
+            return a
+        },
+    }
+    
+    if cfg.Format == "json" {
+        handler = slog.NewJSONHandler(writer, opts)
+    } else {
+        handler = slog.NewTextHandler(writer, opts)
+    }
+    
+    return slog.New(handler), nil
+}
+
+// Middleware for HTTP logging
+func LoggingMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        
+        // Capture response status
+        rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+        
+        next.ServeHTTP(rw, r)
+        
+        duration := time.Since(start)
+        
+        slog.Info("HTTP request",
+            "method", r.Method,
+            "path", r.URL.Path,
+            "status", rw.status,
+            "duration_ms", duration.Milliseconds(),
+            "ip", r.RemoteAddr,
+            "user_agent", r.UserAgent(),
+        )
+    })
+}
+
+type responseWriter struct {
+    http.ResponseWriter
+    status int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+    rw.status = code
+    rw.ResponseWriter.WriteHeader(code)
+}
+```
+
+#### Zap Logger (Alternative)
+
+```go
+package main
+
+import (
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+)
+
+func main() {
+    // 1. Production logger
+    logger, _ := zap.NewProduction()
+    defer logger.Sync()
+    
+    logger.Info("Application started",
+        zap.String("version", "1.0.0"),
+        zap.Int("port", 8080),
+    )
+    
+    logger.Error("Database error",
+        zap.Error(fmt.Errorf("connection refused")),
+        zap.String("host", "localhost"),
+    )
+    
+    // 2. Development logger
+    devLogger, _ := zap.NewDevelopment()
+    devLogger.Debug("Debug message", zap.String("key", "value"))
+    
+    // 3. Custom logger
+    config := zap.Config{
+        Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
+        Development: false,
+        Encoding:    "json",
+        EncoderConfig: zapcore.EncoderConfig{
+            TimeKey:        "timestamp",
+            LevelKey:       "level",
+            NameKey:        "logger",
+            CallerKey:      "caller",
+            MessageKey:     "message",
+            StacktraceKey:  "stacktrace",
+            LineEnding:     zapcore.DefaultLineEnding,
+            EncodeLevel:    zapcore.LowercaseLevelEncoder,
+            EncodeTime:     zapcore.ISO8601TimeEncoder,
+            EncodeDuration: zapcore.SecondsDurationEncoder,
+            EncodeCaller:   zapcore.ShortCallerEncoder,
+        },
+        OutputPaths:      []string{"stdout", "/var/log/app.log"},
+        ErrorOutputPaths: []string{"stderr"},
+    }
+    
+    customLogger, _ := config.Build()
+    defer customLogger.Sync()
+    
+    customLogger.Info("Custom logger",
+        zap.String("service", "myapp"),
+    )
+    
+    // 4. Sugared logger (less typed)
+    sugar := logger.Sugar()
+    sugar.Infow("User login",
+        "user_id", 123,
+        "username", "john",
+    )
+}
+```
+
+---
+
+### บทที่ 32: เทมเพลต (Templates)
+
+**เป้าหมาย:** สร้าง HTML และ text templates สำหรับ dynamic content
+
+#### Text Templates
+
+```go
+package main
+
+import (
+    "bytes"
+    "os"
+    "text/template"
+)
+
+func main() {
+    // 1. Basic template
+    tmpl := template.Must(template.New("greeting").Parse("Hello, {{.Name}}!"))
+    tmpl.Execute(os.Stdout, map[string]string{"Name": "World"})
+    
+    // 2. Template with conditionals
+    const emailTmpl = `
+    Subject: Welcome {{.Name}}
+    
+    {{if .IsVIP}}
+    Dear VIP Customer {{.Name}},
+    {{else}}
+    Dear {{.Name}},
+    {{end}}
+    
+    Thank you for joining our platform.
+    {{if .Discount}}
+    Use code {{.Discount.Code}} for {{.Discount.Percent}}% off!
+    {{end}}
+    
+    Best regards,
+    The Team
+    `
+    
+    data := struct {
+        Name     string
+        IsVIP    bool
+        Discount *Discount
+    }{
+        Name:  "John Doe",
+        IsVIP: true,
+        Discount: &Discount{
+            Code:    "WELCOME20",
+            Percent: 20,
+        },
+    }
+    
+    tmpl = template.Must(template.New("email").Parse(emailTmpl))
+    tmpl.Execute(os.Stdout, data)
+    
+    // 3. Template with loops
+    const listTmpl = `
+    <ul>
+    {{range .Items}}
+        <li>{{.}}</li>
+    {{else}}
+        <li>No items found</li>
+    {{end}}
+    </ul>
+    `
+    
+    tmpl = template.Must(template.New("list").Parse(listTmpl))
+    tmpl.Execute(os.Stdout, map[string][]string{
+        "Items": {"Apple", "Banana", "Orange"},
+    })
+    
+    // 4. Template with custom functions
+    funcMap := template.FuncMap{
+        "upper": strings.ToUpper,
+        "lower": strings.ToLower,
+        "formatDate": func(t time.Time) string {
+            return t.Format("2006-01-02")
+        },
+        "multiply": func(a, b int) int {
+            return a * b
+        },
+    }
+    
+    const funcTmpl = `
+    Uppercase: {{.Name | upper}}
+    Lowercase: {{.Name | lower}}
+    Date: {{.CreatedAt | formatDate}}
+    Total: {{multiply .Price .Quantity}}
+    `
+    
+    tmpl = template.Must(template.New("func").Funcs(funcMap).Parse(funcTmpl))
+    tmpl.Execute(os.Stdout, struct {
+        Name      string
+        CreatedAt time.Time
+        Price     int
+        Quantity  int
+    }{
+        Name:      "John Doe",
+        CreatedAt: time.Now(),
+        Price:     100,
+        Quantity:  3,
+    })
+}
+```
+
+#### HTML Templates
+
+```go
+package main
+
+import (
+    "html/template"
+    "net/http"
+)
+
+type PageData struct {
+    Title       string
+    User        *User
+    Products    []Product
+    IsLoggedIn  bool
+    Flash       string
+    CSRFToken   string
+}
+
+func renderTemplate(w http.ResponseWriter, tmplName string, data interface{}) {
+    // Parse templates with layout
+    tmpl := template.Must(template.ParseFiles(
+        "templates/layout.html",
+        "templates/"+tmplName+".html",
+    ))
+    
+    w.Header().Set("Content-Type", "text/html; charset=utf-8")
+    tmpl.ExecuteTemplate(w, "layout", data)
+}
+
+// templates/layout.html
+/*
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.Title}} - My App</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        {{template "navbar" .}}
+    </header>
+    
+    <main>
+        {{if .Flash}}
+        <div class="alert">{{.Flash}}</div>
+        {{end}}
+        
+        {{template "content" .}}
+    </main>
+    
+    <footer>
+        &copy; 2024 My App
+    </footer>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
+*/
+
+// templates/navbar.html
+/*
+{{define "navbar"}}
+<nav>
+    <a href="/">Home</a>
+    {{if .IsLoggedIn}}
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a>
+    {{else}}
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    {{end}}
+</nav>
+{{end}}
+*/
+
+// templates/home.html
+/*
+{{define "content"}}
+<h1>Welcome, {{.User.Name}}!</h1>
+
+<div class="products">
+    <h2>Our Products</h2>
+    <div class="product-grid">
+        {{range .Products}}
+        <div class="product-card">
+            <h3>{{.Name}}</h3>
+            <p>{{.Description}}</p>
+            <div class="price">${{.Price}}</div>
+            <form method="POST" action="/cart/add">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <input type="hidden" name="product_id" value="{{.ID}}">
+                <input type="number" name="quantity" value="1" min="1">
+                <button type="submit">Add to Cart</button>
+            </form>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}
+*/
+```
+
+#### Template Functions and Helpers
+
+```go
+package main
+
+import (
+    "html/template"
+    "strings"
+    "time"
+)
+
+// Custom template functions
+var templateFuncs = template.FuncMap{
+    // String helpers
+    "upper":      strings.ToUpper,
+    "lower":      strings.ToLower,
+    "title":      strings.Title,
+    "trim":       strings.TrimSpace,
+    "truncate":   truncate,
+    
+    // Number helpers
+    "formatNumber": formatNumber,
+    "currency":     formatCurrency,
+    
+    // Time helpers
+    "formatDate":   formatDate,
+    "formatTime":   formatTime,
+    "timeAgo":      timeAgo,
+    
+    // Array helpers
+    "has":          contains,
+    "join":         strings.Join,
+    "first":        first,
+    "last":         last,
+    
+    // HTML helpers
+    "safeHTML":     func(s string) template.HTML { return template.HTML(s) },
+    "safeJS":       func(s string) template.JS { return template.JS(s) },
+}
+
+func truncate(s string, length int) string {
+    if len(s) <= length {
+        return s
+    }
+    return s[:length] + "..."
+}
+
+func formatNumber(n int) string {
+    return strconv.FormatInt(int64(n), 10)
+}
+
+func formatCurrency(amount float64) string {
+    return fmt.Sprintf("$%.2f", amount)
+}
+
+func formatDate(t time.Time) string {
+    return t.Format("2006-01-02")
+}
+
+func formatTime(t time.Time) string {
+    return t.Format("15:04:05")
+}
+
+func timeAgo(t time.Time) string {
+    duration := time.Since(t)
+    
+    switch {
+    case duration < time.Minute:
+        return "just now"
+    case duration < time.Hour:
+        return fmt.Sprintf("%d minutes ago", int(duration.Minutes()))
+    case duration < 24*time.Hour:
+        return fmt.Sprintf("%d hours ago", int(duration.Hours()))
+    default:
+        return fmt.Sprintf("%d days ago", int(duration.Hours()/24))
+    }
+}
+
+func contains(slice []string, item string) bool {
+    for _, s := range slice {
+        if s == item {
+            return true
+        }
+    }
+    return false
+}
+
+func first(slice []interface{}) interface{} {
+    if len(slice) == 0 {
+        return nil
+    }
+    return slice[0]
+}
+
+func last(slice []interface{}) interface{} {
+    if len(slice) == 0 {
+        return nil
+    }
+    return slice[len(slice)-1]
+}
+
+// Setup template with functions
+func setupTemplates() *template.Template {
+    return template.Must(template.New("").
+        Funcs(templateFuncs).
+        ParseGlob("templates/*.html"))
+}
+```
+
+---
+
+### บทที่ 33: การจัดการค่า Configuration
+
+**เป้าหมาย:** จัดการ configuration หลายแหล่ง (file, env, flags)
+
+#### Using Viper
+
+```go
+package config
+
+import (
+    "fmt"
+    "strings"
+    "time"
+    
+    "github.com/spf13/viper"
+)
+
+type Config struct {
+    Server   ServerConfig   `mapstructure:"server"`
+    Database DatabaseConfig `mapstructure:"database"`
+    Redis    RedisConfig    `mapstructure:"redis"`
+    JWT      JWTConfig      `mapstructure:"jwt"`
+    Log      LogConfig      `mapstructure:"log"`
+    SMTP     SMTPConfig     `mapstructure:"smtp"`
+}
+
+type ServerConfig struct {
+    Port         int           `mapstructure:"port"`
+    Mode         string        `mapstructure:"mode"`
+    ReadTimeout  time.Duration `mapstructure:"read_timeout"`
+    WriteTimeout time.Duration `mapstructure:"write_timeout"`
+}
+
+type DatabaseConfig struct {
+    Host            string        `mapstructure:"host"`
+    Port            int           `mapstructure:"port"`
+    User            string        `mapstructure:"user"`
+    Password        string        `mapstructure:"password"`
+    Name            string        `mapstructure:"name"`
+    SSLMode         string        `mapstructure:"ssl_mode"`
+    MaxOpenConns    int           `mapstructure:"max_open_conns"`
+    MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+    ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
+}
+
+type RedisConfig struct {
+    Addr     string `mapstructure:"addr"`
+    Password string `mapstructure:"password"`
+    DB       int    `mapstructure:"db"`
+    PoolSize int    `mapstructure:"pool_size"`
+}
+
+type JWTConfig struct {
+    Secret        string        `mapstructure:"secret"`
+    AccessExpiry  time.Duration `mapstructure:"access_expiry"`
+    RefreshExpiry time.Duration `mapstructure:"refresh_expiry"`
+}
+
+type LogConfig struct {
+    Level  string `mapstructure:"level"`
+    Format string `mapstructure:"format"`
+    Output string `mapstructure:"output"`
+}
+
+type SMTPConfig struct {
+    Host     string `mapstructure:"host"`
+    Port     int    `mapstructure:"port"`
+    Username string `mapstructure:"username"`
+    Password string `mapstructure:"password"`
+    From     string `mapstructure:"from"`
+}
+
+func LoadConfig(configPath string) (*Config, error) {
+    // Set defaults
+    viper.SetDefault("server.port", 8080)
+    viper.SetDefault("server.mode", "debug")
+    viper.SetDefault("server.read_timeout", "15s")
+    viper.SetDefault("server.write_timeout", "15s")
+    viper.SetDefault("log.level", "info")
+    viper.SetDefault("log.format", "json")
+    viper.SetDefault("log.output", "stdout")
+    
+    // Config file
+    viper.SetConfigName("config")
+    viper.SetConfigType("yaml")
+    viper.AddConfigPath(configPath)
+    viper.AddConfigPath(".")
+    viper.AddConfigPath("/etc/app/")
+    
+    // Environment variables
+    viper.AutomaticEnv()
+    viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+    
+    // Read config file
+    if err := viper.ReadInConfig(); err != nil {
+        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+            return nil, fmt.Errorf("read config: %w", err)
+        }
+    }
+    
+    // Unmarshal
+    var cfg Config
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return nil, fmt.Errorf("unmarshal config: %w", err)
+    }
+    
+    return &cfg, nil
+}
+```
+
+#### Environment Variables
+
+```go
+package config
+
+import (
+    "os"
+    "strconv"
+    "time"
+)
+
+type Config struct {
+    // Server
+    ServerPort int
+    ServerMode string
+    
+    // Database
+    DBHost     string
+    DBPort     int
+    DBUser     string
+    DBPassword string
+    DBName     string
+    
+    // Redis
+    RedisAddr     string
+    RedisPassword string
+    RedisDB       int
+    
+    // JWT
+    JWTSecret        string
+    JWTAccessExpiry  time.Duration
+    JWTRefreshExpiry time.Duration
+}
+
+func LoadFromEnv() (*Config, error) {
+    cfg := &Config{
+        // Server defaults
+        ServerPort: 8080,
+        ServerMode: "debug",
+        
+        // Database defaults
+        DBHost: "localhost",
+        DBPort: 5432,
+        
+        // Redis defaults
+        RedisAddr: "localhost:6379",
+        RedisDB:   0,
+    }
+    
+    // Server
+    if port := os.Getenv("SERVER_PORT"); port != "" {
+        if p, err := strconv.Atoi(port); err == nil {
+            cfg.ServerPort = p
+        }
+    }
+    
+    if mode := os.Getenv("SERVER_MODE"); mode != "" {
+        cfg.ServerMode = mode
+    }
+    
+    // Database
+    if host := os.Getenv("DB_HOST"); host != "" {
+        cfg.DBHost = host
+    }
+    
+    if port := os.Getenv("DB_PORT"); port != "" {
+        if p, err := strconv.Atoi(port); err == nil {
+            cfg.DBPort = p
+        }
+    }
+    
+    cfg.DBUser = os.Getenv("DB_USER")
+    cfg.DBPassword = os.Getenv("DB_PASSWORD")
+    cfg.DBName = os.Getenv("DB_NAME")
+    
+    // Redis
+    if addr := os.Getenv("REDIS_ADDR"); addr != "" {
+        cfg.RedisAddr = addr
+    }
+    
+    cfg.RedisPassword = os.Getenv("REDIS_PASSWORD")
+    
+    if db := os.Getenv("REDIS_DB"); db != "" {
+        if d, err := strconv.Atoi(db); err == nil {
+            cfg.RedisDB = d
+        }
+    }
+    
+    // JWT
+    cfg.JWTSecret = os.Getenv("JWT_SECRET")
+    
+    if expiry := os.Getenv("JWT_ACCESS_EXPIRY"); expiry != "" {
+        if d, err := time.ParseDuration(expiry); err == nil {
+            cfg.JWTAccessExpiry = d
+        }
+    } else {
+        cfg.JWTAccessExpiry = 15 * time.Minute
+    }
+    
+    if expiry := os.Getenv("JWT_REFRESH_EXPIRY"); expiry != "" {
+        if d, err := time.ParseDuration(expiry); err == nil {
+            cfg.JWTRefreshExpiry = d
+        }
+    } else {
+        cfg.JWTRefreshExpiry = 7 * 24 * time.Hour
+    }
+    
+    // Validation
+    if cfg.JWTSecret == "" {
+        return nil, fmt.Errorf("JWT_SECRET is required")
+    }
+    
+    return cfg, nil
+}
+```
+
+#### Command Line Flags
+
+```go
+package main
+
+import (
+    "flag"
+    "fmt"
+    "time"
+)
+
+type Config struct {
+    // Server
+    ServerPort int
+    ServerMode string
+    
+    // Database
+    DBHost     string
+    DBPort     int
+    DBUser     string
+    DBPassword string
+    DBName     string
+    
+    // Redis
+    RedisAddr     string
+    RedisPassword string
+    RedisDB       int
+    
+    // JWT
+    JWTSecret        string
+    JWTAccessExpiry  time.Duration
+    JWTRefreshExpiry time.Duration
+}
+
+func LoadFromFlags() *Config {
+    cfg := &Config{}
+    
+    // Server flags
+    flag.IntVar(&cfg.ServerPort, "port", 8080, "Server port")
+    flag.StringVar(&cfg.ServerMode, "mode", "debug", "Server mode (debug/release)")
+    
+    // Database flags
+    flag.StringVar(&cfg.DBHost, "db-host", "localhost", "Database host")
+    flag.IntVar(&cfg.DBPort, "db-port", 5432, "Database port")
+    flag.StringVar(&cfg.DBUser, "db-user", "", "Database user")
+    flag.StringVar(&cfg.DBPassword, "db-password", "", "Database password")
+    flag.StringVar(&cfg.DBName, "db-name", "", "Database name")
+    
+    // Redis flags
+    flag.StringVar(&cfg.RedisAddr, "redis-addr", "localhost:6379", "Redis address")
+    flag.StringVar(&cfg.RedisPassword, "redis-password", "", "Redis password")
+    flag.IntVar(&cfg.RedisDB, "redis-db", 0, "Redis database")
+    
+    // JWT flags
+    flag.StringVar(&cfg.JWTSecret, "jwt-secret", "", "JWT secret key")
+    flag.DurationVar(&cfg.JWTAccessExpiry, "jwt-access-expiry", 15*time.Minute, "JWT access token expiry")
+    flag.DurationVar(&cfg.JWTRefreshExpiry, "jwt-refresh-expiry", 7*24*time.Hour, "JWT refresh token expiry")
+    
+    flag.Parse()
+    
+    return cfg
+}
+```
+
+#### Complete Configuration Example
+
+```go
+package config
+
+import (
+    "fmt"
+    "strings"
+    
+    "github.com/spf13/viper"
+)
+
+// config.yaml
+/*
+server:
+  port: 8080
+  mode: release
+  read_timeout: 15s
+  write_timeout: 15s
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: ${DB_PASSWORD}
+  name: myapp
+  ssl_mode: disable
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: 5m
+
+redis:
+  addr: localhost:6379
+  password: ${REDIS_PASSWORD}
+  db: 0
+  pool_size: 10
+
+jwt:
+  secret: ${JWT_SECRET}
+  access_expiry: 15m
+  refresh_expiry: 168h
+
+log:
+  level: info
+  format: json
+  output: stdout
+
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
+  from: noreply@myapp.com
+*/
+
+type Config struct {
+    Server   ServerConfig   `mapstructure:"server"`
+    Database DatabaseConfig `mapstructure:"database"`
+    Redis    RedisConfig    `mapstructure:"redis"`
+    JWT      JWTConfig      `mapstructure:"jwt"`
+    Log      LogConfig      `mapstructure:"log"`
+    SMTP     SMTPConfig     `mapstructure:"smtp"`
+}
+
+func InitConfig() (*Config, error) {
+    // Set config file
+    viper.SetConfigName("config")
+    viper.SetConfigType("yaml")
+    viper.AddConfigPath(".")
+    viper.AddConfigPath("./config")
+    viper.AddConfigPath("/etc/app")
+    
+    // Environment variables
+    viper.AutomaticEnv()
+    viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+    
+    // Read config file
+    if err := viper.ReadInConfig(); err != nil {
+        return nil, fmt.Errorf("failed to read config: %w", err)
+    }
+    
+    // Expand environment variables in config
+    for _, key := range viper.AllKeys() {
+        val := viper.GetString(key)
+        if strings.Contains(val, "${") {
+            expanded := os.ExpandEnv(val)
+            viper.Set(key, expanded)
+        }
+    }
+    
+    var cfg Config
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+    }
+    
+    // Validate required fields
+    if cfg.JWT.Secret == "" {
+        return nil, fmt.Errorf("JWT secret is required")
+    }
+    
+    return &cfg, nil
+}
+```
+
+---
+
+## สรุปภาคที่ 4: ตัวอย่างแอปพลิเคชันครบวงจร
+
+```go
+// main.go - Complete application example
+package main
+
+import (
+    "context"
+    "log/slog"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+    
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/chi/v5/middleware"
+    "github.com/go-chi/cors"
+    
+    "myapp/config"
+    "myapp/handlers"
+    "myapp/logger"
+    "myapp/repository"
+    "myapp/service"
+)
+
+func main() {
+    // 1. Load configuration
+    cfg, err := config.InitConfig()
+    if err != nil {
+        panic(err)
+    }
+    
+    // 2. Setup logger
+    log, err := logger.NewLogger(cfg.Log)
+    if err != nil {
+        panic(err)
+    }
+    slog.SetDefault(log)
+    
+    slog.Info("Application starting", "config", cfg)
+    
+    // 3. Connect to database
+    db, err := repository.NewPostgresDB(cfg.Database)
+    if err != nil {
+        slog.Error("Failed to connect to database", "error", err)
+        os.Exit(1)
+    }
+    defer db.Close()
+    
+    // 4. Connect to Redis
+    redisClient, err := repository.NewRedisClient(cfg.Redis)
+    if err != nil {
+        slog.Error("Failed to connect to Redis", "error", err)
+        os.Exit(1)
+    }
+    defer redisClient.Close()
+    
+    // 5. Initialize repositories
+    userRepo := repository.NewUserRepository(db)
+    sessionRepo := repository.NewSessionRepository(redisClient)
+    
+    // 6. Initialize services
+    authService := service.NewAuthService(userRepo, sessionRepo, cfg.JWT)
+    userService := service.NewUserService(userRepo)
+    
+    // 7. Initialize handlers
+    authHandler := handlers.NewAuthHandler(authService)
+    userHandler := handlers.NewUserHandler(userService)
+    healthHandler := handlers.NewHealthHandler(db, redisClient)
+    
+    // 8. Setup router
+    r := chi.NewRouter()
+    
+    // Global middlewares
+    r.Use(middleware.RequestID)
+    r.Use(middleware.RealIP)
+    r.Use(logger.HTTPMiddleware)
+    r.Use(middleware.Recoverer)
+    r.Use(middleware.Timeout(60 * time.Second))
+    r.Use(cors.Handler(cors.Options{
+        AllowedOrigins:   []string{"*"},
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+        ExposedHeaders:   []string{"Link"},
+        AllowCredentials: false,
+        MaxAge:           300,
+    }))
+    
+    // Health check
+    r.Get("/health", healthHandler.Health)
+    r.Get("/ready", healthHandler.Ready)
+    r.Get("/live", healthHandler.Live)
+    
+    // Public routes
+    r.Post("/api/v1/auth/register", authHandler.Register)
+    r.Post("/api/v1/auth/login", authHandler.Login)
+    r.Post("/api/v1/auth/refresh", authHandler.Refresh)
+    
+    // Protected routes
+    r.Group(func(r chi.Router) {
+        r.Use(authHandler.AuthMiddleware)
+        
+        r.Get("/api/v1/users/me", userHandler.GetMe)
+        r.Put("/api/v1/users/me", userHandler.UpdateMe)
+        r.Post("/api/v1/auth/logout", authHandler.Logout)
+    })
+    
+    // 9. Create server
+    server := &http.Server{
+        Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
+        Handler:      r,
+        ReadTimeout:  cfg.Server.ReadTimeout,
+        WriteTimeout: cfg.Server.WriteTimeout,
+        IdleTimeout:  120 * time.Second,
+    }
+    
+    // 10. Start server
+    go func() {
+        slog.Info("Server starting", "port", cfg.Server.Port)
+        if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            slog.Error("Server failed", "error", err)
+            os.Exit(1)
+        }
+    }()
+    
+    // 11. Graceful shutdown
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    
+    slog.Info("Shutting down server...")
+    
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    
+    if err := server.Shutdown(ctx); err != nil {
+        slog.Error("Server forced to shutdown", "error", err)
+    }
+    
+    slog.Info("Server exited")
+}
+```
+
+---
+
+**สิ่งที่ได้เรียนรู้ในภาคที่ 4:**
+
+1. **การรับข้อมูล (Input)**: HTTP server, JSON/XML, Enum/Bitmask, Time handling
+2. **การประมวลผล (Processing)**: Anonymous functions, Closures, Concurrency patterns
+3. **การจัดเก็บ (Storage)**: Files, Database, Structured logging
+4. **การส่งออก (Output)**: HTML/Template, Configuration management
+
+พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 5** เพื่อพัฒนาสู่การเป็น Go Developer มืออาชีพ ด้วยการวัดประสิทธิภาพ, profiling, context management, และ generics
 
 ## ภาคที่ 5: สู่การเป็นนักพัฒนา Go มืออาชีพ (บทที่ 34–42)
  ```mermaid
