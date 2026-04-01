@@ -90,12 +90,7 @@ In this project use 3 layer architecture
   Email: root@gmail.com
   Password: root_password
 
-{
-  "confirm_password": "kongnakornna",
-  "email": "kongnakornna@gmail.com",
-  "name": "kongnakornna",
-  "password": "kongnakornna"
-}
+ 
 
 ```
 ## TODO
