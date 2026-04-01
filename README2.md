@@ -15347,40 +15347,41 @@ func InitializeOrderAPI(db *gorm.DB, bus eventbus.EventBus) *handlers.OrderHandl
 
 ## ภาคที่ 9: การผสานระบบภายนอก (บทที่ 52–58)
 
-**แผนภาพ: Redis, RabbitMQ, MQTT, InfluxDB, WebSocket, Notifications**
- ```mermaid
+## แผนภาพ Data Flow (Flowchart TB)
+
+```mermaid
 flowchart TB
-    subgraph DataSources[แหล่งข้อมูลภายนอก]
+    subgraph External["ระบบภายนอก (External Systems)"]
         direction LR
-        IoT[IoT Sensors] -->|MQTT| MQTT
-        User[ผู้ใช้] -->|HTTP Request| API
+        IoT["IoT Sensors"] -->|MQTT| MQTT
+        User["ผู้ใช้"] -->|HTTP Request| API
     end
 
-    subgraph Core[ระบบหลัก Go]
+    subgraph Core["ระบบหลัก Go"]
         API[HTTP API / WebSocket]
         Redis[(Redis)]
         Rabbit[(RabbitMQ)]
         Influx[(InfluxDB)]
     end
 
-    subgraph Processing[การประมวลผล]
+    subgraph Processing["การประมวลผล"]
         Workers[Worker Pool]
         Cache[Cache Layer]
         Stream[Event Stream]
     end
 
-    subgraph Notifications[การแจ้งเตือน]
+    subgraph Notifications["การแจ้งเตือน"]
         SMS[SMS Gateway]
         LINE[LINE Notify]
         Discord[Discord Webhook]
     end
 
-    subgraph Clients[ไคลเอนต์]
+    subgraph Clients["ไคลเอนต์"]
         Browser[เว็บเบราว์เซอร์]
         Mobile[แอปมือถือ]
     end
 
-    %% การไหลของข้อมูล
+    %% Data flow
     MQTT -->|Telemetry| Influx
     API -->|Read/Write| Redis
     API -->|Publish Event| Rabbit
@@ -15390,50 +15391,908 @@ flowchart TB
     Influx -->|Query| API
     Redis -->|Cached Data| API
 
-    %% Real-time
     API -->|WebSocket| Browser
     API -->|WebSocket| Mobile
 
-    %% Notifications trigger
     Workers -->|Alert| SMS
     Workers -->|Alert| LINE
     Workers -->|Alert| Discord
     Influx -->|Threshold Exceeded| Workers
 ```
 
-**คำอธิบายภาษาไทย:**
-
-แผนภาพนี้แสดงการทำงานร่วมกันของระบบภายนอกทั้ง 7 ชนิดที่กล่าวถึงในบทที่ 52–58 โดยแบ่งเป็น 5 กลุ่มหลัก:
-
-1. **แหล่งข้อมูลภายนอก**  
-   - **IoT Sensors**: ส่งข้อมูลผ่าน MQTT ไปยัง InfluxDB โดยตรง  
-   - **ผู้ใช้**: ส่ง HTTP request ผ่าน API ที่เขียนด้วย Go
-
-2. **ระบบหลัก Go**  
-   - **HTTP API / WebSocket**: รับคำขอจากผู้ใช้และให้บริการ real‑time ผ่าน WebSocket  
-   - **Redis**: ใช้เป็น cache (เก็บข้อมูลที่เรียกบ่อย) และ message queue (Pub/Sub)  
-   - **RabbitMQ**: รับ event จาก API และกระจายไปยัง workers  
-   - **InfluxDB**: เก็บข้อมูลอนุกรมเวลาจาก IoT และผลลัพธ์จากการประมวลผล
-
-3. **การประมวลผล**  
-   - **Worker Pool**: ดึงงานจาก RabbitMQ, ประมวลผล (เช่น คำนวณค่าเฉลี่ย, ตรวจจับเหตุการณ์), จากนั้นอัปเดต cache และ InfluxDB  
-   - **Cache Layer**: ข้อมูลที่ถูกเรียกบ่อยจะถูกเก็บใน Redis เพื่อลดภาระฐานข้อมูล  
-   - **Event Stream**: ใช้ Redis Pub/Sub หรือ RabbitMQ เพื่อส่ง event ระหว่าง component
-
-4. **การแจ้งเตือน**  
-   - เมื่อ worker ตรวจพบเงื่อนไข (เช่น ค่าเกินเกณฑ์) จะส่งการแจ้งเตือนผ่าน **SMS**, **LINE Notify**, และ **Discord Webhook** ตามช่องทางที่กำหนด
-
-5. **ไคลเอนต์**  
-   - เบราว์เซอร์และแอปมือถือรับข้อมูล real‑time ผ่าน WebSocket และแสดงผลพร้อมรับการแจ้งเตือน
-
-**การไหลของข้อมูลโดยสรุป:**
-- ข้อมูลจาก IoT → InfluxDB (จัดเก็บ)
-- ผู้ใช้ → API → Redis (cache) / RabbitMQ (event) → Workers → InfluxDB / Redis
-- InfluxDB → API → WebSocket → ไคลเอนต์ (แสดงผล)
-- Workers → SMS/LINE/Discord (แจ้งเตือน)
-
-โครงสร้างนี้ช่วยให้ระบบมีความยืดหยุ่น รองรับการขยายขนาด และสามารถตอบสนองต่อเหตุการณ์แบบเรียลไทม์ได้อย่างมีประสิทธิภาพ
 ---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 9 ครอบคลุมบทที่ 52–58 โดยนำเสนอการผสานระบบภายนอกที่พบได้บ่อยในโลกแห่งความจริง:
+
+- **Redis (บทที่ 52)**: Cache, Message Queue
+- **RabbitMQ (บทที่ 53)**: Message Broker มาตรฐานองค์กร
+- **MQTT (บทที่ 54)**: IoT และระบบเรียลไทม์
+- **InfluxDB (บทที่ 55)**: Time‑Series Database
+- **WebSocket (บทที่ 56)**: การสื่อสารแบบ real‑time
+- **SMS และ LINE Notify (บทที่ 57)**: การแจ้งเตือนผ่านมือถือ
+- **Discord Webhook (บทที่ 58)**: การแจ้งเตือนใน Discord
+
+---
+
+## บทที่ 52: Redis สำหรับ Cache และ Message Queue
+
+### Redis คืออะไร?
+
+Redis (Remote Dictionary Server) เป็นฐานข้อมูลแบบ in‑memory ที่รวดเร็วสูง นิยมใช้สำหรับ caching, session storage, message queue (Pub/Sub, List), และ real‑time analytics
+
+### การติดตั้งและเชื่อมต่อ
+
+```go
+go get github.com/redis/go-redis/v9
+```
+
+```go
+package cache
+
+import (
+    "context"
+    "encoding/json"
+    "time"
+
+    "github.com/redis/go-redis/v9"
+)
+
+var rdb *redis.Client
+
+func InitRedis(addr, password string, db int) {
+    rdb = redis.NewClient(&redis.Options{
+        Addr:     addr,
+        Password: password,
+        DB:       db,
+    })
+}
+
+func GetRedis() *redis.Client {
+    return rdb
+}
+```
+
+### 1. Cache-aside Pattern
+
+```go
+// GetUserWithCache
+func GetUserWithCache(ctx context.Context, userID int) (*User, error) {
+    key := fmt.Sprintf("user:%d", userID)
+
+    // 1. Try to get from Redis
+    val, err := rdb.Get(ctx, key).Result()
+    if err == nil {
+        var user User
+        if err := json.Unmarshal([]byte(val), &user); err == nil {
+            return &user, nil
+        }
+    }
+
+    // 2. Cache miss: query database
+    user, err := db.GetUserByID(ctx, userID)
+    if err != nil {
+        return nil, err
+    }
+
+    // 3. Store in cache (async)
+    go func() {
+        data, _ := json.Marshal(user)
+        rdb.Set(context.Background(), key, data, 10*time.Minute)
+    }()
+
+    return user, nil
+}
+```
+
+### 2. Redis Pub/Sub (Message Queue)
+
+**Publisher**
+```go
+func PublishOrderEvent(ctx context.Context, orderID int) error {
+    event := map[string]interface{}{
+        "event": "order_created",
+        "order_id": orderID,
+    }
+    data, _ := json.Marshal(event)
+    return rdb.Publish(ctx, "orders", data).Err()
+}
+```
+
+**Subscriber**
+```go
+func SubscribeOrders() {
+    pubsub := rdb.Subscribe(context.Background(), "orders")
+    defer pubsub.Close()
+
+    ch := pubsub.Channel()
+    for msg := range ch {
+        var event map[string]interface{}
+        json.Unmarshal([]byte(msg.Payload), &event)
+        // process event
+        log.Printf("Received event: %v", event)
+    }
+}
+```
+
+### 3. Redis List as Queue (Producer-Consumer)
+
+**Producer (LPush)**
+```go
+func EnqueueJob(job interface{}) error {
+    data, _ := json.Marshal(job)
+    return rdb.LPush(context.Background(), "jobs", data).Err()
+}
+```
+
+**Consumer (BRPop)**
+```go
+func Worker() {
+    for {
+        result, err := rdb.BRPop(context.Background(), 0, "jobs").Result()
+        if err != nil {
+            continue
+        }
+        // result[1] is the value
+        var job Job
+        json.Unmarshal([]byte(result[1]), &job)
+        processJob(job)
+    }
+}
+```
+
+---
+
+## บทที่ 53: RabbitMQ – Message Broker มาตรฐานองค์กร
+
+### RabbitMQ คืออะไร?
+
+RabbitMQ เป็น message broker ที่ใช้โปรโตคอล AMQP รองรับ routing ที่ซับซ้อน (direct, topic, fanout exchanges), message persistence, และ reliability features
+
+### การติดตั้งและเชื่อมต่อ
+
+```go
+go get github.com/rabbitmq/amqp091-go
+```
+
+```go
+package queue
+
+import (
+    "context"
+    "log"
+
+    amqp "github.com/rabbitmq/amqp091-go"
+)
+
+type RabbitMQ struct {
+    conn *amqp.Connection
+    ch   *amqp.Channel
+}
+
+func NewRabbitMQ(url string) (*RabbitMQ, error) {
+    conn, err := amqp.Dial(url)
+    if err != nil {
+        return nil, err
+    }
+    ch, err := conn.Channel()
+    if err != nil {
+        conn.Close()
+        return nil, err
+    }
+    return &RabbitMQ{conn: conn, ch: ch}, nil
+}
+
+func (r *RabbitMQ) Close() {
+    r.ch.Close()
+    r.conn.Close()
+}
+```
+
+### 1. Simple Queue (Work Queue)
+
+**Producer**
+```go
+func (r *RabbitMQ) Publish(queueName string, body []byte) error {
+    q, err := r.ch.QueueDeclare(
+        queueName, // name
+        true,      // durable
+        false,     // delete when unused
+        false,     // exclusive
+        false,     // no-wait
+        nil,       // arguments
+    )
+    if err != nil {
+        return err
+    }
+
+    return r.ch.Publish(
+        "",          // exchange
+        q.Name,      // routing key
+        false,       // mandatory
+        false,       // immediate
+        amqp.Publishing{
+            ContentType:  "application/json",
+            Body:         body,
+            DeliveryMode: amqp.Persistent, // make message persistent
+        },
+    )
+}
+```
+
+**Consumer**
+```go
+func (r *RabbitMQ) Consume(queueName string, handler func([]byte) error) error {
+    q, err := r.ch.QueueDeclare(queueName, true, false, false, false, nil)
+    if err != nil {
+        return err
+    }
+
+    // prefetch 1 (fair dispatch)
+    r.ch.Qos(1, 0, false)
+
+    msgs, err := r.ch.Consume(
+        q.Name, // queue
+        "",     // consumer
+        false,  // auto-ack (we'll ack manually)
+        false,  // exclusive
+        false,  // no-local
+        false,  // no-wait
+        nil,    // args
+    )
+    if err != nil {
+        return err
+    }
+
+    go func() {
+        for d := range msgs {
+            if err := handler(d.Body); err != nil {
+                // if error, reject and requeue
+                d.Nack(false, true)
+            } else {
+                d.Ack(false)
+            }
+        }
+    }()
+    return nil
+}
+```
+
+### 2. Publish/Subscribe (Fanout Exchange)
+
+**Producer**
+```go
+func (r *RabbitMQ) PublishFanout(exchangeName string, body []byte) error {
+    err := r.ch.ExchangeDeclare(
+        exchangeName, // name
+        "fanout",     // type
+        true,         // durable
+        false,        // auto-deleted
+        false,        // internal
+        false,        // no-wait
+        nil,          // arguments
+    )
+    if err != nil {
+        return err
+    }
+
+    return r.ch.Publish(
+        exchangeName, // exchange
+        "",           // routing key (ignored for fanout)
+        false,
+        false,
+        amqp.Publishing{
+            ContentType: "application/json",
+            Body:        body,
+        },
+    )
+}
+```
+
+**Consumer**
+```go
+func (r *RabbitMQ) SubscribeFanout(exchangeName string, handler func([]byte) error) error {
+    err := r.ch.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil)
+    if err != nil {
+        return err
+    }
+
+    q, err := r.ch.QueueDeclare(
+        "",    // name (auto-generated)
+        false, // durable
+        false, // delete when unused
+        true,  // exclusive (temporary)
+        false, // no-wait
+        nil,
+    )
+    if err != nil {
+        return err
+    }
+
+    err = r.ch.QueueBind(q.Name, "", exchangeName, false, nil)
+    if err != nil {
+        return err
+    }
+
+    msgs, err := r.ch.Consume(q.Name, "", true, false, false, false, nil)
+    if err != nil {
+        return err
+    }
+
+    go func() {
+        for d := range msgs {
+            handler(d.Body)
+        }
+    }()
+    return nil
+}
+```
+
+### 3. Routing (Direct Exchange) และ Topic Exchange
+
+คล้ายกันแต่ใช้ exchange type ต่างกันและ routing key มี pattern สำหรับ topic
+
+---
+
+## บทที่ 54: MQTT สำหรับ IoT และระบบเรียลไทม์
+
+### MQTT คืออะไร?
+
+MQTT (Message Queuing Telemetry Transport) เป็นโปรโตคอล lightweight สำหรับการสื่อสารแบบ publish/subscribe เหมาะสำหรับ IoT, mobile apps, และระบบที่ต้องการการส่งข้อมูลแบบ real‑time ด้วยแบนด์วิดท์ต่ำ
+
+### การติดตั้งและเชื่อมต่อ
+
+```go
+go get github.com/eclipse/paho.mqtt.golang
+```
+
+```go
+package mqtt
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+type MQTTClient struct {
+    client mqtt.Client
+}
+
+func NewMQTTClient(broker, clientID, username, password string) (*MQTTClient, error) {
+    opts := mqtt.NewClientOptions()
+    opts.AddBroker(broker)
+    opts.SetClientID(clientID)
+    if username != "" {
+        opts.SetUsername(username)
+        opts.SetPassword(password)
+    }
+    opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
+        log.Printf("Received: %s from topic: %s", msg.Payload(), msg.Topic())
+    })
+    opts.SetAutoReconnect(true)
+    opts.SetConnectTimeout(10 * time.Second)
+
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        return nil, token.Error()
+    }
+    return &MQTTClient{client: client}, nil
+}
+
+func (m *MQTTClient) Publish(topic string, qos byte, retained bool, payload []byte) error {
+    token := m.client.Publish(topic, qos, retained, payload)
+    token.Wait()
+    return token.Error()
+}
+
+func (m *MQTTClient) Subscribe(topic string, qos byte, handler mqtt.MessageHandler) error {
+    token := m.client.Subscribe(topic, qos, handler)
+    token.Wait()
+    return token.Error()
+}
+
+func (m *MQTTClient) Close() {
+    m.client.Disconnect(250)
+}
+```
+
+### ตัวอย่าง: IoT Sensor Data Collector
+
+```go
+func main() {
+    mqttClient, err := NewMQTTClient("tcp://localhost:1883", "go_collector", "", "")
+    if err != nil {
+        panic(err)
+    }
+    defer mqttClient.Close()
+
+    // Subscribe to all sensor data topics
+    err = mqttClient.Subscribe("sensors/+/data", 0, func(client mqtt.Client, msg mqtt.Message) {
+        var data SensorData
+        if err := json.Unmarshal(msg.Payload(), &data); err != nil {
+            log.Printf("Invalid JSON: %v", err)
+            return
+        }
+        // Save to InfluxDB or process
+        fmt.Printf("Received from %s: temp=%.2f, humidity=%.2f\n",
+            data.DeviceID, data.Temp, data.Humidity)
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    // Keep the program running
+    select {}
+}
+```
+
+---
+
+## บทที่ 55: InfluxDB – Time‑Series Database
+
+### InfluxDB คืออะไร?
+
+InfluxDB เป็นฐานข้อมูล time‑series ที่ออกแบบมาเพื่อจัดเก็บและสืบค้นข้อมูลที่มี timestamp เช่น ข้อมูลเซ็นเซอร์, metrics, logs มีประสิทธิภาพสูงและมี query language เฉพาะ (Flux หรือ InfluxQL)
+
+### การติดตั้งและเชื่อมต่อ
+
+```go
+go get github.com/influxdata/influxdb-client-go/v2
+```
+
+```go
+package influx
+
+import (
+    "context"
+    "time"
+
+    influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+    "github.com/influxdata/influxdb-client-go/v2/api"
+)
+
+type InfluxDB struct {
+    client   influxdb2.Client
+    writeAPI api.WriteAPIBlocking
+    queryAPI api.QueryAPI
+    org      string
+    bucket   string
+}
+
+func NewInfluxDB(url, token, org, bucket string) *InfluxDB {
+    client := influxdb2.NewClient(url, token)
+    writeAPI := client.WriteAPIBlocking(org, bucket)
+    queryAPI := client.QueryAPI(org)
+    return &InfluxDB{
+        client:   client,
+        writeAPI: writeAPI,
+        queryAPI: queryAPI,
+        org:      org,
+        bucket:   bucket,
+    }
+}
+
+func (i *InfluxDB) WritePoint(measurement string, tags map[string]string, fields map[string]interface{}, t time.Time) error {
+    p := influxdb2.NewPoint(measurement, tags, fields, t)
+    return i.writeAPI.WritePoint(context.Background(), p)
+}
+
+func (i *InfluxDB) Query(flux string) ([]api.FluxRecord, error) {
+    result, err := i.queryAPI.Query(context.Background(), flux)
+    if err != nil {
+        return nil, err
+    }
+    var records []api.FluxRecord
+    for result.Next() {
+        records = append(records, result.Record())
+    }
+    return records, result.Err()
+}
+```
+
+### ตัวอย่างการใช้งาน
+
+```go
+// Write sensor data
+influx.WritePoint("temperature",
+    map[string]string{"device": "sensor1", "location": "room101"},
+    map[string]interface{}{"value": 25.6},
+    time.Now(),
+)
+
+// Query average temperature for last hour
+flux := `from(bucket:"mybucket")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "temperature")
+  |> filter(fn: (r) => r.device == "sensor1")
+  |> aggregateWindow(every: 5m, fn: mean)`
+records, err := influx.Query(flux)
+```
+
+---
+
+## บทที่ 56: WebSocket และ Socket.IO
+
+### WebSocket พื้นฐาน
+
+WebSocket เป็นโปรโตคอลที่ช่วยให้ client-server สื่อสารแบบ full-duplex เหนือ TCP เหมาะสำหรับ real-time applications เช่น chat, live notifications
+
+**การติดตั้ง gorilla/websocket**
+```go
+go get github.com/gorilla/websocket
+```
+
+### ตัวอย่าง WebSocket Server
+
+```go
+package websocket
+
+import (
+    "log"
+    "net/http"
+    "sync"
+
+    "github.com/gorilla/websocket"
+)
+
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+type Client struct {
+    conn *websocket.Conn
+    send chan []byte
+    hub  *Hub
+}
+
+type Hub struct {
+    clients    map[*Client]bool
+    broadcast  chan []byte
+    register   chan *Client
+    unregister chan *Client
+    mu         sync.RWMutex
+}
+
+func NewHub() *Hub {
+    return &Hub{
+        clients:    make(map[*Client]bool),
+        broadcast:  make(chan []byte),
+        register:   make(chan *Client),
+        unregister: make(chan *Client),
+    }
+}
+
+func (h *Hub) Run() {
+    for {
+        select {
+        case client := <-h.register:
+            h.mu.Lock()
+            h.clients[client] = true
+            h.mu.Unlock()
+        case client := <-h.unregister:
+            h.mu.Lock()
+            if _, ok := h.clients[client]; ok {
+                delete(h.clients, client)
+                close(client.send)
+            }
+            h.mu.Unlock()
+        case message := <-h.broadcast:
+            h.mu.RLock()
+            for client := range h.clients {
+                select {
+                case client.send <- message:
+                default:
+                    close(client.send)
+                    delete(h.clients, client)
+                }
+            }
+            h.mu.RUnlock()
+        }
+    }
+}
+
+func (c *Client) readPump() {
+    defer func() {
+        c.hub.unregister <- c
+        c.conn.Close()
+    }()
+    for {
+        _, msg, err := c.conn.ReadMessage()
+        if err != nil {
+            break
+        }
+        c.hub.broadcast <- msg
+    }
+}
+
+func (c *Client) writePump() {
+    defer c.conn.Close()
+    for {
+        select {
+        case msg, ok := <-c.send:
+            if !ok {
+                c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+                return
+            }
+            if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+                return
+            }
+        }
+    }
+}
+
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+    conn, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    client := &Client{conn: conn, send: make(chan []byte, 256), hub: hub}
+    hub.register <- client
+
+    go client.writePump()
+    go client.readPump()
+}
+```
+
+### การใช้งานใน main
+
+```go
+hub := NewHub()
+go hub.Run()
+http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+    ServeWs(hub, w, r)
+})
+```
+
+---
+
+## บทที่ 57: การส่ง SMS และ LINE Notify
+
+### 1. ส่ง SMS ผ่าน Twilio (ตัวอย่าง)
+
+```go
+package sms
+
+import (
+    "github.com/twilio/twilio-go"
+    twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
+)
+
+type TwilioSender struct {
+    client     *twilio.RestClient
+    fromNumber string
+}
+
+func NewTwilioSender(accountSid, authToken, fromNumber string) *TwilioSender {
+    client := twilio.NewRestClientWithParams(twilio.ClientParams{
+        Username: accountSid,
+        Password: authToken,
+    })
+    return &TwilioSender{client: client, fromNumber: fromNumber}
+}
+
+func (t *TwilioSender) Send(to, message string) error {
+    params := &twilioApi.CreateMessageParams{}
+    params.SetTo(to)
+    params.SetFrom(t.fromNumber)
+    params.SetBody(message)
+
+    _, err := t.client.Api.CreateMessage(params)
+    return err
+}
+```
+
+### 2. LINE Notify – การแจ้งเตือนผ่าน LINE
+
+**LINE Notify** ให้บริการแจ้งเตือนฟรี โดยต้องสร้าง token ที่ https://notify-bot.line.me/
+
+```go
+package linenotify
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+type LINE struct {
+    token string
+}
+
+func NewLINE(token string) *LINE {
+    return &LINE{token: token}
+}
+
+func (l *LINE) SendMessage(message string) error {
+    url := "https://notify-api.line.me/api/notify"
+    data := []byte(fmt.Sprintf("message=%s", message))
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+    if err != nil {
+        return err
+    }
+    req.Header.Set("Authorization", "Bearer "+l.token)
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("LINE Notify returned status %d", resp.StatusCode)
+    }
+    return nil
+}
+
+func (l *LINE) SendImage(message, imagePath string) error {
+    var b bytes.Buffer
+    w := multipart.NewWriter(&b)
+
+    w.WriteField("message", message)
+
+    file, err := os.Open(imagePath)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    part, err := w.CreateFormFile("imageFile", imagePath)
+    if err != nil {
+        return err
+    }
+    io.Copy(part, file)
+    w.Close()
+
+    req, err := http.NewRequest("POST", "https://notify-api.line.me/api/notify", &b)
+    if err != nil {
+        return err
+    }
+    req.Header.Set("Authorization", "Bearer "+l.token)
+    req.Header.Set("Content-Type", w.FormDataContentType())
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("LINE Notify returned status %d", resp.StatusCode)
+    }
+    return nil
+}
+```
+
+---
+
+## บทที่ 58: Discord Webhook สำหรับแจ้งเตือน
+
+### Discord Webhook คืออะไร?
+
+Discord Webhook เป็นวิธีส่งข้อความอัตโนมัติไปยัง channel ใน Discord โดยไม่ต้องใช้ bot token เหมาะสำหรับการแจ้งเตือนจากระบบ (เช่น deployment status, error logs)
+
+### การส่งข้อความผ่าน Go
+
+```go
+package discord
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+type Webhook struct {
+    url string
+}
+
+type WebhookPayload struct {
+    Content   string  `json:"content,omitempty"`
+    Username  string  `json:"username,omitempty"`
+    AvatarURL string  `json:"avatar_url,omitempty"`
+    Embeds    []Embed `json:"embeds,omitempty"`
+}
+
+type Embed struct {
+    Title       string  `json:"title,omitempty"`
+    Description string  `json:"description,omitempty"`
+    Color       int     `json:"color,omitempty"` // decimal color
+    Fields      []Field `json:"fields,omitempty"`
+    Timestamp   string  `json:"timestamp,omitempty"`
+}
+
+type Field struct {
+    Name   string `json:"name"`
+    Value  string `json:"value"`
+    Inline bool   `json:"inline,omitempty"`
+}
+
+func NewWebhook(url string) *Webhook {
+    return &Webhook{url: url}
+}
+
+func (w *Webhook) SendMessage(content string) error {
+    payload := WebhookPayload{Content: content}
+    return w.send(payload)
+}
+
+func (w *Webhook) SendEmbed(embed Embed) error {
+    payload := WebhookPayload{Embeds: []Embed{embed}}
+    return w.send(payload)
+}
+
+func (w *Webhook) send(payload WebhookPayload) error {
+    data, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    resp, err := http.Post(w.url, "application/json", bytes.NewBuffer(data))
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+        return fmt.Errorf("discord webhook returned status %d", resp.StatusCode)
+    }
+    return nil
+}
+```
+
+### ตัวอย่างการแจ้งเตือน Deployment
+
+```go
+webhook := discord.NewWebhook("https://discord.com/api/webhooks/...")
+
+// Simple message
+webhook.SendMessage("🚀 Deployment started: v1.2.3")
+
+// Embed with details
+embed := discord.Embed{
+    Title:       "Deployment Successful",
+    Description: "Version v1.2.3 has been deployed to production.",
+    Color:       0x00ff00, // green
+    Fields: []discord.Field{
+        {Name: "Environment", Value: "Production", Inline: true},
+        {Name: "Version", Value: "v1.2.3", Inline: true},
+        {Name: "Deployed By", Value: "CI/CD", Inline: false},
+    },
+    Timestamp: time.Now().Format(time.RFC3339),
+}
+webhook.SendEmbed(embed)
+```
+
+---
+
+## สรุป
+
+ภาคที่ 9 ได้นำเสนอการผสานระบบภายนอกที่จำเป็นสำหรับแอปพลิเคชันสมัยใหม่:
+
+| ระบบ | การใช้งานหลัก | ตัวอย่าง |
+|------|-------------|---------|
+| Redis | Cache, Message Queue | Caching user data, job queue |
+| RabbitMQ | Message Broker | Async email sending, order processing |
+| MQTT | IoT Communication | Sensor data collection |
+| InfluxDB | Time‑Series Database | Metrics storage, telemetry |
+| WebSocket | Real‑time Communication | Chat, live notifications |
+| SMS | Mobile alerts | OTP, transaction alerts |
+| LINE Notify | Instant messaging | System alerts, notifications |
+| Discord | Team communication | Deployment status, error logs |
+
+การรวมระบบเหล่านี้เข้ากับ Go application ช่วยให้สามารถสร้างแอปพลิเคชันที่มีความสามารถครบครัน รองรับการทำงานแบบ real‑time, event‑driven, และการแจ้งเตือนหลากหลายช่องทาง
 
 ## ภาคที่ 10: เทมเพลต กระบวนการพัฒนา และตัวอย่างโค้ด (บทที่ 59–63)
 
