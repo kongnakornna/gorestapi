@@ -3709,7 +3709,6 @@ func LoadConfig() (*Config, error) {
 ```
 
 ---
-
 เราจะเพิ่มคำอธิบายใต้แผนภาพภาษาไทยสำหรับแต่ละส่วน เพื่อให้ผู้อ่านเข้าใจการไหลของข้อมูลได้ง่ายขึ้น โดยใช้แผนภาพ Mermaid ที่นำเสนอในคำตอบก่อนหน้านี้ พร้อมคำอธิบายภาษาไทยใต้ภาพ
 
 ---
@@ -4123,10 +4122,477 @@ graph LR
 จากตัวอย่างโปรเจกต์ครบวงจร (Full‑stack Example) จะได้โครงสร้างโค้ดที่สามารถนำไปใช้เป็นต้นแบบ โครงสร้างนี้ช่วยให้ทีมสร้าง Task List และ Checklist เพื่อติดตามงาน พร้อมทั้ง Workflow Diagram ที่อธิบายขั้นตอนการทำงาน สุดท้าย mop Config จัดการค่า configuration (YAML/ENV) เพื่อให้แอปพลิเคชันทำงานได้ในหลายสภาพแวดล้อม
 
 ---
+เราจะนำเสนอแผนภาพพร้อมคำอธิบายภาษาไทยสำหรับแต่ละภาค โดยสามารถนำ Mermaid code ไปใช้ใน draw.io หรือโปรแกรมที่รองรับ Mermaid ได้เลย
 
-แผนภาพเหล่านี้สามารถนำไปแทรกในหนังสือหรือเอกสารการสอน เพื่อช่วยให้ผู้อ่านเห็นภาพรวมและลำดับการไหลของข้อมูลในแต่ละหัวข้อได้ดียิ่งขึ้น
+---
 
+## 📌 ภาพรวมการไหลของข้อมูลในคู่มือ
 
+```mermaid
+graph TD
+    subgraph Part1[Part 1: Fundamentals]
+        A1[Source Code] --> A2[Compiler]
+        A2 --> A3[Executable]
+        A3 --> A4[Run & Debug]
+    end
+
+    subgraph Part2[Part 2: Basic Language & Data Structures]
+        B1[Variables & Types] --> B2[Control Flow]
+        B2 --> B3[Functions]
+        B3 --> B4[Structs & Interfaces]
+    end
+
+    subgraph Part3[Part 3: Project Management & Advanced Data Structures]
+        C1[Go Modules] --> C2[Tests]
+        C2 --> C3[Arrays/Slices/Maps]
+        C3 --> C4[Error Handling]
+    end
+
+    subgraph Part4[Part 4: Practical Application Development]
+        D1[HTTP Server] --> D2[JSON/XML]
+        D2 --> D3[Concurrency]
+        D3 --> D4[Logging & Config]
+    end
+
+    subgraph Part5[Part 5: Professional Go Development]
+        E1[Benchmarks] --> E2[Profiling]
+        E2 --> E3[Context]
+        E3 --> E4[Generics]
+    end
+
+    subgraph Part6[Part 6: Popular Tools & Libraries]
+        F1[chi, viper, cobra, zap] --> F2[GORM]
+        F2 --> F3[gomail & hermes]
+    end
+
+    subgraph Part7[Part 7: Architecture Design & Workflow]
+        G1[Clean Architecture] --> G2[Blueprint]
+        G2 --> G3[Workflow & Tasks]
+    end
+
+    subgraph Part8[Part 8: Domain-Driven Design]
+        H1[DDD Principles] --> H2[Aggregates & Events]
+        H2 --> H3[CQRS & Services]
+    end
+
+    subgraph Part9[Part 9: External Systems Integration]
+        I1[Redis] --> I2[RabbitMQ]
+        I2 --> I3[MQTT]
+        I3 --> I4[InfluxDB]
+        I4 --> I5[WebSocket]
+        I5 --> I6[SMS/LINE/Discord]
+    end
+
+    subgraph Part10[Part 10: Templates & Examples]
+        J1[Full‑stack Example] --> J2[Task List]
+        J2 --> J3[Checklist]
+        J3 --> J4[Workflow Diagram]
+        J4 --> J5[mop Config]
+    end
+
+    A4 --> B1
+    C4 --> D1
+    D4 --> E1
+    E4 --> F1
+    F3 --> G1
+    G3 --> H1
+    H3 --> I1
+    I6 --> J1
+```
+
+**คำอธิบายภาษาไทย:**  
+แผนภาพนี้แสดงภาพรวมการไหลของเนื้อหาในคู่มือ แต่ละภาคจะนำไปสู่ภาคถัดไป โดยเริ่มจากพื้นฐาน (คอมไพล์, รัน) ไปสู่โครงสร้างข้อมูล, การจัดการโปรเจกต์, การพัฒนาเชิงปฏิบัติ, เครื่องมือ, สถาปัตยกรรม, DDD, การเชื่อมต่อระบบภายนอก และสุดท้ายคือเทมเพลตและตัวอย่างโค้ด ซึ่งเป็นการเรียนรู้แบบลำดับและต่อยอดกัน
+
+---
+
+## ภาคที่ 1: ปฐมบทกับการเขียนโปรแกรม (บทที่ 1–5)
+
+### แผนภาพ: จากแนวคิดสู่โปรแกรมแรก
+
+```mermaid
+graph LR
+    subgraph User[ผู้ใช้]
+        U1[เขียนโค้ด]
+    end
+
+    subgraph Terminal
+        T1[go run] --> T2[คอมไพเลอร์]
+        T2 --> T3[ไฟล์ binary]
+        T3 --> T4[แสดงผล]
+    end
+
+    U1 -->|main.go| T1
+    T4 -->|คอนโซล| U1
+```
+
+**คำอธิบายภาษาไทย:**  
+ผู้ใช้เขียนซอร์สโค้ด (`main.go`) จากนั้นใช้คำสั่ง `go run` ซึ่งจะเรียกคอมไพเลอร์ (compiler) แปลงเป็นไฟล์ binary แล้วรันโปรแกรม ผลลัพธ์แสดงออกทางคอนโซล แผนภาพนี้แสดงกระบวนการพื้นฐานของการพัฒนาโปรแกรมด้วย Go ตั้งแต่การเขียนโค้ดไปจนถึงการรันและเห็นผลลัพธ์
+
+---
+
+## ภาคที่ 2: พื้นฐานภาษาและโครงสร้างข้อมูล (บทที่ 6–16)
+
+### แผนภาพ: การไหลของข้อมูลในภาษา Go
+
+```mermaid
+graph TD
+    A[ประกาศตัวแปร] --> B[โครงสร้างควบคุม<br/>(if, for, switch)]
+    B --> C[เรียกใช้ฟังก์ชัน]
+    C --> D[Struct และ Method]
+    D --> E[พอยน์เตอร์]
+    E --> F[อินเทอร์เฟซ]
+
+    subgraph Data[ชนิดข้อมูล]
+        A1[ชนิดพื้นฐาน<br/>int, string, bool]
+        A2[ชนิดประกอบ<br/>array, slice, map]
+    end
+    A1 --> A
+    A2 --> A
+```
+
+**คำอธิบายภาษาไทย:**  
+การเขียนโปรแกรมใน Go เริ่มจากการประกาศตัวแปร (ใช้ชนิดข้อมูลพื้นฐานหรือชนิดประกอบ) จากนั้นใช้โครงสร้างควบคุมเพื่อกำหนดทิศทางการทำงาน เรียกใช้ฟังก์ชัน ซึ่งอาจเป็น method ที่ผูกกับ struct หรือรับพอยน์เตอร์ และสุดท้ายนำไปใช้งานผ่านอินเทอร์เฟซ แผนภาพนี้แสดงลำดับการใช้ส่วนประกอบภาษาเพื่อสร้างโปรแกรมที่ซับซ้อนขึ้น
+
+---
+
+## ภาคที่ 3: การจัดการโปรเจกต์และโครงสร้างข้อมูลขั้นสูง (บทที่ 17–23)
+
+### แผนภาพ: โมดูล → ทดสอบ → คอลเลกชัน → การจัดการข้อผิดพลาด
+
+```mermaid
+graph TD
+    subgraph Modules[Go Modules]
+        M1[go mod init] --> M2[go.mod]
+        M2 --> M3[go get / tidy]
+        M3 --> M4[go.sum]
+    end
+
+    subgraph Testing[การทดสอบ]
+        T1[_test.go] --> T2[go test]
+        T2 --> T3[รายงาน coverage]
+    end
+
+    subgraph Collections[โครงสร้างข้อมูล]
+        C1[อาเรย์] --> C2[สไลซ์]
+        C2 --> C3[แมพ]
+    end
+
+    subgraph Errors[การจัดการข้อผิดพลาด]
+        E1[errors.New] --> E2[fmt.Errorf]
+        E2 --> E3[errors.Is / As]
+    end
+
+    M4 --> T1
+    T3 --> C1
+    C3 --> E1
+```
+
+**คำอธิบายภาษาไทย:**  
+เริ่มต้นจัดการโปรเจกต์ด้วย Go Modules สร้างไฟล์ `go.mod` และ `go.sum` จากนั้นเขียนการทดสอบในไฟล์ `_test.go` แล้วรันด้วย `go test` ข้อมูลจากการทดสอบจะนำไปปรับปรุงโครงสร้างข้อมูลอย่างอาเรย์, สไลซ์, แมพ ส่วนการจัดการข้อผิดพลาด (error) จะถูกนำไปใช้ในโค้ดจริง เพื่อให้โปรแกรมมีความน่าเชื่อถือ
+
+---
+
+## ภาคที่ 4: การพัฒนาแอปพลิเคชันเชิงปฏิบัติ (บทที่ 24–33)
+
+### แผนภาพ: HTTP Request → ประมวลผล → Response
+
+```mermaid
+graph LR
+    subgraph Client[ไคลเอนต์]
+        C1[เบราว์เซอร์ / API Client]
+    end
+
+    subgraph Server[เซิร์ฟเวอร์]
+        S1[HTTP Handler] --> S2[แปลง JSON/XML]
+        S2 --> S3[ตรรกะธุรกิจ<br/>(ฟังก์ชัน, การทำงานพร้อมกัน)]
+        S3 --> S4[แปลงเป็น JSON/XML]
+        S4 --> S5[ส่ง Response]
+    end
+
+    subgraph Storage[ที่เก็บข้อมูล]
+        ST1[ไฟล์]
+        ST2[ฐานข้อมูล]
+    end
+
+    C1 -->|Request| S1
+    S3 <--> ST1
+    S3 <--> ST2
+    S5 -->|Response| C1
+```
+
+**คำอธิบายภาษาไทย:**  
+ไคลเอนต์ส่งคำขอ (HTTP request) มาที่เซิร์ฟเวอร์ ผ่าน Handler ซึ่งจะแปลงข้อมูล JSON/XML จาก body ให้เป็น struct ของ Go จากนั้นตรรกะธุรกิจจะประมวลผล อาจอ่านหรือเขียนข้อมูลจากไฟล์หรือฐานข้อมูล ผลลัพธ์ถูกแปลงกลับเป็น JSON/XML แล้วส่งกลับไปยังไคลเอนต์ แผนภาพนี้แสดงการทำงานพื้นฐานของเว็บแอปพลิเคชันด้วย Go
+
+---
+
+## ภาคที่ 5: สู่การเป็นนักพัฒนา Go มืออาชีพ (บทที่ 34–42)
+
+### แผนภาพ: Benchmark → Profile → Optimize
+
+```mermaid
+graph TD
+    A[เขียนโค้ด] --> B[เขียน Benchmark]
+    B --> C[Profiling<br/>(CPU, memory)]
+    C --> D[ระบุจุดช้า]
+    D --> E[ปรับปรุงประสิทธิภาพ<br/>(Generics, context)]
+    E --> A
+
+    subgraph Tools[เครื่องมือ]
+        T1[go test -bench]
+        T2[pprof]
+        T3[go vet / golangci-lint]
+    end
+    B --> T1
+    C --> T2
+    D --> T3
+```
+
+**คำอธิบายภาษาไทย:**  
+หลังจากเขียนโค้ดแล้ว ให้เขียน benchmark ในไฟล์ `_test.go` รันด้วย `go test -bench` จากนั้นใช้ profiler (pprof) วิเคราะห์การใช้ CPU และหน่วยความจำ เพื่อหาจุดที่ช้า ปรับปรุงโดยใช้ Generics, context หรือเทคนิคอื่น ๆ แล้วนำโค้ดที่ปรับแล้วกลับมาวัดซ้ำ เป็นวงจรการเพิ่มประสิทธิภาพอย่างต่อเนื่อง
+
+---
+
+## ภาคที่ 6: เครื่องมือและไลบรารียอดนิยม (บทที่ 43–45)
+
+### แผนภาพ: Router → Config → CLI → Logger → ORM → Email
+
+```mermaid
+graph LR
+    subgraph Router
+        R1[chi] --> R2[Middleware]
+    end
+
+    subgraph Config
+        V1[viper] --> V2[config.yaml]
+        V2 --> R1
+    end
+
+    subgraph CLI
+        C1[cobra] --> C2[Commands]
+        C2 --> V1
+    end
+
+    subgraph Logger
+        Z1[zap] --> Z2[Structured Logs]
+    end
+
+    subgraph ORM
+        G1[GORM] --> G2[Database Operations]
+    end
+
+    subgraph Email
+        M1[gomail] --> M2[hermes]
+        M2 --> M3[HTML Email]
+    end
+
+    R2 --> Z1
+    R2 --> G1
+    G1 --> M1
+```
+
+**คำอธิบายภาษาไทย:**  
+การพัฒนาแอปพลิเคชันยุคใหม่มักใช้เครื่องมือหลายตัวร่วมกัน เช่น chi สำหรับ routing และ middleware, viper สำหรับอ่านค่าคอนฟิกจากไฟล์, cobra สำหรับสร้าง CLI, zap สำหรับบันทึก log แบบมีโครงสร้าง, GORM สำหรับจัดการฐานข้อมูล, gomail และ hermes สำหรับส่งอีเมลแบบ HTML สวยงาม แผนภาพนี้แสดงการเชื่อมโยงเครื่องมือเหล่านี้เข้าด้วยกัน
+
+---
+
+## ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
+
+### แผนภาพ: Clean Architecture Layers
+
+```mermaid
+graph TD
+    subgraph Delivery
+        D1[HTTP Handlers] --> D2[DTOs]
+    end
+
+    subgraph Usecase
+        U1[Business Logic] --> U2[Repository Interface]
+    end
+
+    subgraph Repository
+        R1[Repository Interface] --> R2[Implementation<br/>(GORM, Redis)]
+    end
+
+    subgraph External
+        E1[Database] --> E2[Cache]
+    end
+
+    D2 --> U1
+    U2 --> R1
+    R2 --> E1
+    R2 --> E2
+```
+
+**คำอธิบายภาษาไทย:**  
+สถาปัตยกรรม Clean Architecture แบ่งเป็นสามชั้นหลัก:
+- **Delivery**: รับ Request และส่ง Response (เช่น HTTP handlers) ใช้ DTO เพื่อสื่อสารกับชั้นถัดไป
+- **Usecase**: ตรรกะธุรกิจ (business logic) เรียกใช้ repository ผ่าน interface
+- **Repository**: นำ interface ไป implement ด้วย GORM หรือ Redis เพื่อติดต่อฐานข้อมูลหรือ cache
+
+การแยกชั้นนี้ทำให้โค้ดยืดหยุ่น ทดสอบง่าย และบำรุงรักษาง่าย
+
+---
+
+## ภาคที่ 8: Domain-Driven Design (DDD) (บทที่ 49–51)
+
+### แผนภาพ: Domain → Application → Infrastructure
+
+```mermaid
+graph LR
+    subgraph Domain
+        A[Entities & Value Objects] --> B[Aggregates]
+        B --> C[Domain Events]
+        C --> D[Repository Interface]
+    end
+
+    subgraph Application
+        E[Use Cases] --> F[DTOs]
+        F --> G[Service Orchestration]
+    end
+
+    subgraph Infrastructure
+        H[Repository Implementation] --> I[Event Bus]
+        I --> J[Message Broker]
+    end
+
+    A --> E
+    D --> H
+    C --> I
+```
+
+**คำอธิบายภาษาไทย:**  
+ใน DDD ชั้น **Domain** จะเก็บโมเดลธุรกิจหลัก (Entity, Value Object, Aggregate) และกำหนด interface สำหรับ repository รวมถึง domain events  
+ชั้น **Application** จะนำ domain มาใช้ใน use cases ผ่าน DTO และจัดลำดับการทำงาน  
+ชั้น **Infrastructure** รับผิดชอบการ implement repository และส่ง domain events ผ่าน event bus หรือ message broker ไปยังระบบอื่น  
+
+การแยกแบบนี้ทำให้โมเดลธุรกิจไม่ขึ้นอยู่กับเทคโนโลยีภายนอก
+
+---
+
+## ภาคที่ 9: การผสานระบบภายนอกและคุณลักษณะเสริม (บทที่ 52–58)
+
+### แผนภาพ: Redis, RabbitMQ, MQTT, InfluxDB, WebSocket, Notifications
+ 
+```mermaid
+flowchart TD
+    subgraph CacheQueue[Cache & Queue]
+        R1[Redis] -->|Cache| R2[In-memory Data]
+        R1 -->|Queue| R3[Pub/Sub]
+    end
+
+    subgraph MessageBroker[Message Broker]
+        M1[RabbitMQ] --> M2[Exchanges & Queues]
+        M2 --> M3[Workers]
+    end
+
+    subgraph IoT[IoT Devices]
+        I1[MQTT Broker] --> I2[Sensors]
+        I2 --> I3[Raw Data]
+    end
+
+    subgraph TimeSeries[Time‑Series Database]
+        T1[InfluxDB] --> T2[Metrics & Analytics]
+    end
+
+    subgraph Realtime[Real‑time Communication]
+        W1[WebSocket Server] --> W2[Live Updates to Clients]
+    end
+
+    subgraph Notifications[Notification Channels]
+        N1[SMS Gateway] --> N2[LINE Notify]
+        N2 --> N3[Discord Webhook]
+    end
+
+    R2 -->|Cache hit| T1
+    R3 -->|Message| M1
+    M3 -->|Processed data| T1
+    I3 -->|Sensor telemetry| T1
+    T2 -->|Metrics & alerts| W1
+    W2 -->|Trigger| N1
+```
+
+**คำอธิบายภาษาไทย:**
+
+แผนภาพนี้แสดงการทำงานร่วมกันของระบบภายนอกที่ใช้ในแอปพลิเคชัน Go ระดับ production โดยมีลำดับการไหลของข้อมูลดังนี้:
+
+1. **Cache & Queue (Redis)**  
+   - ใช้ Redis เป็น **cache** เก็บข้อมูลในหน่วยความจำ (In-memory Data) เพื่อลดภาระฐานข้อมูล  
+   - ใช้ Redis เป็น **queue** (Pub/Sub) สำหรับส่งข้อความระหว่าง services
+
+2. **Message Broker (RabbitMQ)**  
+   - RabbitMQ ทำหน้าที่เป็นตัวกลางรับข้อความจาก Redis Pub/Sub ผ่าน exchanges และ queues  
+   - Workers จะดึงงานจาก queue และประมวลผล จากนั้นส่งข้อมูลที่ประมวลผลแล้วไปยัง InfluxDB
+
+3. **IoT Devices (MQTT)**  
+   - อุปกรณ์ IoT ส่งข้อมูลผ่าน MQTT Broker ไปยังเซ็นเซอร์ (Sensors)  
+   - ข้อมูลดิบ (Raw Data) จะถูกส่งต่อไปยัง InfluxDB เพื่อจัดเก็บเป็นอนุกรมเวลา
+
+4. **Time‑Series Database (InfluxDB)**  
+   - รับข้อมูลจาก Redis cache, RabbitMQ workers, และ MQTT  
+   - เก็บเป็น metrics และ analytics พร้อมให้บริการข้อมูลแก่ระบบอื่น
+
+5. **Real‑time Communication (WebSocket)**  
+   - WebSocket Server ดึงข้อมูลจาก InfluxDB เพื่อส่งการอัปเดตแบบเรียลไทม์ไปยังไคลเอนต์
+
+6. **Notifications (SMS, LINE, Discord)**  
+   - เมื่อเกิดเหตุการณ์สำคัญ (เช่น ข้อมูลเกินค่าที่กำหนด) WebSocket จะส่งสัญญาณไปยัง SMS Gateway  
+   - จากนั้นส่งต่อไปยัง LINE Notify และ Discord Webhook เพื่อแจ้งเตือนผู้ใช้ผ่านช่องทางที่กำหนด
+
+**สรุป:** ระบบทั้งหมดทำงานร่วมกันเป็นวงจร เริ่มจากการรับข้อมูลจาก IoT และแคช/คิวใน Redis, ประมวลผลผ่าน RabbitMQ, เก็บข้อมูลใน InfluxDB, แสดงผลแบบเรียลไทม์ผ่าน WebSocket และแจ้งเตือนผ่านช่องทางต่างๆ ทำให้แอปพลิเคชันมีความเสถียร รองรับปริมาณข้อมูลสูง และตอบสนองได้ทันที
+
+**คำอธิบายภาษาไทย:**  
+ระบบสมัยใหม่มักเชื่อมต่อกับหลายบริการ:
+- **Redis**: ใช้เป็น cache และ message queue (pub/sub)
+- **RabbitMQ**: เป็น message broker สำหรับกระจายงานระหว่าง services
+- **MQTT**: รับข้อมูลจากอุปกรณ์ IoT (เซ็นเซอร์)
+- **InfluxDB**: เก็บบันทึกข้อมูลอนุกรมเวลา (time‑series) สำหรับ metrics
+- **WebSocket**: สื่อสารแบบ real‑time กับไคลเอนต์
+- **SMS / LINE / Discord**: แจ้งเตือนผู้ใช้ผ่านช่องทางต่าง ๆ
+
+ข้อมูลจากทุกแหล่งจะถูกนำไปจัดเก็บและแสดงผลแบบเรียลไทม์
+
+---
+
+## ภาคที่ 10: เทมเพลต กระบวนการพัฒนา และตัวอย่างโค้ด (บทที่ 59–63)
+
+### แผนภาพ: ตัวอย่างแอป → Task List → Checklist → Diagram → Config
+
+```mermaid
+graph LR
+    subgraph Example
+        E1[Full‑stack Example] --> E2[Code Structure]
+    end
+
+    subgraph Processes
+        P1[Task List] --> P2[Checklist]
+        P2 --> P3[Workflow Diagram]
+    end
+
+    subgraph Config
+        C1[mop Config] --> C2[YAML/ENV]
+        C2 --> E1
+    end
+
+    E2 --> P1
+    P3 --> C1
+```
+
+**คำอธิบายภาษาไทย:**  
+ในภาคสุดท้ายเราจะนำเสนอตัวอย่างแอปพลิเคชันครบวงจร (Full‑stack Example) ซึ่งแสดงโครงสร้างโค้ดตาม Clean Architecture และ DDD จากนั้นใช้ Task List และ Checklist เป็นแนวทางในการพัฒนาและการตรวจสอบคุณภาพ แผนภาพการทำงาน (Workflow Diagram) ช่วยให้ทีมเห็นภาพรวมของกระบวนการ และ mop Config ช่วยจัดการการตั้งค่าผ่านไฟล์ YAML หรือ environment variables เพื่อให้แอปพลิเคชันปรับค่าได้ง่ายเมื่อนำไปใช้งานจริง
+
+---
+
+## วิธีใช้แผนภาพใน draw.io
+
+1. คัดลอกโค้ด Mermaid ที่ต้องการ  
+2. ใน draw.io ไปที่ **Arrange → Insert → Advanced → Mermaid**  
+3. วางโค้ดแล้วกด **Insert**  
+4. แผนภาพจะถูกสร้างขึ้นและสามารถแก้ไขเพิ่มเติมได้
+
+หรือใช้โปรแกรมที่รองรับ Mermaid เช่น GitHub, GitLab, VS Code (ติดตั้ง extension Mermaid)
+
+แผนภาพเหล่านี้ช่วยให้เห็นภาพการทำงานของระบบและแนวคิดในคู่มืออย่างชัดเจน เหมาะสำหรับใช้สอนหรืออธิบายสถาปัตยกรรมให้ทีมฟัง
+ 
 
 ## 📚 บทสรุป
 
