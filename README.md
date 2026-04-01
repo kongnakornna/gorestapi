@@ -278,6 +278,658 @@ Go รองรับการเขียนโปรแกรมแบบ:
 
 ---
 
+# 1. Procedural Programming
+
+## Procedural คืออะไร?
+**Procedural programming** (การเขียนโปรแกรมแบบกระบวนการ) เป็นกระบวนทัศน์ที่เน้นการเขียนโค้ดเป็นชุดของคำสั่งหรือฟังก์ชัน (procedures / routines) ที่ทำงานตามลำดับขั้นตอน (step-by-step) โดยใช้ตัวแปร โครงสร้างควบคุม (if, for, switch) และฟังก์ชันที่เรียกซ้ำกันได้
+
+## Procedural มีกี่แบบ?
+ในทางปฏิบัติ Procedural programming ไม่ได้แบ่งเป็น “แบบ” อย่างเป็นทางการ แต่สามารถมองได้ตาม **โครงสร้างของโค้ด**:
+- **Linear / Sequential** – คำสั่งทำงานเรียงตามลำดับ
+- **Modular** – แบ่งโค้ดออกเป็นฟังก์ชัน/โมดูล
+- **Structured** – ใช้โครงสร้างควบคุม (sequence, selection, iteration) หลีกเลี่ยง goto
+
+ภาษา Go มีพื้นฐานเป็น procedural โดยมีการจัดระเบียบผ่านฟังก์ชันและแพ็กเกจ
+
+## ใช้อย่างไร ในกรณีไหน?
+- เขียนโปรแกรมที่มีขั้นตอนชัดเจน (linear flow)
+- งานที่ต้องการประสิทธิภาพสูง ควบคุมทรัพยากรใกล้เคียงฮาร์ดแวร์
+- โค้ดขนาดเล็กถึงกลาง ไม่ต้องการความซับซ้อนของ OOP
+- Go มักใช้ procedural ร่วมกับ concurrent และ OOP (ผ่าน struct & interface)
+
+## หลักการทำงาน
+1. โปรแกรมเริ่มทำงานจากฟังก์ชัน `main()`
+2. เรียกฟังก์ชันตามลำดับ อาจมีการส่งค่าและรับค่ากลับ
+3. ตัวแปรมีขอบเขตตาม block หรือ package
+4. การทำงานเป็นแบบ imperative: เปลี่ยนแปลงสถานะของตัวแปรโดยตรง
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม main]) --> FuncA[เรียก Function A]
+    FuncA --> FuncB[เรียก Function B]
+    FuncB --> Cond{เงื่อนไข?}
+    Cond -- true --> Action1[ทำ Action 1]
+    Cond -- false --> Action2[ทำ Action 2]
+    Action1 --> End([จบ])
+    Action2 --> End
+```
+
+## ตัวอย่างการใช้งานจริง: โปรแกรมคำนวณราคาสินค้า
+```go
+package main
+
+import "fmt"
+
+// ฟังก์ชันคำนวณราคารวม
+func calculateTotal(price float64, quantity int) float64 {
+    return price * float64(quantity)
+}
+
+// ฟังก์ชันคำนวณส่วนลด
+func applyDiscount(total float64, discountPercent float64) float64 {
+    return total * (1 - discountPercent/100)
+}
+
+// ฟังก์ชันหลัก
+func main() {
+    price := 250.0
+    qty := 3
+    discount := 10.0
+
+    total := calculateTotal(price, qty)
+    fmt.Printf("Total: %.2f\n", total)
+
+    finalPrice := applyDiscount(total, discount)
+    fmt.Printf("After discount: %.2f\n", finalPrice)
+}
+```
+
+## เทมเพลตโครงสร้างโปรเจกต์แบบ Procedural ใน Go
+```
+project/
+├── main.go
+├── handlers/         # ฟังก์ชันจัดการ request
+├── services/         # ฟังก์ชัน business logic
+├── repositories/     # ฟังก์ชันติดต่อฐานข้อมูล
+└── utils/            # ฟังก์ชันช่วยเหลือ
+```
+โค้ดในแต่ละ package จะเป็นชุดฟังก์ชันที่ทำงานตามลำดับที่เรียกใช้
+
+---
+
+# 2. Concurrent Programming
+
+## Concurrent คืออะไร?
+**Concurrent programming** คือการเขียนโปรแกรมให้สามารถทำงานหลายอย่าง **พร้อมกัน** (overlap in time) โดยไม่จำเป็นต้องทำพร้อมกันจริง (parallel) แต่เป็นการจัดการหลาย tasks สลับกันเพื่อเพิ่มประสิทธิภาพและความสามารถในการตอบสนอง
+
+Go มี **goroutine** (เธรดน้ำหนักเบา) และ **channel** สำหรับการสื่อสารระหว่าง goroutines ทำให้การเขียน concurrent โปรแกรมง่ายและปลอดภัย
+
+## Concurrent มีกี่แบบ?
+รูปแบบหลักในการเขียน concurrent code:
+- **Goroutines + Channels** – CSP (Communicating Sequential Processes) แบบ Go
+- **Mutex / Atomic** – ใช้การล็อกเพื่อป้องกัน race condition
+- **Worker Pool** – ใช้ goroutines จำนวนคงที่ทำงานจากคิวงาน
+- **Pipeline** – ข้อมูลไหลผ่านหลาย goroutines ที่เชื่อมต่อกันด้วย channel
+
+## ใช้อย่างไร ในกรณีไหน?
+- งานที่ต้องการทำหลายอย่างพร้อมกัน (web server, API calls)
+- งาน I/O-bound (อ่านไฟล์, เรียกฐานข้อมูล, HTTP request)
+- ปรับปรุงประสิทธิภาพการทำงานของระบบ
+- Queue processor, background jobs
+
+## หลักการทำงาน
+1. สร้าง goroutine ด้วย `go function()`
+2. Goroutine ทำงาน concurrent กับ main goroutine
+3. ใช้ `channel` สำหรับส่งข้อมูลระหว่าง goroutines (synchronization)
+4. ใช้ `sync.WaitGroup` หรือ `context` เพื่อควบคุม lifecycle
+
+## Dataflow Diagram (Flowchart TB) - Worker Pool
+
+```mermaid
+graph TB
+    subgraph Main
+        A[main] --> B[สร้าง Jobs Channel]
+        B --> C[สร้าง Workers n ตัว]
+        C --> D[ส่งงานเข้า Jobs Channel]
+    end
+
+    subgraph Worker1
+        E[for job := range jobs] --> F[ประมวลผล job]
+    end
+    subgraph Worker2
+        G[for job := range jobs] --> H[ประมวลผล job]
+    end
+
+    D --> E
+    D --> G
+    F --> I[ส่งผลลัพธ์]
+    H --> I
+    I --> J[main รวบรวมผล]
+```
+
+## ตัวอย่างการใช้งานจริง: Download เว็บหลาย ๆ ที่พร้อมกัน
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "sync"
+    "time"
+)
+
+func fetch(url string, wg *sync.WaitGroup, results chan<- string) {
+    defer wg.Done()
+    start := time.Now()
+    resp, err := http.Get(url)
+    if err != nil {
+        results <- fmt.Sprintf("%s -> error: %v", url, err)
+        return
+    }
+    defer resp.Body.Close()
+    elapsed := time.Since(start)
+    results <- fmt.Sprintf("%s -> %d ms", url, elapsed.Milliseconds())
+}
+
+func main() {
+    urls := []string{
+        "https://google.com",
+        "https://github.com",
+        "https://stackoverflow.com",
+    }
+
+    var wg sync.WaitGroup
+    results := make(chan string, len(urls))
+
+    for _, url := range urls {
+        wg.Add(1)
+        go fetch(url, &wg, results)
+    }
+
+    wg.Wait()
+    close(results)
+
+    for res := range results {
+        fmt.Println(res)
+    }
+}
+```
+
+## เทมเพลต Worker Pool
+```go
+type Job struct { ID int; Data interface{} }
+type Result struct { JobID int; Output interface{}; Err error }
+
+func worker(jobs <-chan Job, results chan<- Result, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for job := range jobs {
+        // process job
+        results <- Result{JobID: job.ID, Output: processedData}
+    }
+}
+
+func main() {
+    jobs := make(chan Job, 100)
+    results := make(chan Result, 100)
+
+    // start workers
+    var wg sync.WaitGroup
+    for w := 0; w < 5; w++ {
+        wg.Add(1)
+        go worker(jobs, results, &wg)
+    }
+
+    // send jobs
+    for i := 0; i < 100; i++ {
+        jobs <- Job{ID: i, Data: ...}
+    }
+    close(jobs)
+    wg.Wait()
+    close(results)
+
+    // collect results
+    for res := range results { ... }
+}
+```
+
+---
+
+# 3. Functional Programming
+
+## Functional คืออะไร?
+**Functional programming** (การเขียนโปรแกรมเชิงฟังก์ชัน) เป็นกระบวนทัศน์ที่มองการคำนวณเป็นการประเมินค่าของฟังก์ชัน โดยเน้น:
+- **Pure functions** – ผลลัพธ์ขึ้นอยู่กับอินพุตเท่านั้น ไม่มี side effect
+- **Immutability** – ข้อมูลไม่เปลี่ยนแปลงหลังสร้าง
+- **First-class functions** – ฟังก์ชันเป็นค่าที่สามารถส่งต่อได้
+- **Higher-order functions** – ฟังก์ชันรับฟังก์ชันเป็นพารามิเตอร์หรือคืนฟังก์ชัน
+
+Go รองรับฟังก์ชัน first-class, closures, และ higher-order functions แต่ไม่มี immutability บังคับ (ใช้แนวทาง pragmatic functional)
+
+## Functional มีกี่แบบ?
+- **Pure FP** – ใช้เฉพาะ pure functions, immutable data (Haskell, Elm)
+- **Impure FP** – อนุญาต side effect บางส่วน (Go, JavaScript, Scala)
+- **Higher-order functions** – map, filter, reduce
+- **Function composition** – นำฟังก์ชันเล็ก ๆ มาต่อกัน
+
+## ใช้อย่างไร ในกรณีไหน?
+- การแปลงข้อมูล (transform) ด้วย pipeline
+- เขียนโค้ดที่คาดเดาได้ง่าย ทดสอบง่าย
+- ลดความซับซ้อนในการจัดการสถานะ
+- ใช้ร่วมกับ concurrent (pure functions ปลอดภัยต่อ race condition)
+
+## หลักการทำงาน
+1. กำหนดฟังก์ชันเล็ก ๆ ที่ทำหน้าที่เฉพาะ
+2. ใช้ higher-order functions (map, filter, reduce) กับ slice
+3. หลีกเลี่ยงการเปลี่ยนแปลงตัวแปรภายนอก (immutability เท่าที่ทำได้)
+4. สร้าง pipeline โดยการต่อฟังก์ชันเข้าด้วยกัน
+
+## Dataflow Diagram (Flowchart TB) - Pipeline
+
+```mermaid
+graph LR
+    A[Input Data] --> B[Filter]
+    B --> C[Map]
+    C --> D[Reduce]
+    D --> E[Output Result]
+```
+
+## ตัวอย่างการใช้งานจริง: ประมวลผลข้อมูลผู้ใช้
+```go
+package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+// Pure function
+func toUpper(s string) string { return strings.ToUpper(s) }
+
+// Higher-order filter
+func filter(users []string, predicate func(string) bool) []string {
+    var result []string
+    for _, u := range users {
+        if predicate(u) {
+            result = append(result, u)
+        }
+    }
+    return result
+}
+
+// Higher-order map
+func mapFunc(users []string, fn func(string) string) []string {
+    result := make([]string, len(users))
+    for i, u := range users {
+        result[i] = fn(u)
+    }
+    return result
+}
+
+func main() {
+    users := []string{"alice", "bob", "charlie", "admin"}
+
+    // Pipeline: filter user with length > 3, then convert to upper
+    filtered := filter(users, func(u string) bool { return len(u) > 3 })
+    upper := mapFunc(filtered, toUpper)
+
+    fmt.Println(upper) // [CHARLIE ADMIN]
+}
+```
+
+## เทมเพลต: generic map/filter/reduce (Go 1.18+)
+```go
+type Slice[T any] []T
+
+func (s Slice[T]) Map(fn func(T) T) Slice[T] {
+    result := make(Slice[T], len(s))
+    for i, v := range s {
+        result[i] = fn(v)
+    }
+    return result
+}
+
+func (s Slice[T]) Filter(pred func(T) bool) Slice[T] {
+    result := Slice[T]{}
+    for _, v := range s {
+        if pred(v) {
+            result = append(result, v)
+        }
+    }
+    return result
+}
+```
+
+---
+
+# 4. Object-Oriented Programming (OOP)
+
+## OOP คืออะไร?
+**Object-Oriented Programming** (การเขียนโปรแกรมเชิงวัตถุ) เป็นกระบวนทัศน์ที่จัดระเบียบโค้ดเป็น “วัตถุ” (objects) ซึ่งรวมข้อมูล (fields) และพฤติกรรม (methods) เข้าด้วยกัน เน้นหลักการ:
+- **Encapsulation** – ซ่อนรายละเอียดภายใน
+- **Inheritance** – สืบทอดคุณสมบัติจากคลาสแม่ (Go ใช้ composition แทน)
+- **Polymorphism** – หลายรูปแบบผ่าน interface
+
+ภาษา Go ไม่มีคลาสแบบดั้งเดิม แต่ใช้ **struct** แทนข้อมูล และ **interface** แทนพฤติกรรมร่วมกัน ทำให้ได้แนวคิด OOP แบบ lightweight
+
+## OOP มีกี่แบบ?
+ตามกระบวนทัศน์ OOP แบ่งเป็น:
+- **Class-based** (Java, C++, Python) – มีคลาสเป็นต้นแบบ
+- **Prototype-based** (JavaScript) – วัตถุสืบทอดจากวัตถุอื่น
+- Go ใช้ **struct + interface** เข้าถึง OOP ในรูปแบบ composition over inheritance
+
+## ใช้อย่างไร ในกรณีไหน?
+- โปรแกรมที่ต้องการจำลองสิ่งของในโลกจริง (entity modeling)
+- ต้องการความสามารถในการขยาย (extension) ผ่าน interface
+- ต้องการ polymorphism โดยไม่ต้องใช้ inheritance ซับซ้อน
+- โค้ดขนาดใหญ่ที่ต้องการ modularity
+
+## หลักการทำงาน
+1. กำหนด **struct** สำหรับเก็บข้อมูล
+2. เพิ่ม **method** ให้ struct ด้วย `func (r Receiver) MethodName()`
+3. กำหนด **interface** เพื่อประกาศชุดของ method ที่ต้องมี
+4. ใช้งาน polymorphism ผ่าน interface (dependency injection, mock)
+
+## Dataflow Diagram (Flowchart TB) - Polymorphism
+
+```mermaid
+graph TB
+    A[Interface Speaker] --> B1[Dog.Speak]
+    A --> B2[Cat.Speak]
+    A --> B3[Robot.Speak]
+    C[Function makeSound] --> A
+    C --> D[เรียก s.Speak]
+```
+
+## ตัวอย่างการใช้งานจริง: สัตว์เลี้ยงและหุ่นยนต์
+```go
+package main
+
+import "fmt"
+
+// Interface
+type Speaker interface {
+    Speak() string
+}
+
+// Struct Dog
+type Dog struct{ Name string }
+
+func (d Dog) Speak() string {
+    return fmt.Sprintf("%s says Woof!", d.Name)
+}
+
+// Struct Cat
+type Cat struct{ Name string }
+
+func (c Cat) Speak() string {
+    return fmt.Sprintf("%s says Meow!", c.Name)
+}
+
+// Function ที่ใช้ polymorphism
+func makeSound(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+func main() {
+    dog := Dog{Name: "Rex"}
+    cat := Cat{Name: "Luna"}
+
+    makeSound(dog) // Rex says Woof!
+    makeSound(cat) // Luna says Meow!
+}
+```
+
+## เทมเพลต: โครงสร้าง OOP ใน Go
+```go
+// entity.go
+type Entity struct {
+    ID   int
+    Name string
+}
+
+func (e Entity) GetID() int { return e.ID }
+
+// repository.go
+type Repository interface {
+    Save(entity Entity) error
+    Find(id int) (Entity, error)
+}
+
+type MySQLRepository struct {
+    db *sql.DB
+}
+
+func (r MySQLRepository) Save(entity Entity) error { ... }
+func (r MySQLRepository) Find(id int) (Entity, error) { ... }
+```
+
+---
+
+# 5. Struct
+
+## Struct คืออะไร?
+**Struct** (structure) เป็นชนิดข้อมูล (type) ที่用户可以กำหนดขึ้นเอง โดยรวมฟิลด์ (fields) หลายชนิดเข้าเป็นหน่วยเดียวกัน ใช้แทน “record” หรือ “object” ในภาษา Go
+
+## Struct มีกี่แบบ?
+- **Named struct** – ประกาศด้วย `type Name struct { fields }`
+- **Anonymous struct** – ประกาศตรงจุดโดยไม่ตั้งชื่อ
+- **Embedded struct** – ฝัง struct อื่นโดยไม่ระบุชื่อฟิลด์ (ใช้แทน inheritance)
+- **Empty struct** – `struct{}` ไม่มีฟิลด์ ใช้เป็นเซ็ตหรือ signalling
+
+## ใช้อย่างไร ในกรณีไหน?
+- จำลองข้อมูลที่มีโครงสร้าง (User, Product, Order)
+- จัดกลุ่มข้อมูลที่เกี่ยวข้องกัน
+- ฝัง struct เพื่อ reuse โค้ด (composition)
+- สร้าง method ให้ struct (รับ receiver)
+
+## หลักการทำงาน
+1. ประกาศ struct type พร้อมฟิลด์พร้อมชนิด
+2. สร้าง instance ด้วย `var`, `new`, `&StructName{...}`
+3. เข้าถึงฟิลด์ด้วย dot (`.`)
+4. สามารถเพิ่ม method ให้ struct ด้วย receiver (value หรือ pointer)
+
+## Dataflow Diagram (Flowchart TB) - Struct with Methods
+
+```mermaid
+graph TB
+    A[ประกาศ type User struct] --> B[สร้าง instance u]
+    B --> C[เรียก u.GetFullName]
+    C --> D[รับค่า firstName + lastName]
+```
+
+## ตัวอย่างการใช้งานจริง: ระบบจัดการผู้ใช้
+```go
+package main
+
+import "fmt"
+
+type User struct {
+    ID        int
+    FirstName string
+    LastName  string
+    Email     string
+}
+
+// Method with value receiver
+func (u User) FullName() string {
+    return u.FirstName + " " + u.LastName
+}
+
+// Method with pointer receiver (modify)
+func (u *User) UpdateEmail(newEmail string) {
+    u.Email = newEmail
+}
+
+func main() {
+    // create struct
+    user := User{
+        ID:        1,
+        FirstName: "John",
+        LastName:  "Doe",
+        Email:     "john@example.com",
+    }
+
+    fmt.Println(user.FullName()) // John Doe
+
+    user.UpdateEmail("john.doe@example.com")
+    fmt.Println(user.Email) // john.doe@example.com
+}
+```
+
+## เทมเพลต: Embedded struct (Composition)
+```go
+type Base struct {
+    CreatedAt time.Time
+    UpdatedAt time.Time
+}
+
+type Product struct {
+    Base        // embedded
+    ID    int
+    Name  string
+    Price float64
+}
+```
+
+---
+
+# 6. Inheritance
+
+## Inheritance คืออะไร?
+**Inheritance** (การสืบทอด) เป็นกลไกใน OOP ที่คลาสลูกสามารถสืบทอดฟิลด์และเมธอดจากคลาสแม่ ทำให้สามารถ reuse โค้ดและสร้างความสัมพันธ์แบบ **is-a** Go **ไม่มี** inheritance แบบคลาส แต่ใช้ **embedding** (struct ฝัง struct) และ **interface** เพื่อให้ได้ผลคล้ายกันโดยเน้น **composition** (has-a) มากกว่า
+
+## Inheritance มีกี่แบบ?
+ในภาษา OOP ทั่วไป:
+- **Single inheritance** – สืบทอดจากคลาสแม่เดียว (Java, C#)
+- **Multiple inheritance** – สืบทอดจากหลายคลาส (C++) – เกิดปัญหา diamond problem
+- **Multilevel inheritance** – A -> B -> C
+
+Go ใช้ **embedding** ซึ่งไม่ใช่ inheritance แท้ แต่ให้ความสามารถในการ reuse โค้ดและ method promotion
+
+## ใช้อย่างไร ในกรณีไหน?
+- ต้องการ reuse โค้ดโดยไม่ต้องเขียนซ้ำ (ใช้ embedding)
+- ต้องการสร้าง “type hierarchy” แบบง่ายผ่าน interface
+- หลีกเลี่ยงปัญหาความซับซ้อนของ deep inheritance
+- ใช้ในไลบรารีเช่น GORM (ฝัง `gorm.Model`)
+
+## หลักการทำงาน (ใน Go ด้วย embedding)
+1. ประกาศ struct `Parent` ที่มีฟิลด์และเมธอด
+2. ประกาศ struct `Child` ที่ฝัง `Parent` (anonymous field)
+3. Child สามารถเข้าถึงฟิลด์และเมธอดของ Parent โดยตรง (promotion)
+4. Child สามารถ override เมธอดได้โดยการประกาศเมธอดชื่อเดียวกัน
+5. ไม่สามารถแปลงจาก Child เป็น Parent ได้โดยอัตโนมัติ (ต้องใช้ interface)
+
+## Dataflow Diagram (Flowchart TB) - Embedding
+
+```mermaid
+graph TB
+    A[type Animal struct] --> B[type Dog struct<br/>Animal]
+    B --> C[dog := Dog{...}]
+    C --> D[เรียก dog.Speak()<br/>พบเมธอดใน Dog?]
+    D -- มี --> E[เรียก Dog.Speak]
+    D -- ไม่มี --> F[เรียก Animal.Speak]
+```
+
+## ตัวอย่างการใช้งานจริง: ระบบพาหนะ
+```go
+package main
+
+import "fmt"
+
+// Base struct
+type Vehicle struct {
+    Brand string
+    Year  int
+}
+
+func (v Vehicle) Info() string {
+    return fmt.Sprintf("%s (%d)", v.Brand, v.Year)
+}
+
+func (v Vehicle) Start() string {
+    return "Engine started"
+}
+
+// Car embeds Vehicle
+type Car struct {
+    Vehicle
+    Doors int
+}
+
+// Override Start method
+func (c Car) Start() string {
+    return "Car engine started with key"
+}
+
+// Motorcycle embeds Vehicle
+type Motorcycle struct {
+    Vehicle
+    HasSidecar bool
+}
+
+func main() {
+    car := Car{
+        Vehicle: Vehicle{Brand: "Toyota", Year: 2020},
+        Doors:   4,
+    }
+
+    bike := Motorcycle{
+        Vehicle: Vehicle{Brand: "Harley", Year: 2019},
+        HasSidecar: false,
+    }
+
+    fmt.Println(car.Info())      // Toyota (2020)  (promoted)
+    fmt.Println(car.Start())     // Car engine started with key (overridden)
+    fmt.Println(bike.Start())    // Engine started (inherited)
+}
+```
+
+## เทมเพลต: Embedding แบบ GORM
+```go
+import "gorm.io/gorm"
+
+type BaseModel struct {
+    ID        uint           `gorm:"primarykey"`
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+type User struct {
+    BaseModel  // embedding
+    Name       string
+    Email      string
+}
+// User จะมีฟิลด์ ID, CreatedAt, UpdatedAt, DeletedAt โดยอัตโนมัติ
+```
+
+---
+
+## สรุปเปรียบเทียบ
+
+| กระบวนทัศน์ | จุดเน้น | Go รองรับอย่างไร |
+|------------|--------|-----------------|
+| **Procedural** | ลำดับขั้นตอน, ฟังก์ชัน | พื้นฐานของ Go (main, functions, packages) |
+| **Concurrent** | การทำงานหลายอย่างพร้อมกัน | goroutine, channel, sync |
+| **Functional** | Pure functions, immutability, higher-order | first-class functions, closures, generics |
+| **OOP** | วัตถุ, encapsulation, polymorphism | struct (data) + interface (behavior), composition |
+| **Struct** | การรวมข้อมูล | type struct, methods, embedding |
+| **Inheritance** | สืบทอดคุณสมบัติ (is-a) | ไม่มี direct inheritance แต่ใช้ embedding และ interface |
+
+แต่ละกระบวนทัศน์มีข้อดีและเหมาะกับงานต่างกัน Go ออกแบบให้เรียบง่ายและสามารถผสมผสานหลายกระบวนทัศน์ได้อย่างลงตัว โดยยึดหลัก “less is more” และ “composition over inheritance”
+
+---
+
+## แหล่งอ้างอิง
+- [The Go Programming Language Specification](https://go.dev/ref/spec)
+- [Effective Go](https://go.dev/doc/effective_go)
+- [Go by Example](https://gobyexample.com/)
+- [GORM Documentation](https://gorm.io/docs/)
+
+
+
 ### 1.5 Golang Procedural คืออะไร
 **Procedural** หรือการเขียนโปรแกรมแบบเชิงกระบวนการ เป็นรูปแบบที่เน้นการเขียนฟังก์ชัน (function) และเรียกใช้ตามลำดับขั้นตอน โกแลง (Go) รองรับการเขียนแบบนี้โดยใช้ฟังก์ชันเป็นหน่วยหลัก โค้ดจะถูกแบ่งออกเป็นฟังก์ชันย่อย ๆ ที่ทำงานเฉพาะอย่าง และเรียกใช้ตามลำดับที่กำหนด ถึงแม้ Go จะไม่ใช่ภาษา procedural ล้วน ๆ แต่ก็สามารถเขียนในสไตล์นี้ได้อย่างดี
 
