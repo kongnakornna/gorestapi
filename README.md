@@ -1552,6 +1552,7 @@ Go ใช้ **embedding** ซึ่งไม่ใช่ inheritance แท้ 
 5. ไม่สามารถแปลงจาก Child เป็น Parent ได้โดยอัตโนมัติ (ต้องใช้ interface)
 
 ## Diagram: Method Promotion with Embedding
+<img width="1441" height="2555" alt="em" src="https://github.com/user-attachments/assets/b75c4937-d846-4373-8065-db7b6661cffa" />
 
 ```mermaid
 graph TB
