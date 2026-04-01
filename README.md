@@ -2254,10 +2254,7 @@ srv.ListenAndServe()
 การสร้าง HTTP Server ในภาษา Go (Golang) เป็นเรื่องที่ทำได้ง่ายและมีประสิทธิภาพสูง เนื่องจากภาษา Go มีแพ็คเกจ `net/http` ในมาตรฐานที่ครบครัน รองรับการทำงานแบบ concurrent ผ่าน goroutine ทำให้สามารถรับคำขอพร้อมกันได้โดยไม่ต้องพึ่งพา web framework ภายนอก
 
 ในบทความนี้จะอธิบายตั้งแต่โครงสร้างการทำงาน (dataflow) ผ่านแผนภาพจำลอง (เหมือนกับที่ใช้ draw.io) อธิบายแต่ละส่วนอย่างละเอียด พร้อมตัวอย่างการใช้งานจริง เทมเพลต และโค้ดตัวอย่าง
-
----
- Below is a Mermaid flowchart that visualizes the HTTP request flow in a Go web server, based on the diagram you provided. You can copy the code and render it in any Mermaid-compatible viewer (e.g., GitHub, Notion, or online editors).
-
+ 
 ```mermaid
 graph TD
     Client([Client]) -->|HTTP Request<br/>GET /api/users| Server
