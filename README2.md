@@ -2267,7 +2267,6 @@ func eventName(event user.DomainEvent) string {
 ---
 
 ## ภาคที่ 9: การผสานระบบภายนอก (บทที่ 52–58)
-# ภาคที่ 9: การผสานระบบภายนอก (บทที่ 52–58)
 
 ## แผนภาพ Data Flow (Flowchart TB)
 
@@ -3215,6 +3214,773 @@ webhook.SendEmbed(embed)
 | Discord | Team communication | Deployment status, error logs |
 
 การรวมระบบเหล่านี้เข้ากับ Go application ช่วยให้สามารถสร้างแอปพลิเคชันที่มีความสามารถครบครัน รองรับการทำงานแบบ real‑time, event‑driven, และการแจ้งเตือนหลากหลายช่องทาง
+
+
+
+## ภาคที่ 10: เทมเพลต กระบวนการพัฒนา และตัวอย่างโค้ด (บทที่ 59–63)
+
+## แผนภาพ Data Flow (Flowchart TB)
+
+```mermaid
+flowchart TB
+    subgraph FullStack["บทที่ 59: Full‑stack Example"]
+        direction TB
+        FS1["Frontend (React/HTML)<br/>- User interface<br/>- WebSocket client"]
+        FS2["Backend (Go API)<br/>- REST endpoints<br/>- WebSocket hub<br/>- Business logic"]
+        FS3["Database (PostgreSQL)<br/>- Users, Orders<br/>- GORM models"]
+        FS4["Cache (Redis)<br/>- Session store<br/>- Rate limiting"]
+        FS5["Message Queue (RabbitMQ)<br/>- Async tasks<br/>- Email sending"]
+    end
+
+    subgraph Templates["บทที่ 60–61: Templates & Checklists"]
+        TT1["Task List Template<br/>- Phase-based checklist<br/>- Feature development"]
+        TT2["Checklist Template<br/>- Code quality<br/>- Security<br/>- Performance<br/>- Testing<br/>- Deployment"]
+    end
+
+    subgraph Workflow["บทที่ 62: Workflow Diagram"]
+        WF1["Feature Development Flow<br/>Analyze → Design → Implement → Test → Deploy"]
+        WF2["Authentication Flow<br/>Login → JWT → Redis refresh"]
+        WF3["Order Processing Flow<br/>Place Order → Stock Check → Payment → Notification"]
+    end
+
+    subgraph Config["บทที่ 63: mop Config"]
+        C1["Configuration Management<br/>- YAML files<br/>- Environment variables<br/>- Defaults"]
+        C2["Load & Validate<br/>- viper<br/>- Struct tags"]
+    end
+
+    FullStack --> Templates
+    FullStack --> Workflow
+    FullStack --> Config
+    Templates --> Workflow
+    Config --> FullStack
+```
+
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 10 ครอบคลุมบทที่ 59–63 โดยรวบรวมเทมเพลต กระบวนการพัฒนา และตัวอย่างโค้ดครบวงจรที่สามารถนำไปปรับใช้ในโปรเจกต์จริงได้ทันที
+
+- **บทที่ 59**: ตัวอย่างโค้ดครบวงจร (Full‑stack Example) – สร้างแอปพลิเคชัน REST API + WebSocket + Database + Queue + Cache
+- **บทที่ 60**: Task List Template – เทมเพลตสำหรับติดตามงานในแต่ละเฟส
+- **บทที่ 61**: Checklist Template – รายการตรวจสอบคุณภาพโค้ดและกระบวนการ
+- **บทที่ 62**: แผนภาพการทำงาน (Workflow Diagram) – แผนภาพ Mermaid สำหรับอธิบายการทำงานของระบบ
+- **บทที่ 63**: mop Config – การจัดการ Configuration ด้วย viper และ environment variables
+
+---
+
+## บทที่ 59: ตัวอย่างโค้ดครบวงจร (Full‑stack Example)
+
+### 1. โครงสร้างโปรเจกต์ (อ้างอิง Clean Architecture + DDD)
+
+```
+myapp/
+├── cmd/
+│   └── api/
+│       └── main.go                 # entry point
+├── internal/
+│   ├── config/                     # viper config
+│   ├── domain/                     # entities, value objects, events
+│   │   ├── user/
+│   │   │   ├── entity.go
+│   │   │   ├── repository.go
+│   │   │   └── events.go
+│   │   └── order/
+│   ├── application/                # use cases
+│   │   ├── user/
+│   │   │   ├── register.go
+│   │   │   ├── login.go
+│   │   │   └── dto.go
+│   │   └── order/
+│   ├── infrastructure/             # implementations
+│   │   ├── persistence/
+│   │   │   ├── gorm/
+│   │   │   │   ├── user_repo.go
+│   │   │   │   └── order_repo.go
+│   │   │   └── redis/
+│   │   ├── queue/                  # RabbitMQ
+│   │   └── email/                  # gomail
+│   └── interfaces/                 # delivery
+│       ├── http/
+│       │   ├── handlers/
+│       │   ├── middleware/
+│       │   └── routes.go
+│       └── websocket/
+│           └── hub.go
+├── pkg/
+│   ├── logger/                     # zap wrapper
+│   └── jwt/
+├── configs/
+│   └── config.yaml
+├── migrations/
+├── go.mod
+└── go.sum
+```
+
+### 2. ตัวอย่างโค้ดหลัก (main.go)
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "myapp/internal/config"
+    "myapp/internal/infrastructure/persistence/gorm"
+    "myapp/internal/infrastructure/queue"
+    "myapp/internal/infrastructure/email"
+    "myapp/internal/interfaces/http/handlers"
+    "myapp/internal/interfaces/http/middleware"
+    "myapp/internal/interfaces/websocket"
+    "myapp/pkg/logger"
+    "github.com/go-chi/chi/v5"
+)
+
+func main() {
+    // 1. Load configuration
+    cfg, err := config.Load()
+    if err != nil {
+        panic(err)
+    }
+
+    // 2. Setup logger
+    logger.Init(cfg.Log)
+    defer logger.Sync()
+
+    // 3. Connect to database
+    db, err := gorm.Connect(cfg.Database)
+    if err != nil {
+        logger.Fatal("Failed to connect to database", "error", err)
+    }
+
+    // 4. Connect to Redis
+    redisClient, err := redis.Connect(cfg.Redis)
+    if err != nil {
+        logger.Fatal("Failed to connect to Redis", "error", err)
+    }
+
+    // 5. Connect to RabbitMQ
+    rabbit, err := queue.Connect(cfg.RabbitMQ)
+    if err != nil {
+        logger.Fatal("Failed to connect to RabbitMQ", "error", err)
+    }
+    defer rabbit.Close()
+
+    // 6. Setup email service
+    emailService := email.NewService(cfg.SMTP)
+
+    // 7. Initialize repositories
+    userRepo := gorm.NewUserRepository(db)
+    orderRepo := gorm.NewOrderRepository(db)
+    sessionRepo := redis.NewSessionRepository(redisClient)
+
+    // 8. Initialize use cases
+    registerUC := user.NewRegisterUseCase(userRepo, emailService)
+    loginUC := user.NewLoginUseCase(userRepo, sessionRepo, cfg.JWT)
+    placeOrderUC := order.NewPlaceOrderUseCase(orderRepo, userRepo, rabbit)
+
+    // 9. Initialize handlers
+    userHandler := handlers.NewUserHandler(registerUC, loginUC)
+    orderHandler := handlers.NewOrderHandler(placeOrderUC)
+
+    // 10. WebSocket hub
+    wsHub := websocket.NewHub()
+    go wsHub.Run()
+
+    // 11. Setup router
+    r := chi.NewRouter()
+    r.Use(middleware.Logger)
+    r.Use(middleware.Recoverer)
+    r.Use(middleware.CORS)
+
+    // Public routes
+    r.Post("/api/register", userHandler.Register)
+    r.Post("/api/login", userHandler.Login)
+    r.Get("/ws", wsHub.ServeWS)
+
+    // Protected routes (require JWT)
+    r.Group(func(r chi.Router) {
+        r.Use(middleware.Auth(sessionRepo, cfg.JWT))
+        r.Get("/api/me", userHandler.Me)
+        r.Post("/api/orders", orderHandler.PlaceOrder)
+    })
+
+    // 12. Start server
+    srv := &http.Server{
+        Addr:         ":" + cfg.Server.Port,
+        Handler:      r,
+        ReadTimeout:  15 * time.Second,
+        WriteTimeout: 15 * time.Second,
+    }
+
+    go func() {
+        logger.Info("Server starting", "port", cfg.Server.Port)
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            logger.Fatal("Server failed", "error", err)
+        }
+    }()
+
+    // 13. Graceful shutdown
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    logger.Info("Shutting down server...")
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    srv.Shutdown(ctx)
+}
+```
+
+### 3. ตัวอย่าง Use Case: Place Order
+
+```go
+// internal/application/order/place_order.go
+package order
+
+import (
+    "context"
+    "encoding/json"
+    "errors"
+    "fmt"
+
+    "myapp/internal/domain/order"
+    "myapp/internal/domain/user"
+    "myapp/internal/infrastructure/queue"
+)
+
+type PlaceOrderUseCase struct {
+    orderRepo order.Repository
+    userRepo  user.Repository
+    queue     *queue.RabbitMQ
+}
+
+type PlaceOrderInput struct {
+    UserID uint
+    Items  []OrderItemInput
+}
+
+type OrderItemInput struct {
+    ProductID uint
+    Name      string
+    Price     float64
+    Quantity  int
+}
+
+func NewPlaceOrderUseCase(orderRepo order.Repository, userRepo user.Repository, queue *queue.RabbitMQ) *PlaceOrderUseCase {
+    return &PlaceOrderUseCase{
+        orderRepo: orderRepo,
+        userRepo:  userRepo,
+        queue:     queue,
+    }
+}
+
+func (uc *PlaceOrderUseCase) Execute(ctx context.Context, input PlaceOrderInput) (*order.Order, error) {
+    // 1. Validate user exists and is active
+    u, err := uc.userRepo.FindByID(ctx, input.UserID)
+    if err != nil || u == nil {
+        return nil, errors.New("user not found")
+    }
+    if !u.IsActive() {
+        return nil, errors.New("inactive user cannot place order")
+    }
+
+    // 2. Create order aggregate
+    ord := order.NewOrder(input.UserID)
+    for _, item := range input.Items {
+        money := order.NewMoney(item.Price)
+        ord.AddItem(item.ProductID, item.Name, money, item.Quantity)
+    }
+
+    // 3. Submit order (domain logic)
+    if err := ord.Submit(); err != nil {
+        return nil, err
+    }
+
+    // 4. Persist
+    if err := uc.orderRepo.Save(ctx, ord); err != nil {
+        return nil, err
+    }
+
+    // 5. Publish domain event to queue (async processing)
+    event := order.OrderSubmittedEvent{
+        OrderID: ord.ID(),
+        UserID:  ord.CustomerID(),
+        Total:   ord.Total().Float64(),
+    }
+    data, _ := json.Marshal(event)
+    uc.queue.Publish("order.events", data)
+
+    return ord, nil
+}
+```
+
+### 4. ตัวอย่าง WebSocket Hub
+
+```go
+// internal/interfaces/websocket/hub.go
+package websocket
+
+import (
+    "net/http"
+    "sync"
+
+    "github.com/gorilla/websocket"
+)
+
+type Hub struct {
+    clients    map[*Client]bool
+    broadcast  chan []byte
+    register   chan *Client
+    unregister chan *Client
+    mu         sync.RWMutex
+}
+
+func NewHub() *Hub {
+    return &Hub{
+        clients:    make(map[*Client]bool),
+        broadcast:  make(chan []byte),
+        register:   make(chan *Client),
+        unregister: make(chan *Client),
+    }
+}
+
+func (h *Hub) Run() {
+    for {
+        select {
+        case client := <-h.register:
+            h.mu.Lock()
+            h.clients[client] = true
+            h.mu.Unlock()
+        case client := <-h.unregister:
+            h.mu.Lock()
+            if _, ok := h.clients[client]; ok {
+                delete(h.clients, client)
+                close(client.send)
+            }
+            h.mu.Unlock()
+        case msg := <-h.broadcast:
+            h.mu.RLock()
+            for client := range h.clients {
+                select {
+                case client.send <- msg:
+                default:
+                    close(client.send)
+                    delete(h.clients, client)
+                }
+            }
+            h.mu.RUnlock()
+        }
+    }
+}
+
+func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
+    upgrader := websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+    conn, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        return
+    }
+    client := &Client{hub: h, conn: conn, send: make(chan []byte, 256)}
+    h.register <- client
+
+    go client.writePump()
+    go client.readPump()
+}
+```
+
+---
+
+## บทที่ 60: Task List Template
+
+เทมเพลตสำหรับการติดตามงานพัฒนา feature ใหม่ (อ้างอิงจากบทที่ 48)
+
+```
+## Feature: [ชื่อฟีเจอร์]
+**Owner:** [ชื่อผู้รับผิดชอบ]
+**Due:** [วันที่]
+
+### Phase 1: Analysis & Design
+- [ ] ระบุ requirement และ user stories
+- [ ] ระบุ bounded context และ aggregate root
+- [ ] ออกแบบ entity, value objects
+- [ ] กำหนด repository interface methods
+- [ ] ระบุ domain events
+- [ ] ออกแบบ DTOs (request/response)
+- [ ] สร้าง sequence diagram (ถ้ามี)
+
+### Phase 2: Domain Implementation
+- [ ] สร้าง entity struct และ business methods
+- [ ] สร้าง value objects
+- [ ] สร้าง repository interface
+- [ ] สร้าง domain events
+- [ ] เขียน unit tests สำหรับ domain logic
+
+### Phase 3: Infrastructure Implementation
+- [ ] Implement repository (GORM/sqlx)
+- [ ] สร้าง migration scripts
+- [ ] ตั้งค่า connection pool
+- [ ] Implement cache (Redis) ถ้าจำเป็น
+- [ ] ทดสอบ repository (integration tests)
+
+### Phase 4: Application Layer
+- [ ] สร้าง use case structs
+- [ ] เขียน business logic orchestration
+- [ ] สร้าง DTOs (input/output)
+- [ ] เขียน unit tests สำหรับ use cases (mock repository)
+
+### Phase 5: Delivery Layer
+- [ ] สร้าง HTTP handlers
+- [ ] เพิ่ม input validation (go-playground/validator)
+- [ ] เพิ่ม middleware (auth, logging) ถ้าจำเป็น
+- [ ] ลงทะเบียน routes
+- [ ] ทดสอบ handlers (httptest)
+
+### Phase 6: Documentation & Review
+- [ ] อัปเดต OpenAPI/Swagger
+- [ ] รัน golangci-lint และแก้ไข warnings
+- [ ] รัน go test -cover (target >80%)
+- [ ] รัน go test -race
+- [ ] Code review
+
+### Phase 7: Deployment
+- [ ] สร้าง migration สำหรับ production
+- [ ] อัปเดต docker-compose (ถ้ามี)
+- [ ] Deploy to staging
+- [ ] ทดสอบ end-to-end
+- [ ] Deploy to production
+```
+
+---
+
+## บทที่ 61: Checklist Template
+
+รายการตรวจสอบคุณภาพสำหรับการเตรียม release
+
+### Code Quality
+- [ ] All exported functions have comments (godoc)
+- [ ] No unused imports or variables (`go vet`)
+- [ ] Code formatted with `go fmt`
+- [ ] Error handling explicit (no ignored errors)
+- [ ] No `panic` in library code (only main/init)
+- [ ] Context passed as first parameter in all functions
+- [ ] Interfaces are small and focused
+- [ ] No global state except configuration
+
+### Security
+- [ ] Passwords hashed with bcrypt
+- [ ] JWT secret loaded from environment, not hardcoded
+- [ ] Refresh tokens stored in Redis, not in DB
+- [ ] Access token short-lived (≤15min)
+- [ ] CORS configured properly (allow only trusted origins)
+- [ ] Input validation on all endpoints
+- [ ] SQL injection prevented (use parameterized queries / GORM)
+- [ ] No sensitive data in logs
+- [ ] HTTPS enforced in production
+- [ ] Rate limiting on auth endpoints
+
+### Performance
+- [ ] Database indexes created on frequently queried columns
+- [ ] User data cached in Redis where appropriate
+- [ ] Connection pools configured for DB and Redis
+- [ ] Use of goroutines for non-blocking tasks (email, etc.)
+- [ ] Avoid N+1 queries (use Preload in GORM)
+- [ ] Benchmarks for critical paths
+
+### Testing
+- [ ] Unit tests cover business logic (usecase)
+- [ ] Repository tests with testcontainers or in-memory DB
+- [ ] HTTP handler tests with httptest
+- [ ] Mock external dependencies (Redis, Mailer)
+- [ ] Race condition tests with `-race` flag
+- [ ] Test coverage >80%
+
+### Deployment
+- [ ] Configurable via environment variables
+- [ ] Graceful shutdown implemented
+- [ ] Health check endpoint (`/health`, `/ready`)
+- [ ] Logging to stdout (for container)
+- [ ] Docker image built with non-root user
+- [ ] Secrets not baked into image
+- [ ] Database migration runs automatically on startup
+- [ ] Readiness and liveness probes configured
+- [ ] Monitoring (Prometheus metrics) exposed
+
+---
+
+## บทที่ 62: แผนภาพการทำงาน (Workflow Diagram)
+
+### 1. Feature Development Workflow
+
+```mermaid
+graph LR
+    A[Analyze<br/>Requirement] --> B[Design<br/>Domain Models]
+    B --> C[Implement Domain<br/>Entities, Interfaces]
+    C --> D[Implement Infrastructure<br/>Repository, Cache]
+    D --> E[Implement Usecase<br/>Business Logic]
+    E --> F[Implement Handler<br/>HTTP/CLI]
+    F --> G[Write Tests<br/>Unit, Integration]
+    G --> H[Document & Review]
+    H --> I[Deploy]
+```
+
+### 2. Authentication Flow (JWT + Redis Refresh)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DB
+    participant Redis
+
+    Client->>API: POST /login (email, password)
+    API->>DB: Validate credentials
+    DB-->>API: User data
+    API->>API: Generate access & refresh tokens
+    API->>Redis: Store refresh token (user_id, expiry)
+    API-->>Client: Tokens
+
+    Client->>API: GET /protected (access token)
+    API->>API: Validate access token
+    API-->>Client: Response
+
+    Client->>API: POST /refresh (refresh token)
+    API->>Redis: Verify refresh token
+    Redis-->>API: Valid
+    API->>API: Generate new access token
+    API-->>Client: New access token
+```
+
+### 3. Order Processing Flow (Async with Queue)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    participant DB
+    participant Queue
+    participant Worker
+    participant Email
+
+    User->>API: POST /orders (items)
+    API->>DB: Create order (status = pending)
+    DB-->>API: Order ID
+    API->>Queue: Publish order_created event
+    API-->>User: Order created (processing)
+
+    Queue->>Worker: Consume event
+    Worker->>DB: Check stock, calculate total
+    Worker->>DB: Update order status (processing)
+    Worker->>Queue: Publish payment_required event
+    Worker->>Email: Send order confirmation
+    Email-->>User: Email notification
+```
+
+---
+
+## บทที่ 63: mop Config – การจัดการ Configuration
+
+### 1. ไฟล์ config.yaml ตัวอย่าง
+
+```yaml
+# configs/config.yaml
+server:
+  port: 8080
+  mode: release
+  read_timeout: 15s
+  write_timeout: 15s
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: ${DB_PASSWORD}
+  name: myapp
+  ssl_mode: disable
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: 5m
+
+redis:
+  addr: localhost:6379
+  password: ${REDIS_PASSWORD}
+  db: 0
+  pool_size: 10
+
+jwt:
+  secret: ${JWT_SECRET}
+  access_expiry: 15m
+  refresh_expiry: 168h
+
+log:
+  level: info
+  format: json
+  output: stdout
+
+rabbitmq:
+  url: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@localhost:5672/
+  exchange: order_events
+
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
+  from: noreply@myapp.com
+```
+
+### 2. ฟังก์ชันโหลด Configuration ด้วย viper (Go)
+
+```go
+// internal/config/config.go
+package config
+
+import (
+    "fmt"
+    "strings"
+    "time"
+
+    "github.com/spf13/viper"
+)
+
+type Config struct {
+    Server   ServerConfig   `mapstructure:"server"`
+    Database DatabaseConfig `mapstructure:"database"`
+    Redis    RedisConfig    `mapstructure:"redis"`
+    JWT      JWTConfig      `mapstructure:"jwt"`
+    Log      LogConfig      `mapstructure:"log"`
+    RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
+    SMTP     SMTPConfig     `mapstructure:"smtp"`
+}
+
+type ServerConfig struct {
+    Port         int           `mapstructure:"port"`
+    Mode         string        `mapstructure:"mode"`
+    ReadTimeout  time.Duration `mapstructure:"read_timeout"`
+    WriteTimeout time.Duration `mapstructure:"write_timeout"`
+}
+
+type DatabaseConfig struct {
+    Host            string        `mapstructure:"host"`
+    Port            int           `mapstructure:"port"`
+    User            string        `mapstructure:"user"`
+    Password        string        `mapstructure:"password"`
+    Name            string        `mapstructure:"name"`
+    SSLMode         string        `mapstructure:"ssl_mode"`
+    MaxOpenConns    int           `mapstructure:"max_open_conns"`
+    MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+    ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
+}
+
+type RedisConfig struct {
+    Addr     string `mapstructure:"addr"`
+    Password string `mapstructure:"password"`
+    DB       int    `mapstructure:"db"`
+    PoolSize int    `mapstructure:"pool_size"`
+}
+
+type JWTConfig struct {
+    Secret        string        `mapstructure:"secret"`
+    AccessExpiry  time.Duration `mapstructure:"access_expiry"`
+    RefreshExpiry time.Duration `mapstructure:"refresh_expiry"`
+}
+
+type LogConfig struct {
+    Level  string `mapstructure:"level"`
+    Format string `mapstructure:"format"`
+    Output string `mapstructure:"output"`
+}
+
+type RabbitMQConfig struct {
+    URL      string `mapstructure:"url"`
+    Exchange string `mapstructure:"exchange"`
+}
+
+type SMTPConfig struct {
+    Host     string `mapstructure:"host"`
+    Port     int    `mapstructure:"port"`
+    Username string `mapstructure:"username"`
+    Password string `mapstructure:"password"`
+    From     string `mapstructure:"from"`
+}
+
+func Load() (*Config, error) {
+    viper.SetConfigName("config")
+    viper.SetConfigType("yaml")
+    viper.AddConfigPath(".")
+    viper.AddConfigPath("./configs")
+    viper.AddConfigPath("/etc/app")
+
+    viper.AutomaticEnv()
+    viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+    // Defaults
+    viper.SetDefault("server.port", 8080)
+    viper.SetDefault("server.mode", "debug")
+    viper.SetDefault("server.read_timeout", "15s")
+    viper.SetDefault("server.write_timeout", "15s")
+    viper.SetDefault("log.level", "info")
+    viper.SetDefault("log.format", "json")
+    viper.SetDefault("log.output", "stdout")
+
+    if err := viper.ReadInConfig(); err != nil {
+        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+            return nil, fmt.Errorf("failed to read config: %w", err)
+        }
+    }
+
+    // Expand environment variables in config values
+    for _, key := range viper.AllKeys() {
+        val := viper.GetString(key)
+        if strings.Contains(val, "${") {
+            expanded := os.ExpandEnv(val)
+            viper.Set(key, expanded)
+        }
+    }
+
+    var cfg Config
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+    }
+
+    // Validate required fields
+    if cfg.JWT.Secret == "" {
+        return nil, fmt.Errorf("JWT secret is required")
+    }
+
+    return &cfg, nil
+}
+```
+
+### 3. การใช้งานใน main.go
+
+```go
+cfg, err := config.Load()
+if err != nil {
+    log.Fatal("Failed to load config:", err)
+}
+log.Printf("Server starting on port %d", cfg.Server.Port)
+```
+
+---
+
+## สรุป
+
+ภาคที่ 10 ได้รวบรวมองค์ประกอบสุดท้ายที่ทำให้โปรเจกต์ Go ระดับ Production พร้อมใช้งาน:
+
+- **Full‑stack Example** (บทที่ 59) แสดงการทำงานร่วมกันของ Clean Architecture, WebSocket, Queue, และ Cache
+- **Task List Template** (บทที่ 60) ช่วยทีมวางแผนและติดตามงานพัฒนา feature ใหม่
+- **Checklist Template** (บทที่ 61) ตรวจสอบคุณภาพโค้ด ความปลอดภัย และกระบวนการ deploy
+- **Workflow Diagram** (บทที่ 62) อธิบายลำดับการทำงานด้วยแผนภาพ Mermaid
+- **mop Config** (บทที่ 63) จัดการ configuration อย่างมืออาชีพด้วย viper
+
+คู่มือนี้ครอบคลุมทุกขั้นตอนตั้งแต่การเริ่มต้นจนถึงการนำไปใช้งานจริง พร้อมเทมเพลตและโค้ดตัวอย่างที่สามารถนำไปปรับใช้ได้ทันที
+
 
 ## 📚 บทสรุป
 
