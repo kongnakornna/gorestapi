@@ -126,6 +126,28 @@ kongnakornjantakun@gmail.com
 
 ## ภาคที่ 1: ปฐมบทกับการเขียนโปรแกรม
 
+**แผนภาพ: จากแนวคิดสู่โปรแกรมแรก**
+
+```mermaid
+graph LR
+    subgraph User[ผู้ใช้]
+        U1[เขียนโค้ด]
+    end
+
+    subgraph Terminal[เทอร์มินัล]
+        T1[go run] --> T2[คอมไพเลอร์]
+        T2 --> T3[ไบนารี]
+        T3 --> T4[ผลลัพธ์]
+    end
+
+    U1 -->|main.go| T1
+    T4 -->|แสดงผล| U1
+```
+
+**คำอธิบาย:**  
+ผู้ใช้เขียนโค้ด (ไฟล์ `.go`) แล้วสั่ง `go run` ซึ่งจะส่งให้คอมไพเลอร์แปลงเป็นไบนารีและทำงานทันที ผลลัพธ์แสดงบนเทอร์มินัล ผู้ใช้เห็นผลและสามารถปรับปรุงโค้ดต่อไป วงจรนี้แสดงการพัฒนาโปรแกรมแรกด้วย Go
+
+---
 ### บทที่ 1: ความรู้เบื้องต้นเกี่ยวกับการเขียนโปรแกรมคอมพิวเตอร์
 
 #### 1.1 การเขียนโปรแกรมคืออะไร?
@@ -10277,84 +10299,2379 @@ func main() {
 พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 5** เพื่อพัฒนาสู่การเป็น Go Developer มืออาชีพ ด้วยการวัดประสิทธิภาพ, profiling, context management, และ generics
 
 ## ภาคที่ 5: สู่การเป็นนักพัฒนา Go มืออาชีพ (บทที่ 34–42)
- ```mermaid
-flowchart TD
-    subgraph Performance[การวัดและปรับปรุงประสิทธิภาพ]
-        A[บทที่ 34: Benchmark] --> B[go test -bench]
-        B --> C[บทที่ 36: Profiling<br/>pprof]
-        C --> D[ระบุจุดช้า]
-        D --> E[บทที่ 38: Generics<br/>ลด duplication]
-        E --> F[บทที่ 37: Context<br/>จัดการ timeout/cancel]
-        F --> G[บทที่ 35: HTTP Client<br/>ปรับแต่ง connection pool]
+# ภาคที่ 5: สู่การเป็นนักพัฒนา Go มืออาชีพ (บทที่ 34–42)
+
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart TB
+    subgraph Performance["1. การวัดและปรับปรุงประสิทธิภาพ (Performance Optimization)"]
+        direction TB
+        A1["Benchmark (บทที่ 34)<br/>go test -bench<br/>benchmem, benchtime<br/>cpu profiling"]
+        A2["Profiling (บทที่ 36)<br/>pprof, CPU/Memory/Block<br/>goroutine profiling<br/>trace generation"]
+        A3["Optimization Techniques<br/>escape analysis<br/>allocation reduction<br/>sync.Pool, preallocation"]
+        
+        A1 --> A2
+        A2 --> A3
     end
 
-    subgraph CodeDesign[การออกแบบโค้ด]
-        H[บทที่ 39: OOP ใน Go<br/>struct + interface + composition]
-        I[บทที่ 41: คำแนะนำ<br/>idioms, naming, error handling]
-        J[บทที่ 40: การอัปเกรด/ดาวน์เกรด<br/>Go version]
+    subgraph Advanced["2. เทคนิคขั้นสูง (Advanced Techniques)"]
+        direction TB
+        B1["Context (บทที่ 37)<br/>timeout, cancellation<br/>request-scoped values<br/>context.WithValue"]
+        B2["Generics (บทที่ 38)<br/>type parameters<br/>constraints, type sets<br/>generic functions/types"]
+        B3["OOP in Go (บทที่ 39)<br/>composition over inheritance<br/>embedding, interfaces"]
+        
+        B1 --> B2
+        B2 --> B3
     end
 
-    subgraph Reference[เอกสารอ้างอิง]
-        K[บทที่ 42: Cheatsheet]
+    subgraph Tools["3. เครื่องมือและแนวปฏิบัติ (Tools & Best Practices)"]
+        direction TB
+        C1["HTTP Client (บทที่ 35)<br/>custom transport<br/>timeout, retry<br/>circuit breaker"]
+        C2["Version Management (บทที่ 40)<br/>go mod edit<br/>gvm, go upgrade"]
+        C3["Code Design (บทที่ 41)<br/>idioms, naming<br/>error handling, testing"]
     end
 
-    Performance --> CodeDesign
-    CodeDesign --> Reference
+    subgraph Reference["4. เอกสารอ้างอิง (Reference)"]
+        D1["Cheatsheet (บทที่ 42)<br/>syntax reference<br/>common patterns<br/>quick lookup"]
+    end
+
+    Performance --> Advanced
+    Advanced --> Tools
+    Tools --> Reference
+
+    subgraph Skills["ทักษะที่ได้"]
+        E1[วิเคราะห์และเพิ่มประสิทธิภาพโค้ด]
+        E2[เขียนโค้ดที่ปลอดภัยและยืดหยุ่น]
+        E3[ใช้เครื่องมือระดับมืออาชีพ]
+        E4[มีคลังอ้างอิงส่วนตัว]
+    end
+
+    Performance --> E1
+    Advanced --> E2
+    Tools --> E3
+    Reference --> E4
 ```
 
-**คำอธิบายภาษาไทย (แบบละเอียด):**
+---
 
-ภาคที่ 5 (บทที่ 34–42) มุ่งเน้นยกระดับผู้พัฒนาไปสู่ระดับมืออาชีพ ครอบคลุมการวัดประสิทธิภาพ, การปรับแต่งโค้ด, การใช้เครื่องมือขั้นสูง, และแนวทางการออกแบบที่ดี โดยมีลำดับการเรียนรู้ดังนี้
+## คำอธิบายภาษาไทย (แบบละเอียด)
 
-### 1. การวัดและปรับปรุงประสิทธิภาพ (Performance)
-
-- **บทที่ 34: Benchmark**  
-  ผู้เขียน Benchmark ในไฟล์ `_test.go` โดยใช้ฟังก์ชัน `BenchmarkXxx(b *testing.B)` และรันด้วย `go test -bench`. ช่วยให้รู้ว่าโค้ดส่วนไหนทำงานช้าหรือใช้หน่วยความจำมาก
-
-- **บทที่ 36: Profiling**  
-  ใช้ `pprof` (built‑in) เพื่อเก็บและวิเคราะห์ข้อมูล CPU, memory, goroutine ผ่าน `go tool pprof` หรือเปิด endpoint `http://localhost:6060/debug/pprof` เมื่อใช้ `net/http/pprof`. ผล profiling ช่วยระบุจุด bottleneck ได้แม่นยำ
-
-- **บทที่ 38: Generics**  
-  ตั้งแต่ Go 1.18 เป็นต้นมา Generics ช่วยลดการเขียนโค้ดซ้ำซ้อนสำหรับชนิดข้อมูลที่คล้ายกัน โดยใช้ type parameters เช่น `func Map[T any](s []T, f func(T) T) []T`. ทำให้โค้ดปลอดภัยและลด dependency กับ interface{}
-
-- **บทที่ 37: Context**  
-  `context.Context` ใช้ในการส่งค่า deadline, cancellation, และ request‑scoped values ผ่านขอบเขตของ API เป็นมาตรฐานสำหรับการจัดการ timeout และการยกเลิกงาน (โดยเฉพาะใน HTTP server และ goroutine) ช่วยให้ระบบตอบสนองได้ดีและไม่เกิด goroutine ค้าง
-
-- **บทที่ 35: HTTP Client**  
-  การสร้าง HTTP client แบบมืออาชีพต้องปรับแต่ง `http.Transport` เช่น กำหนด `MaxIdleConns`, `IdleConnTimeout`, และ `Timeout` เพื่อเพิ่มประสิทธิภาพการเรียก API ภายนอก
-
-### 2. การออกแบบโค้ด (Code Design)
-
-- **บทที่ 39: OOP ใน Go**  
-  Go ไม่มี class แต่ใช้ **struct + method** และ **interface** เพื่อสร้าง abstraction การสืบทอดทำผ่าน **composition** (embedding) แทน inheritance แนวทางนี้ลด coupling และเพิ่มความยืดหยุ่น
-
-- **บทที่ 41: คำแนะนำในการออกแบบโค้ดที่ดี**  
-  รวบรวม best practices เช่น:
-  - **Keep it simple**: หลีกเลี่ยงความซับซ้อนเกินจำเป็น
-  - **Accept interfaces, return structs**: ฟังก์ชันควรรับ interface, คืน concrete type
-  - **Use zero values**: ใช้ zero value ให้เป็นประโยชน์
-  - **Error handling**: ตรวจสอบ error ทันที, ห่อ error ด้วยข้อมูลเพิ่มเติม
-  - **Naming**: ชื่อแพคเกจสั้น, ชื่อฟังก์ชันและตัวแปรสื่อความหมาย
-
-- **บทที่ 40: การอัปเกรดหรือดาวน์เกรดเวอร์ชัน Go**  
-  การจัดการเวอร์ชัน Go ในโปรเจกต์: ใช้ `go mod edit -go=1.x`, อัปเดต `go.mod`, ใช้ `go fix` สำหรับโค้ดที่ต้องปรับให้เข้ากับเวอร์ชันใหม่, หรือใช้ `gvm` (Go Version Manager) สำหรับการสลับเวอร์ชันในการพัฒนา
-
-### 3. เอกสารอ้างอิง (Reference)
-
-- **บทที่ 42: Cheatsheet**  
-  สรุปคำสั่ง Go ที่ใช้บ่อย, ชนิดข้อมูล, การประกาศตัวแปร, โครงสร้างควบคุม, slice, map, channel, การทำงานกับไฟล์, JSON, HTTP และ context เป็นตารางอ้างอิงที่ช่วยให้พัฒนาได้รวดเร็ว
+ภาคที่ 5 ครอบคลุมบทที่ 34–42 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งมุ่งเน้นยกระดับผู้พัฒนาจากนักเขียนโค้ดทั่วไปสู่ Go Developer มืออาชีพ
 
 ---
 
-### แผนภาพสรุป
+## 1. การวัดและปรับปรุงประสิทธิภาพ (Performance Optimization)
 
-แผนภาพด้านบนแสดงลำดับการทำงาน:
-1. เริ่มจาก **Benchmark** → **Profiling** → ระบุจุดช้า → แก้ด้วย **Generics** หรือ **Context** และปรับแต่ง **HTTP Client**
-2. หลังจากปรับปรุงประสิทธิภาพแล้ว ศึกษาการออกแบบโค้ดให้สอดคล้องกับแนวทางของ Go (OOP แบบ Go, idioms, version management)
-3. ปิดท้ายด้วย **Cheatsheet** สำหรับการทบทวนและใช้งานจริง
+### บทที่ 34: การวัดประสิทธิภาพ (Benchmarks)
 
-การเรียนรู้ในภาคนี้จะเปลี่ยนนักพัฒนาจากผู้ใช้ภาษาให้เป็นผู้ที่เข้าใจกลไกภายใน สามารถวิเคราะห์และปรับปรุงระบบให้มีประสิทธิภาพสูง พร้อมเขียนโค้ดที่บำรุงรักษาง่ายและยืดหยุ่นตามความต้องการของธุรกิจ
+**เป้าหมาย:** เขียน benchmark เพื่อวัดประสิทธิภาพของโค้ดและระบุจุด bottleneck
+
+#### Basic Benchmarking
+
+```go
+// math/operations.go
+package math
+
+func Add(a, b int) int {
+    return a + b
+}
+
+func Multiply(a, b int) int {
+    return a * b
+}
+
+func Factorial(n int) int {
+    if n <= 1 {
+        return 1
+    }
+    return n * Factorial(n-1)
+}
+
+func FactorialIterative(n int) int {
+    result := 1
+    for i := 2; i <= n; i++ {
+        result *= i
+    }
+    return result
+}
+```
+
+```go
+// math/operations_test.go
+package math
+
+import (
+    "testing"
+)
+
+// 1. Basic benchmark
+func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Add(10, 20)
+    }
+}
+
+// 2. Benchmark with different inputs
+func BenchmarkMultiply(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Multiply(100, 200)
+    }
+}
+
+// 3. Compare recursive vs iterative
+func BenchmarkFactorialRecursive(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Factorial(10)
+    }
+}
+
+func BenchmarkFactorialIterative(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        FactorialIterative(10)
+    }
+}
+
+// 4. Benchmark with table-driven tests
+func BenchmarkStringConcat(b *testing.B) {
+    tests := []struct {
+        name string
+        size int
+    }{
+        {"small", 10},
+        {"medium", 100},
+        {"large", 1000},
+    }
+    
+    for _, tt := range tests {
+        b.Run(tt.name, func(b *testing.B) {
+            for i := 0; i < b.N; i++ {
+                s := ""
+                for j := 0; j < tt.size; j++ {
+                    s += "a"
+                }
+            }
+        })
+    }
+}
+
+// 5. Benchmark with memory allocation tracking
+func BenchmarkStringBuilder(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        var sb strings.Builder
+        sb.Grow(1000)
+        for j := 0; j < 1000; j++ {
+            sb.WriteString("a")
+        }
+        _ = sb.String()
+    }
+}
+
+// 6. Reset timer for setup code
+func BenchmarkWithSetup(b *testing.B) {
+    data := make([]int, 10000)
+    for i := 0; i < len(data); i++ {
+        data[i] = i
+    }
+    
+    b.ResetTimer() // ไม่นับเวลาส่วน setup
+    
+    for i := 0; i < b.N; i++ {
+        sum := 0
+        for _, v := range data {
+            sum += v
+        }
+        _ = sum
+    }
+}
+
+// 7. Benchmark parallel execution
+func BenchmarkParallel(b *testing.B) {
+    b.RunParallel(func(pb *testing.PB) {
+        for pb.Next() {
+            // Operation to benchmark
+            _ = Add(1, 2)
+        }
+    })
+}
+
+// 8. Benchmark with custom timer
+func BenchmarkCustomTimer(b *testing.B) {
+    b.StopTimer()
+    // Setup code that shouldn't be measured
+    data := make([]int, 1000)
+    for i := 0; i < len(data); i++ {
+        data[i] = i
+    }
+    
+    b.StartTimer()
+    
+    for i := 0; i < b.N; i++ {
+        // Operation to measure
+        _ = processData(data)
+    }
+}
+```
+
+#### Running Benchmarks
+
+```bash
+# Run all benchmarks
+go test -bench=.
+
+# Run specific benchmark
+go test -bench=BenchmarkAdd
+
+# Run benchmarks with memory allocation stats
+go test -bench=. -benchmem
+
+# Run benchmarks for specific time
+go test -bench=. -benchtime=5s
+
+# Run benchmarks with count
+go test -bench=. -count=5
+
+# Run benchmarks and show CPU profile
+go test -bench=. -cpuprofile=cpu.prof
+
+# Run benchmarks and show memory profile
+go test -bench=. -memprofile=mem.prof
+
+# Run benchmarks and show block profile
+go test -bench=. -blockprofile=block.prof
+```
+
+#### ตัวอย่างการใช้งานจริง: Benchmarking JSON vs Protocol Buffers
+
+```go
+// benchmark_serialization_test.go
+package benchmarks
+
+import (
+    "encoding/json"
+    "testing"
+    
+    "google.golang.org/protobuf/proto"
+    pb "myapp/proto"
+)
+
+type User struct {
+    ID        int    `json:"id"`
+    Name      string `json:"name"`
+    Email     string `json:"email"`
+    Age       int    `json:"age"`
+    IsActive  bool   `json:"is_active"`
+}
+
+func BenchmarkJSONMarshal(b *testing.B) {
+    user := User{
+        ID:       12345,
+        Name:     "John Doe",
+        Email:    "john@example.com",
+        Age:      30,
+        IsActive: true,
+    }
+    
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        _, err := json.Marshal(user)
+        if err != nil {
+            b.Fatal(err)
+        }
+    }
+}
+
+func BenchmarkJSONUnmarshal(b *testing.B) {
+    data := []byte(`{"id":12345,"name":"John Doe","email":"john@example.com","age":30,"is_active":true}`)
+    
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        var user User
+        err := json.Unmarshal(data, &user)
+        if err != nil {
+            b.Fatal(err)
+        }
+    }
+}
+
+func BenchmarkProtobufMarshal(b *testing.B) {
+    user := &pb.User{
+        Id:       12345,
+        Name:     "John Doe",
+        Email:    "john@example.com",
+        Age:      30,
+        IsActive: true,
+    }
+    
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        _, err := proto.Marshal(user)
+        if err != nil {
+            b.Fatal(err)
+        }
+    }
+}
+
+func BenchmarkProtobufUnmarshal(b *testing.B) {
+    user := &pb.User{
+        Id:       12345,
+        Name:     "John Doe",
+        Email:    "john@example.com",
+        Age:      30,
+        IsActive: true,
+    }
+    data, _ := proto.Marshal(user)
+    
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        var u pb.User
+        err := proto.Unmarshal(data, &u)
+        if err != nil {
+            b.Fatal(err)
+        }
+    }
+}
+```
+
 ---
+
+### บทที่ 36: การวิเคราะห์โปรไฟล์ (Program Profiling)
+
+**เป้าหมาย:** ใช้ pprof เพื่อวิเคราะห์ CPU, Memory, Goroutine และ Block profile
+
+#### CPU Profiling
+
+```go
+// profile/cpu_profile.go
+package main
+
+import (
+    "os"
+    "runtime/pprof"
+    "time"
+)
+
+func main() {
+    // Create CPU profile file
+    f, err := os.Create("cpu.prof")
+    if err != nil {
+        panic(err)
+    }
+    defer f.Close()
+    
+    // Start CPU profiling
+    pprof.StartCPUProfile(f)
+    defer pprof.StopCPUProfile()
+    
+    // Run your program
+    heavyComputation()
+}
+
+func heavyComputation() {
+    // Simulate heavy work
+    for i := 0; i < 10_000_000; i++ {
+        _ = i * i
+    }
+    time.Sleep(2 * time.Second)
+}
+```
+
+#### Memory Profiling
+
+```go
+// profile/mem_profile.go
+package main
+
+import (
+    "os"
+    "runtime"
+    "runtime/pprof"
+)
+
+func main() {
+    // Create memory profile file
+    f, err := os.Create("mem.prof")
+    if err != nil {
+        panic(err)
+    }
+    defer f.Close()
+    
+    // Run code that allocates memory
+    allocateMemory()
+    
+    // Write memory profile
+    runtime.GC() // Force garbage collection
+    if err := pprof.WriteHeapProfile(f); err != nil {
+        panic(err)
+    }
+}
+
+func allocateMemory() {
+    // Allocate many objects
+    var slices [][]int
+    for i := 0; i < 1000; i++ {
+        slices = append(slices, make([]int, 10000))
+    }
+    // Keep reference to prevent GC
+    _ = slices
+}
+```
+
+#### HTTP Profiling Endpoint
+
+```go
+// profile/http_profile.go
+package main
+
+import (
+    "log"
+    "net/http"
+    _ "net/http/pprof" // Import for side effects
+    "runtime"
+    "time"
+)
+
+func main() {
+    // Enable profiling endpoints
+    // Available at:
+    // /debug/pprof/          - Index page
+    // /debug/pprof/heap      - Memory profile
+    // /debug/pprof/goroutine - Goroutine profile
+    // /debug/pprof/threadcreate - Thread creation profile
+    // /debug/pprof/block      - Blocking profile
+    // /debug/pprof/mutex      - Mutex profile
+    // /debug/pprof/profile    - CPU profile (30 seconds)
+    // /debug/pprof/trace      - Execution trace
+    
+    // Start server with pprof endpoints
+    go func() {
+        log.Println("pprof server listening on :6060")
+        log.Println(http.ListenAndServe(":6060", nil))
+    }()
+    
+    // Your application code
+    for i := 0; i < 10; i++ {
+        go func() {
+            for {
+                time.Sleep(time.Second)
+                // Simulate work
+                _ = make([]int, 1000)
+            }
+        }()
+    }
+    
+    // Monitor runtime stats
+    go func() {
+        for {
+            var m runtime.MemStats
+            runtime.ReadMemStats(&m)
+            log.Printf("Alloc = %v MiB, NumGC = %v", 
+                m.Alloc/1024/1024, m.NumGC)
+            time.Sleep(5 * time.Second)
+        }
+    }()
+    
+    select {} // Keep running
+}
+```
+
+#### Analyzing Profiles
+
+```bash
+# 1. CPU Profile Analysis
+go tool pprof cpu.prof
+# Inside pprof:
+# (pprof) top10          # Show top 10 functions by CPU
+# (pprof) list function  # Show source code with timing
+# (pprof) web            # Generate call graph in browser
+# (pprof) pdf            # Generate PDF
+
+# 2. Memory Profile Analysis
+go tool pprof mem.prof
+# (pprof) top -cum       # Show cumulative allocations
+# (pprof) list allocateMemory
+
+# 3. Analyze from HTTP endpoint
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+go tool pprof http://localhost:6060/debug/pprof/heap
+
+# 4. Generate flame graph (requires graphviz)
+go tool pprof -http=:8080 cpu.prof
+
+# 5. Compare profiles
+go tool pprof -base=before.prof after.prof
+```
+
+#### ตัวอย่างการใช้งานจริง: Profiling Web Application
+
+```go
+// main.go with integrated profiling
+package main
+
+import (
+    "fmt"
+    "log"
+    "net/http"
+    _ "net/http/pprof"
+    "runtime"
+    "time"
+    
+    "github.com/gorilla/mux"
+)
+
+type Profiler struct {
+    enableCPU   bool
+    enableMem   bool
+    enableBlock bool
+    enableMutex bool
+}
+
+func NewProfiler(enable bool) *Profiler {
+    if !enable {
+        return &Profiler{}
+    }
+    
+    // Set profiling rates
+    runtime.SetBlockProfileRate(1)      // Profile blocking
+    runtime.SetMutexProfileFraction(1)   // Profile mutex
+    
+    return &Profiler{
+        enableCPU:   true,
+        enableMem:   true,
+        enableBlock: true,
+        enableMutex: true,
+    }
+}
+
+// Profiling middleware
+func (p *Profiler) Middleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        if p.enableCPU {
+            // Could start CPU profile per request, but usually done globally
+        }
+        
+        start := time.Now()
+        
+        next.ServeHTTP(w, r)
+        
+        duration := time.Since(start)
+        if duration > 100*time.Millisecond {
+            log.Printf("Slow request: %s %s took %v", r.Method, r.URL.Path, duration)
+        }
+    })
+}
+
+// Custom profiling endpoints
+func (p *Profiler) SetupRoutes(r *mux.Router) {
+    // Memory stats endpoint
+    r.HandleFunc("/debug/stats", func(w http.ResponseWriter, r *http.Request) {
+        var m runtime.MemStats
+        runtime.ReadMemStats(&m)
+        
+        fmt.Fprintf(w, "Alloc = %v MiB\n", m.Alloc/1024/1024)
+        fmt.Fprintf(w, "TotalAlloc = %v MiB\n", m.TotalAlloc/1024/1024)
+        fmt.Fprintf(w, "Sys = %v MiB\n", m.Sys/1024/1024)
+        fmt.Fprintf(w, "NumGC = %v\n", m.NumGC)
+        fmt.Fprintf(w, "Goroutines = %v\n", runtime.NumGoroutine())
+    })
+    
+    // Force GC endpoint
+    r.HandleFunc("/debug/gc", func(w http.ResponseWriter, r *http.Request) {
+        runtime.GC()
+        fmt.Fprintf(w, "GC forced")
+    })
+}
+
+// Example service with performance issues
+type UserService struct {
+    cache map[int]*User
+    mu    sync.RWMutex
+}
+
+type User struct {
+    ID    int
+    Name  string
+    Email string
+}
+
+func NewUserService() *UserService {
+    return &UserService{
+        cache: make(map[int]*User),
+    }
+}
+
+// Bad: Not using pointer receiver causes allocations
+func (s UserService) GetUserByID(id int) (*User, error) {
+    s.mu.RLock()
+    defer s.mu.RUnlock()
+    
+    if user, ok := s.cache[id]; ok {
+        return user, nil
+    }
+    return nil, fmt.Errorf("user not found")
+}
+
+// Good: Using pointer receiver
+func (s *UserService) GetUserByIDPtr(id int) (*User, error) {
+    s.mu.RLock()
+    defer s.mu.RUnlock()
+    
+    if user, ok := s.cache[id]; ok {
+        return user, nil
+    }
+    return nil, fmt.Errorf("user not found")
+}
+
+func main() {
+    profiler := NewProfiler(true)
+    
+    r := mux.NewRouter()
+    r.Use(profiler.Middleware)
+    profiler.SetupRoutes(r)
+    
+    // Business endpoints
+    r.HandleFunc("/api/users/{id}", handleGetUser).Methods("GET")
+    
+    log.Println("Server starting on :8080")
+    log.Println("Profiling endpoints:")
+    log.Println("  /debug/pprof/ - Go pprof")
+    log.Println("  /debug/stats  - Runtime stats")
+    log.Println("  /debug/gc     - Force GC")
+    
+    log.Fatal(http.ListenAndServe(":8080", r))
+}
+```
+
+#### Tracing with go tool trace
+
+```go
+// trace/trace_example.go
+package main
+
+import (
+    "os"
+    "runtime/trace"
+    "sync"
+)
+
+func main() {
+    // Create trace file
+    f, err := os.Create("trace.out")
+    if err != nil {
+        panic(err)
+    }
+    defer f.Close()
+    
+    // Start tracing
+    trace.Start(f)
+    defer trace.Stop()
+    
+    // Run code to trace
+    var wg sync.WaitGroup
+    
+    for i := 0; i < 5; i++ {
+        wg.Add(1)
+        go func(id int) {
+            defer wg.Done()
+            
+            // Simulate work
+            sum := 0
+            for j := 0; j < 1000000; j++ {
+                sum += j
+            }
+            _ = sum
+        }(i)
+    }
+    
+    wg.Wait()
+}
+
+// View trace:
+// go tool trace trace.out
+```
+
+---
+
+## 2. เทคนิคขั้นสูง (Advanced Techniques)
+
+### บทที่ 37: การจัดการ Context
+
+**เป้าหมาย:** ใช้ context สำหรับ timeout, cancellation, และ request-scoped values
+
+#### Context Basics
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+func main() {
+    // 1. Background and TODO contexts
+    ctx := context.Background()  // Root context (never canceled)
+    ctx2 := context.TODO()        // When unsure which context to use
+    
+    // 2. Context with timeout
+    ctxTimeout, cancel := context.WithTimeout(ctx, 2*time.Second)
+    defer cancel() // Always call cancel to avoid resource leak
+    
+    // 3. Context with deadline
+    deadline := time.Now().Add(5 * time.Second)
+    ctxDeadline, cancel := context.WithDeadline(ctx, deadline)
+    defer cancel()
+    
+    // 4. Context with cancellation
+    ctxCancel, cancel := context.WithCancel(ctx)
+    defer cancel()
+    
+    // 5. Using context for cancellation
+    go func() {
+        select {
+        case <-ctxCancel.Done():
+            fmt.Println("Cancelled")
+            return
+        }
+    }()
+    
+    // Cancel after 1 second
+    time.Sleep(1 * time.Second)
+    cancel()
+    
+    // 6. Context with values
+    ctxValue := context.WithValue(ctx, "user_id", 123)
+    ctxValue = context.WithValue(ctxValue, "request_id", "abc-123")
+    
+    processRequest(ctxValue)
+}
+
+func processRequest(ctx context.Context) {
+    // Extract values from context
+    if userID, ok := ctx.Value("user_id").(int); ok {
+        fmt.Printf("User ID: %d\n", userID)
+    }
+    
+    if requestID, ok := ctx.Value("request_id").(string); ok {
+        fmt.Printf("Request ID: %s\n", requestID)
+    }
+}
+```
+
+#### Context in HTTP Handlers
+
+```go
+package handlers
+
+import (
+    "context"
+    "database/sql"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+type contextKey string
+
+const (
+    UserIDKey   contextKey = "user_id"
+    RequestIDKey contextKey = "request_id"
+)
+
+// Middleware to add request ID
+func RequestIDMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        requestID := r.Header.Get("X-Request-ID")
+        if requestID == "" {
+            requestID = generateRequestID()
+        }
+        
+        ctx := context.WithValue(r.Context(), RequestIDKey, requestID)
+        w.Header().Set("X-Request-ID", requestID)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+
+// Middleware with timeout per request
+func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            ctx, cancel := context.WithTimeout(r.Context(), timeout)
+            defer cancel()
+            
+            // Create channel to detect timeout
+            done := make(chan struct{})
+            
+            go func() {
+                next.ServeHTTP(w, r.WithContext(ctx))
+                close(done)
+            }()
+            
+            select {
+            case <-done:
+                return
+            case <-ctx.Done():
+                w.WriteHeader(http.StatusGatewayTimeout)
+                fmt.Fprintf(w, "Request timeout after %v", timeout)
+            }
+        })
+    }
+}
+
+// Database query with context
+func GetUserByID(ctx context.Context, db *sql.DB, userID int) (*User, error) {
+    // Context will cancel the query if timeout occurs
+    query := "SELECT id, name, email FROM users WHERE id = $1"
+    
+    var user User
+    row := db.QueryRowContext(ctx, query, userID)
+    err := row.Scan(&user.ID, &user.Name, &user.Email)
+    
+    if err != nil {
+        // Check if error was due to context cancellation
+        if ctx.Err() == context.Canceled {
+            return nil, fmt.Errorf("request cancelled")
+        }
+        if ctx.Err() == context.DeadlineExceeded {
+            return nil, fmt.Errorf("query timeout")
+        }
+        return nil, err
+    }
+    
+    return &user, nil
+}
+
+// HTTP client with context
+func CallExternalAPI(ctx context.Context, url string) (*http.Response, error) {
+    req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+    if err != nil {
+        return nil, err
+    }
+    
+    client := &http.Client{
+        Timeout: 10 * time.Second,
+    }
+    
+    return client.Do(req)
+}
+
+// Worker pool with context cancellation
+type WorkerPool struct {
+    workers int
+    jobs    chan Job
+    ctx     context.Context
+    cancel  context.CancelFunc
+}
+
+func NewWorkerPool(workers int) *WorkerPool {
+    ctx, cancel := context.WithCancel(context.Background())
+    
+    return &WorkerPool{
+        workers: workers,
+        jobs:    make(chan Job),
+        ctx:     ctx,
+        cancel:  cancel,
+    }
+}
+
+func (p *WorkerPool) Start() {
+    for i := 0; i < p.workers; i++ {
+        go p.worker(i)
+    }
+}
+
+func (p *WorkerPool) worker(id int) {
+    for {
+        select {
+        case job := <-p.jobs:
+            // Process job with context
+            job.Process(p.ctx)
+        case <-p.ctx.Done():
+            fmt.Printf("Worker %d stopping\n", id)
+            return
+        }
+    }
+}
+
+func (p *WorkerPool) Stop() {
+    p.cancel()
+}
+
+// Custom context key type to avoid collisions
+type contextKeyType int
+
+const (
+    KeyUser contextKeyType = iota
+    KeyTrace
+    KeySession
+)
+
+// Helper functions for type-safe context access
+func ContextWithUser(ctx context.Context, user *User) context.Context {
+    return context.WithValue(ctx, KeyUser, user)
+}
+
+func UserFromContext(ctx context.Context) (*User, bool) {
+    user, ok := ctx.Value(KeyUser).(*User)
+    return user, ok
+}
+
+// Complete HTTP handler example
+func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+    ctx := r.Context()
+    
+    // Extract values from context
+    requestID, _ := ctx.Value(RequestIDKey).(string)
+    
+    // Set timeout for this operation
+    ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+    defer cancel()
+    
+    // Call database with context
+    user, err := GetUserByID(ctx, db, userID)
+    if err != nil {
+        if ctx.Err() == context.DeadlineExceeded {
+            http.Error(w, "Request timeout", http.StatusGatewayTimeout)
+            return
+        }
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    
+    // Call external API with same context
+    resp, err := CallExternalAPI(ctx, "https://api.example.com/stats")
+    if err != nil {
+        if ctx.Err() == context.Canceled {
+            return // Client disconnected
+        }
+        // Log error but continue
+        log.Printf("External API error: %v", err)
+    }
+    defer resp.Body.Close()
+    
+    // Return response
+    json.NewEncoder(w).Encode(user)
+}
+```
+
+---
+
+### บทที่ 38: Generics – การเขียนโค้ดแบบยืดหยุ่น
+
+**เป้าหมาย:** ใช้ generics เพื่อสร้างโค้ดที่ reusable และ type-safe
+
+#### Basic Generics
+
+```go
+package main
+
+import (
+    "fmt"
+    "golang.org/x/exp/constraints"
+)
+
+// 1. Generic function with type parameter
+func Identity[T any](value T) T {
+    return value
+}
+
+// 2. Generic function with multiple type parameters
+func Pair[T, U any](a T, b U) struct{ First T; Second U } {
+    return struct{ First T; Second U }{First: a, Second: b}
+}
+
+// 3. Generic function with constraints
+func Min[T constraints.Ordered](a, b T) T {
+    if a < b {
+        return a
+    }
+    return b
+}
+
+// 4. Generic function with custom constraint
+type Number interface {
+    int | int64 | float64 | float32
+}
+
+func Sum[T Number](numbers []T) T {
+    var sum T
+    for _, n := range numbers {
+        sum += n
+    }
+    return sum
+}
+
+// 5. Generic type
+type Stack[T any] struct {
+    items []T
+}
+
+func (s *Stack[T]) Push(item T) {
+    s.items = append(s.items, item)
+}
+
+func (s *Stack[T]) Pop() (T, bool) {
+    if len(s.items) == 0 {
+        var zero T
+        return zero, false
+    }
+    item := s.items[len(s.items)-1]
+    s.items = s.items[:len(s.items)-1]
+    return item, true
+}
+
+func (s *Stack[T]) Peek() (T, bool) {
+    if len(s.items) == 0 {
+        var zero T
+        return zero, false
+    }
+    return s.items[len(s.items)-1], true
+}
+
+func main() {
+    // Using generic functions
+    fmt.Println(Identity(42))           // 42
+    fmt.Println(Identity("hello"))      // hello
+    
+    pair := Pair(1, "one")
+    fmt.Printf("%v, %v\n", pair.First, pair.Second)
+    
+    fmt.Println(Min(10, 20))            // 10
+    fmt.Println(Min(3.14, 2.71))        // 2.71
+    
+    // Using generic type
+    intStack := Stack[int]{}
+    intStack.Push(1)
+    intStack.Push(2)
+    fmt.Println(intStack.Pop())         // 2, true
+    
+    stringStack := Stack[string]{}
+    stringStack.Push("hello")
+    fmt.Println(stringStack.Pop())      // hello, true
+}
+```
+
+#### Advanced Generic Patterns
+
+```go
+package generics
+
+import (
+    "fmt"
+    "reflect"
+)
+
+// 1. Generic Map function
+func Map[T, U any](slice []T, f func(T) U) []U {
+    result := make([]U, len(slice))
+    for i, v := range slice {
+        result[i] = f(v)
+    }
+    return result
+}
+
+// 2. Generic Filter function
+func Filter[T any](slice []T, predicate func(T) bool) []T {
+    result := make([]T, 0, len(slice))
+    for _, v := range slice {
+        if predicate(v) {
+            result = append(result, v)
+        }
+    }
+    return result
+}
+
+// 3. Generic Reduce function
+func Reduce[T, U any](slice []T, initial U, f func(U, T) U) U {
+    result := initial
+    for _, v := range slice {
+        result = f(result, v)
+    }
+    return result
+}
+
+// 4. Generic Find function
+func Find[T any](slice []T, predicate func(T) bool) (T, bool) {
+    for _, v := range slice {
+        if predicate(v) {
+            return v, true
+        }
+    }
+    var zero T
+    return zero, false
+}
+
+// 5. Generic Set type
+type Set[T comparable] struct {
+    items map[T]struct{}
+}
+
+func NewSet[T comparable]() *Set[T] {
+    return &Set[T]{
+        items: make(map[T]struct{}),
+    }
+}
+
+func (s *Set[T]) Add(item T) {
+    s.items[item] = struct{}{}
+}
+
+func (s *Set[T]) Remove(item T) {
+    delete(s.items, item)
+}
+
+func (s *Set[T]) Contains(item T) bool {
+    _, ok := s.items[item]
+    return ok
+}
+
+func (s *Set[T]) Size() int {
+    return len(s.items)
+}
+
+func (s *Set[T]) List() []T {
+    result := make([]T, 0, len(s.items))
+    for item := range s.items {
+        result = append(result, item)
+    }
+    return result
+}
+
+// 6. Generic Result type (like Rust)
+type Result[T any] struct {
+    value T
+    err   error
+}
+
+func Ok[T any](value T) Result[T] {
+    return Result[T]{value: value, err: nil}
+}
+
+func Err[T any](err error) Result[T] {
+    return Result[T]{err: err}
+}
+
+func (r Result[T]) IsOk() bool {
+    return r.err == nil
+}
+
+func (r Result[T]) IsErr() bool {
+    return r.err != nil
+}
+
+func (r Result[T]) Unwrap() T {
+    if r.err != nil {
+        panic(r.err)
+    }
+    return r.value
+}
+
+func (r Result[T]) UnwrapOr(defaultValue T) T {
+    if r.err != nil {
+        return defaultValue
+    }
+    return r.value
+}
+
+// 7. Generic Option type
+type Option[T any] struct {
+    value   T
+    present bool
+}
+
+func Some[T any](value T) Option[T] {
+    return Option[T]{value: value, present: true}
+}
+
+func None[T any]() Option[T] {
+    return Option[T]{present: false}
+}
+
+func (o Option[T]) IsSome() bool {
+    return o.present
+}
+
+func (o Option[T]) IsNone() bool {
+    return !o.present
+}
+
+func (o Option[T]) Unwrap() T {
+    if !o.present {
+        panic("called Unwrap on None")
+    }
+    return o.value
+}
+
+func (o Option[T]) UnwrapOr(defaultValue T) T {
+    if o.present {
+        return o.value
+    }
+    return defaultValue
+}
+```
+
+#### ตัวอย่างการใช้งานจริง: Generic Repository
+
+```go
+// repository/generic_repository.go
+package repository
+
+import (
+    "context"
+    "database/sql"
+    "fmt"
+    "reflect"
+    "strings"
+)
+
+// Generic repository interface
+type Repository[T any, ID comparable] interface {
+    Create(ctx context.Context, entity *T) error
+    GetByID(ctx context.Context, id ID) (*T, error)
+    Update(ctx context.Context, entity *T) error
+    Delete(ctx context.Context, id ID) error
+    List(ctx context.Context, limit, offset int) ([]*T, error)
+}
+
+// Generic GORM repository
+type GormRepository[T any, ID comparable] struct {
+    db *gorm.DB
+}
+
+func NewGormRepository[T any, ID comparable](db *gorm.DB) *GormRepository[T, ID] {
+    return &GormRepository[T, ID]{db: db}
+}
+
+func (r *GormRepository[T, ID]) Create(ctx context.Context, entity *T) error {
+    return r.db.WithContext(ctx).Create(entity).Error
+}
+
+func (r *GormRepository[T, ID]) GetByID(ctx context.Context, id ID) (*T, error) {
+    var entity T
+    err := r.db.WithContext(ctx).First(&entity, id).Error
+    if err != nil {
+        return nil, err
+    }
+    return &entity, nil
+}
+
+func (r *GormRepository[T, ID]) Update(ctx context.Context, entity *T) error {
+    return r.db.WithContext(ctx).Save(entity).Error
+}
+
+func (r *GormRepository[T, ID]) Delete(ctx context.Context, id ID) error {
+    var entity T
+    return r.db.WithContext(ctx).Delete(&entity, id).Error
+}
+
+func (r *GormRepository[T, ID]) List(ctx context.Context, limit, offset int) ([]*T, error) {
+    var entities []*T
+    err := r.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&entities).Error
+    return entities, err
+}
+
+// Generic SQL repository with reflection (advanced)
+type SQLRepository[T any] struct {
+    db        *sql.DB
+    tableName string
+    columns   []string
+    idColumn  string
+}
+
+func NewSQLRepository[T any](db *sql.DB, tableName string) (*SQLRepository[T], error) {
+    // Use reflection to get struct fields
+    var t T
+    typ := reflect.TypeOf(t)
+    
+    columns := make([]string, 0)
+    for i := 0; i < typ.NumField(); i++ {
+        field := typ.Field(i)
+        tag := field.Tag.Get("db")
+        if tag == "" {
+            tag = strings.ToLower(field.Name)
+        }
+        if tag != "-" {
+            columns = append(columns, tag)
+        }
+    }
+    
+    return &SQLRepository[T]{
+        db:        db,
+        tableName: tableName,
+        columns:   columns,
+        idColumn:  "id",
+    }, nil
+}
+
+func (r *SQLRepository[T]) Create(ctx context.Context, entity *T) error {
+    // Build INSERT query
+    placeholders := make([]string, len(r.columns))
+    for i := range placeholders {
+        placeholders[i] = fmt.Sprintf("$%d", i+1)
+    }
+    
+    query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id",
+        r.tableName,
+        strings.Join(r.columns, ", "),
+        strings.Join(placeholders, ", "))
+    
+    // Use reflection to get values
+    values := reflect.ValueOf(entity).Elem()
+    args := make([]interface{}, len(r.columns))
+    for i, col := range r.columns {
+        field := values.FieldByNameFunc(func(name string) bool {
+            return strings.EqualFold(name, col)
+        })
+        args[i] = field.Interface()
+    }
+    
+    return r.db.QueryRowContext(ctx, query, args...).Scan(&values.FieldByName("ID").Addr().Interface())
+}
+```
+
+---
+
+### บทที่ 39: Go กับกระบวนทัศน์ OOP?
+
+**เป้าหมาย:** เข้าใจแนวทางการเขียน OOP ใน Go ที่ต่างจากภาษาแบบดั้งเดิม
+
+#### Composition over Inheritance
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+// 1. Embedded structs (composition)
+type Person struct {
+    Name string
+    Age  int
+}
+
+func (p *Person) Greet() string {
+    return fmt.Sprintf("Hello, I'm %s", p.Name)
+}
+
+type Employee struct {
+    Person      // Embedding
+    Position string
+    Salary   float64
+}
+
+// Employee inherits Person's methods
+func (e *Employee) Work() string {
+    return fmt.Sprintf("%s is working as %s", e.Name, e.Position)
+}
+
+// 2. Interface-based polymorphism
+type Speaker interface {
+    Speak() string
+}
+
+type Dog struct {
+    Name string
+}
+
+func (d Dog) Speak() string {
+    return "Woof!"
+}
+
+type Cat struct {
+    Name string
+}
+
+func (c Cat) Speak() string {
+    return "Meow!"
+}
+
+func MakeSound(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+// 3. Strategy pattern with interfaces
+type PaymentStrategy interface {
+    Pay(amount float64) error
+}
+
+type CreditCard struct {
+    Number string
+    CVV    string
+}
+
+func (c *CreditCard) Pay(amount float64) error {
+    fmt.Printf("Paying %.2f with credit card %s\n", amount, c.Number)
+    return nil
+}
+
+type PayPal struct {
+    Email string
+}
+
+func (p *PayPal) Pay(amount float64) error {
+    fmt.Printf("Paying %.2f with PayPal %s\n", amount, p.Email)
+    return nil
+}
+
+type Order struct {
+    Amount  float64
+    Payment PaymentStrategy
+}
+
+func (o *Order) Checkout() error {
+    return o.Payment.Pay(o.Amount)
+}
+
+// 4. Builder pattern
+type ServerConfig struct {
+    Host         string
+    Port         int
+    ReadTimeout  time.Duration
+    WriteTimeout time.Duration
+    MaxConns     int
+}
+
+type ServerBuilder struct {
+    config ServerConfig
+}
+
+func NewServerBuilder() *ServerBuilder {
+    return &ServerBuilder{
+        config: ServerConfig{
+            Host:         "localhost",
+            Port:         8080,
+            ReadTimeout:  30 * time.Second,
+            WriteTimeout: 30 * time.Second,
+            MaxConns:     100,
+        },
+    }
+}
+
+func (b *ServerBuilder) Host(host string) *ServerBuilder {
+    b.config.Host = host
+    return b
+}
+
+func (b *ServerBuilder) Port(port int) *ServerBuilder {
+    b.config.Port = port
+    return b
+}
+
+func (b *ServerBuilder) Timeout(timeout time.Duration) *ServerBuilder {
+    b.config.ReadTimeout = timeout
+    b.config.WriteTimeout = timeout
+    return b
+}
+
+func (b *ServerBuilder) Build() ServerConfig {
+    return b.config
+}
+
+// 5. Factory pattern
+type Database interface {
+    Connect() error
+    Query(query string) ([]Row, error)
+}
+
+type MySQLDB struct {
+    DSN string
+}
+
+func (db *MySQLDB) Connect() error {
+    fmt.Println("Connecting to MySQL")
+    return nil
+}
+
+func (db *MySQLDB) Query(query string) ([]Row, error) {
+    return nil, nil
+}
+
+type PostgreSQLDB struct {
+    Host string
+    Port int
+}
+
+func (db *PostgreSQLDB) Connect() error {
+    fmt.Println("Connecting to PostgreSQL")
+    return nil
+}
+
+func (db *PostgreSQLDB) Query(query string) ([]Row, error) {
+    return nil, nil
+}
+
+type DatabaseFactory struct{}
+
+func (f *DatabaseFactory) Create(dbType, dsn string) (Database, error) {
+    switch dbType {
+    case "mysql":
+        return &MySQLDB{DSN: dsn}, nil
+    case "postgres":
+        return &PostgreSQLDB{}, nil
+    default:
+        return nil, fmt.Errorf("unsupported database type: %s", dbType)
+    }
+}
+```
+
+---
+
+## 3. เครื่องมือและแนวปฏิบัติ (Tools & Best Practices)
+
+### บทที่ 35: สร้าง HTTP Client
+
+**เป้าหมาย:** สร้าง HTTP client ที่มีประสิทธิภาพและ resilient
+
+#### Basic HTTP Client
+
+```go
+package client
+
+import (
+    "bytes"
+    "context"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "time"
+)
+
+// 1. Basic client with configuration
+type HTTPClient struct {
+    client  *http.Client
+    baseURL string
+    headers map[string]string
+}
+
+func NewHTTPClient(baseURL string, timeout time.Duration) *HTTPClient {
+    return &HTTPClient{
+        client: &http.Client{
+            Timeout: timeout,
+            Transport: &http.Transport{
+                MaxIdleConns:        100,
+                MaxIdleConnsPerHost: 10,
+                IdleConnTimeout:     90 * time.Second,
+            },
+        },
+        baseURL: baseURL,
+        headers: make(map[string]string),
+    }
+}
+
+func (c *HTTPClient) SetHeader(key, value string) {
+    c.headers[key] = value
+}
+
+func (c *HTTPClient) Get(ctx context.Context, path string) (*http.Response, error) {
+    url := c.baseURL + path
+    
+    req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+    if err != nil {
+        return nil, err
+    }
+    
+    // Add headers
+    for k, v := range c.headers {
+        req.Header.Set(k, v)
+    }
+    
+    return c.client.Do(req)
+}
+
+func (c *HTTPClient) Post(ctx context.Context, path string, body interface{}) (*http.Response, error) {
+    jsonBody, err := json.Marshal(body)
+    if err != nil {
+        return nil, err
+    }
+    
+    url := c.baseURL + path
+    req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonBody))
+    if err != nil {
+        return nil, err
+    }
+    
+    req.Header.Set("Content-Type", "application/json")
+    for k, v := range c.headers {
+        req.Header.Set(k, v)
+    }
+    
+    return c.client.Do(req)
+}
+```
+
+#### Advanced HTTP Client with Retry and Circuit Breaker
+
+```go
+package client
+
+import (
+    "context"
+    "fmt"
+    "math/rand"
+    "net/http"
+    "time"
+)
+
+// 2. Retry logic
+type RetryConfig struct {
+    MaxRetries     int
+    InitialBackoff time.Duration
+    MaxBackoff     time.Duration
+    RetryableErrors []int // HTTP status codes to retry
+}
+
+type RetryableHTTPClient struct {
+    client *http.Client
+    config RetryConfig
+}
+
+func NewRetryableHTTPClient(config RetryConfig) *RetryableHTTPClient {
+    return &RetryableHTTPClient{
+        client: &http.Client{
+            Timeout: 30 * time.Second,
+        },
+        config: config,
+    }
+}
+
+func (c *RetryableHTTPClient) Do(req *http.Request) (*http.Response, error) {
+    var lastErr error
+    
+    for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
+        // Execute request
+        resp, err := c.client.Do(req)
+        
+        // If successful, return response
+        if err == nil && resp.StatusCode < 500 {
+            return resp, nil
+        }
+        
+        // Close response body if it exists
+        if resp != nil {
+            resp.Body.Close()
+        }
+        
+        // Check if we should retry
+        shouldRetry := false
+        if err != nil {
+            shouldRetry = true
+            lastErr = err
+        } else if c.shouldRetryStatus(resp.StatusCode) {
+            shouldRetry = true
+            lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
+        }
+        
+        if !shouldRetry || attempt == c.config.MaxRetries {
+            if resp != nil {
+                return resp, lastErr
+            }
+            return nil, lastErr
+        }
+        
+        // Calculate backoff with jitter
+        backoff := c.calculateBackoff(attempt)
+        time.Sleep(backoff)
+    }
+    
+    return nil, fmt.Errorf("max retries exceeded: %w", lastErr)
+}
+
+func (c *RetryableHTTPClient) shouldRetryStatus(status int) bool {
+    for _, retryStatus := range c.config.RetryableErrors {
+        if status == retryStatus {
+            return true
+        }
+    }
+    return status >= 500 // Retry on server errors
+}
+
+func (c *RetryableHTTPClient) calculateBackoff(attempt int) time.Duration {
+    backoff := c.config.InitialBackoff
+    for i := 0; i < attempt; i++ {
+        backoff *= 2
+        if backoff > c.config.MaxBackoff {
+            backoff = c.config.MaxBackoff
+            break
+        }
+    }
+    
+    // Add jitter (±20%)
+    jitter := time.Duration(rand.Float64() * float64(backoff) * 0.2)
+    return backoff + jitter
+}
+
+// 3. Circuit breaker pattern
+type CircuitBreaker struct {
+    failureThreshold int
+    timeout          time.Duration
+    failures         int
+    lastFailure      time.Time
+    state            string // CLOSED, OPEN, HALF_OPEN
+    mu               sync.RWMutex
+}
+
+func NewCircuitBreaker(threshold int, timeout time.Duration) *CircuitBreaker {
+    return &CircuitBreaker{
+        failureThreshold: threshold,
+        timeout:          timeout,
+        state:           "CLOSED",
+    }
+}
+
+func (cb *CircuitBreaker) Call(fn func() error) error {
+    if !cb.allowRequest() {
+        return fmt.Errorf("circuit breaker is OPEN")
+    }
+    
+    err := fn()
+    
+    cb.recordResult(err)
+    return err
+}
+
+func (cb *CircuitBreaker) allowRequest() bool {
+    cb.mu.RLock()
+    defer cb.mu.RUnlock()
+    
+    switch cb.state {
+    case "CLOSED":
+        return true
+    case "OPEN":
+        if time.Since(cb.lastFailure) > cb.timeout {
+            cb.mu.RUnlock()
+            cb.mu.Lock()
+            cb.state = "HALF_OPEN"
+            cb.mu.Unlock()
+            cb.mu.RLock()
+            return true
+        }
+        return false
+    case "HALF_OPEN":
+        return true
+    default:
+        return false
+    }
+}
+
+func (cb *CircuitBreaker) recordResult(err error) {
+    cb.mu.Lock()
+    defer cb.mu.Unlock()
+    
+    if err != nil {
+        cb.failures++
+        cb.lastFailure = time.Now()
+        
+        if cb.state == "HALF_OPEN" {
+            cb.state = "OPEN"
+        } else if cb.failures >= cb.failureThreshold {
+            cb.state = "OPEN"
+        }
+    } else {
+        if cb.state == "HALF_OPEN" {
+            cb.state = "CLOSED"
+            cb.failures = 0
+        }
+    }
+}
+```
+
+#### Complete API Client Example
+
+```go
+// api_client.go
+package api
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+type APIClient struct {
+    client    *RetryableHTTPClient
+    baseURL   string
+    apiKey    string
+    circuitBreaker *CircuitBreaker
+}
+
+type APIConfig struct {
+    BaseURL          string
+    APIKey           string
+    Timeout          time.Duration
+    MaxRetries       int
+    CircuitThreshold int
+    CircuitTimeout   time.Duration
+}
+
+func NewAPIClient(config APIConfig) *APIClient {
+    retryConfig := RetryConfig{
+        MaxRetries:     config.MaxRetries,
+        InitialBackoff: 100 * time.Millisecond,
+        MaxBackoff:     5 * time.Second,
+        RetryableErrors: []int{429, 500, 502, 503, 504},
+    }
+    
+    return &APIClient{
+        client:         NewRetryableHTTPClient(retryConfig),
+        baseURL:        config.BaseURL,
+        apiKey:         config.APIKey,
+        circuitBreaker: NewCircuitBreaker(config.CircuitThreshold, config.CircuitTimeout),
+    }
+}
+
+func (c *APIClient) GetUser(ctx context.Context, userID int) (*User, error) {
+    var user User
+    
+    err := c.circuitBreaker.Call(func() error {
+        url := fmt.Sprintf("%s/users/%d", c.baseURL, userID)
+        
+        req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+        if err != nil {
+            return err
+        }
+        
+        req.Header.Set("Authorization", "Bearer "+c.apiKey)
+        req.Header.Set("Accept", "application/json")
+        
+        resp, err := c.client.Do(req)
+        if err != nil {
+            return err
+        }
+        defer resp.Body.Close()
+        
+        if resp.StatusCode != http.StatusOK {
+            return fmt.Errorf("API returned status %d", resp.StatusCode)
+        }
+        
+        return json.NewDecoder(resp.Body).Decode(&user)
+    })
+    
+    if err != nil {
+        return nil, err
+    }
+    
+    return &user, nil
+}
+
+func (c *APIClient) CreateOrder(ctx context.Context, order *Order) (*Order, error) {
+    var result Order
+    
+    err := c.circuitBreaker.Call(func() error {
+        url := fmt.Sprintf("%s/orders", c.baseURL)
+        
+        body, err := json.Marshal(order)
+        if err != nil {
+            return err
+        }
+        
+        req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
+        if err != nil {
+            return err
+        }
+        
+        req.Header.Set("Authorization", "Bearer "+c.apiKey)
+        req.Header.Set("Content-Type", "application/json")
+        
+        resp, err := c.client.Do(req)
+        if err != nil {
+            return err
+        }
+        defer resp.Body.Close()
+        
+        if resp.StatusCode != http.StatusCreated {
+            return fmt.Errorf("API returned status %d", resp.StatusCode)
+        }
+        
+        return json.NewDecoder(resp.Body).Decode(&result)
+    })
+    
+    if err != nil {
+        return nil, err
+    }
+    
+    return &result, nil
+}
+```
+
+---
+
+### บทที่ 40: การอัปเกรดหรือดาวน์เกรดเวอร์ชัน Go
+
+**เป้าหมาย:** จัดการเวอร์ชัน Go ในโปรเจกต์และระบบ
+
+#### Managing Go Versions
+
+```bash
+# 1. Check current version
+go version
+
+# 2. View go.mod version
+cat go.mod
+# go 1.21
+
+# 3. Upgrade to newer version
+go mod edit -go=1.22
+
+# 4. Tidy dependencies for new version
+go mod tidy
+
+# 5. Run go fix for automatic code updates
+go fix ./...
+
+# 6. Vet for version-specific issues
+go vet ./...
+```
+
+#### Using Go Version Manager (gvm)
+
+```bash
+# Install gvm
+bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+
+# List available versions
+gvm listall
+
+# Install specific version
+gvm install go1.21.5
+gvm install go1.22.0
+
+# Use specific version
+gvm use go1.22.0
+
+# Set default version
+gvm use go1.22.0 --default
+
+# Create project with specific version
+cd myproject
+gvm use go1.21.5
+go mod init myproject
+```
+
+#### Version Compatibility
+
+```go
+// build tags for version-specific code
+// +build go1.21
+
+package main
+
+import "slices"
+
+func main() {
+    // Use Go 1.21+ features
+    numbers := []int{3, 1, 4, 1, 5}
+    slices.Sort(numbers)
+}
+
+// For older versions, separate file
+// +build !go1.21
+
+package main
+
+import "sort"
+
+func main() {
+    numbers := []int{3, 1, 4, 1, 5}
+    sort.Ints(numbers)
+}
+```
+
+---
+
+### บทที่ 41: คำแนะนำในการออกแบบโค้ดที่ดี
+
+**เป้าหมาย:** เรียนรู้ idioms และ best practices สำหรับ Go
+
+#### Naming Conventions
+
+```go
+package main // Package names are lowercase, short, descriptive
+
+// ✅ Good naming
+type UserService struct{}  // Struct names: PascalCase
+type userRepository struct{} // Unexported: camelCase
+
+func GetUserByID(id int) (*User, error) {} // Functions: PascalCase for exported
+func getUserByID(id int) (*User, error) {} // camelCase for unexported
+
+var MaxRetries = 3 // Constants: PascalCase
+var defaultTimeout = 30 * time.Second // Unexported: camelCase
+
+// ❌ Bad naming
+type user_service struct{}  // No underscores
+func Get_User_By_Id() {}     // No underscores
+var MAX_RETRIES = 3          // Use PascalCase, not SCREAMING_SNAKE
+```
+
+#### Error Handling Patterns
+
+```go
+// ✅ Always check errors
+file, err := os.Open("file.txt")
+if err != nil {
+    return fmt.Errorf("open file: %w", err)
+}
+defer file.Close()
+
+// ✅ Wrap errors with context
+func ReadConfig(path string) (*Config, error) {
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return nil, fmt.Errorf("read config %s: %w", path, err)
+    }
+    // ...
+}
+
+// ✅ Custom error types for business logic
+type ValidationError struct {
+    Field   string
+    Value   interface{}
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation failed for %s: %s", e.Field, e.Message)
+}
+
+// ✅ Use errors.Is and errors.As
+if errors.Is(err, ErrNotFound) {
+    // handle not found
+}
+
+var valErr *ValidationError
+if errors.As(err, &valErr) {
+    fmt.Printf("Field: %s\n", valErr.Field)
+}
+
+// ❌ Don't ignore errors
+data, _ := os.ReadFile("file.txt") // Bad
+
+// ❌ Don't use panic for normal errors
+if err != nil {
+    panic(err) // Only for unrecoverable situations
+}
+```
+
+#### Interface Design
+
+```go
+// ✅ Small, focused interfaces (Interface Segregation Principle)
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+type Closer interface {
+    Close() error
+}
+
+// ✅ Combine when needed
+type ReadWriter interface {
+    Reader
+    Writer
+}
+
+// ✅ Accept interfaces, return structs
+func NewUserService(repo UserRepository) *UserService {
+    return &UserService{repo: repo}
+}
+
+// ❌ Large, monolithic interfaces
+type DataAccess interface {
+    Create()
+    Read()
+    Update()
+    Delete()
+    List()
+    Search()
+    Export()
+    Import()
+    // Too many methods
+}
+```
+
+#### Concurrency Patterns
+
+```go
+// ✅ Use channels for communication
+func worker(jobs <-chan int, results chan<- int) {
+    for job := range jobs {
+        results <- process(job)
+    }
+}
+
+// ✅ Use select for timeout
+select {
+case result := <-resultChan:
+    return result
+case <-time.After(5 * time.Second):
+    return errors.New("timeout")
+}
+
+// ✅ Use context for cancellation
+func process(ctx context.Context, data []byte) error {
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    default:
+        // process data
+    }
+    return nil
+}
+
+// ❌ Don't share memory for communication
+// Instead, communicate by sharing channels
+```
+
+#### Performance Tips
+
+```go
+// ✅ Preallocate slices when size known
+users := make([]User, 0, expectedSize)
+
+// ✅ Use strings.Builder for string concatenation
+var sb strings.Builder
+sb.Grow(1024)
+for _, s := range strings {
+    sb.WriteString(s)
+}
+result := sb.String()
+
+// ✅ Use sync.Pool for frequently allocated objects
+var bufferPool = sync.Pool{
+    New: func() interface{} {
+        return new(bytes.Buffer)
+    },
+}
+
+buf := bufferPool.Get().(*bytes.Buffer)
+defer bufferPool.Put(buf)
+buf.Reset()
+
+// ❌ Avoid defer in tight loops
+for i := 0; i < 1_000_000; i++ {
+    defer file.Close() // defer overhead in loop
+}
+```
+
+---
+
+### บทที่ 42: ชีทสรุป (Cheatsheet)
+
+**เป้าหมาย:** สรุปคำสั่งและ syntax ที่ใช้บ่อย
+
+#### Go Commands
+
+```bash
+# Development
+go run main.go              # Run program
+go build                    # Build binary
+go build -o myapp           # Build with custom name
+go install                  # Install binary to $GOPATH/bin
+go mod init module-name     # Initialize module
+go mod tidy                 # Clean up dependencies
+go mod vendor               # Create vendor directory
+go get package@version      # Add dependency (deprecated)
+go install package@latest   # Install tool
+
+# Testing
+go test                     # Run tests
+go test -v                  # Verbose output
+go test -run TestName       # Run specific test
+go test -bench .            # Run benchmarks
+go test -benchmem           # Show memory allocation
+go test -cover              # Show coverage
+go test -coverprofile=c.out # Generate coverage profile
+go tool cover -html=c.out   # View coverage in browser
+go test -race               # Check for race conditions
+
+# Code quality
+go fmt ./...                # Format code
+go vet ./...                # Run vet
+golangci-lint run           # Run linter (install separately)
+go mod verify               # Verify dependencies
+
+# Profiling
+go test -cpuprofile=cpu.prof
+go test -memprofile=mem.prof
+go tool pprof cpu.prof
+go tool trace trace.out
+```
+
+#### Common Patterns
+
+```go
+// If-else
+if err != nil {
+    return err
+}
+
+// For loops
+for i := 0; i < 10; i++ {}
+for condition {}
+for range slice {}
+for {}
+
+// Switch
+switch value {
+case 1:
+    // ...
+default:
+    // ...
+}
+
+// Type switch
+switch v := value.(type) {
+case int:
+    // ...
+case string:
+    // ...
+}
+
+// Error handling
+result, err := doSomething()
+if err != nil {
+    return fmt.Errorf("do something: %w", err)
+}
+
+// Defer
+func readFile() error {
+    f, err := os.Open("file")
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+    // ...
+}
+
+// Channel patterns
+ch := make(chan int)
+ch <- value        // Send
+value := <-ch      // Receive
+close(ch)          // Close
+
+// Select
+select {
+case msg := <-ch1:
+    // ...
+case ch2 <- msg:
+    // ...
+case <-time.After(time.Second):
+    // ...
+default:
+    // ...
+}
+
+// Context
+ctx := context.Background()
+ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+defer cancel()
+
+// WaitGroup
+var wg sync.WaitGroup
+wg.Add(1)
+go func() {
+    defer wg.Done()
+    // ...
+}()
+wg.Wait()
+
+// Mutex
+var mu sync.Mutex
+mu.Lock()
+defer mu.Unlock()
+// critical section
+```
+
+#### Quick Reference Tables
+
+| **Type** | **Declaration** | **Zero Value** |
+|----------|-----------------|----------------|
+| `int` | `var i int` | `0` |
+| `float64` | `var f float64` | `0.0` |
+| `string` | `var s string` | `""` |
+| `bool` | `var b bool` | `false` |
+| `pointer` | `var p *int` | `nil` |
+| `slice` | `var s []int` | `nil` |
+| `map` | `var m map[string]int` | `nil` |
+| `channel` | `var ch chan int` | `nil` |
+| `func` | `var f func()` | `nil` |
+| `interface` | `var i interface{}` | `nil` |
+
+| **Common Functions** | **Purpose** |
+|---------------------|-------------|
+| `len(s)` | Length of string, slice, map, channel |
+| `cap(s)` | Capacity of slice |
+| `make(T, size)` | Create slice, map, channel |
+| `new(T)` | Allocate memory (returns pointer) |
+| `append(s, v)` | Append to slice |
+| `copy(dst, src)` | Copy slice |
+| `delete(m, k)` | Delete map key |
+| `close(ch)` | Close channel |
+
+---
+
+## สรุปภาคที่ 5: การเป็น Go Developer มืออาชีพ
+
+```mermaid
+flowchart LR
+    subgraph Skills["ทักษะระดับมืออาชีพ"]
+        S1[วัดประสิทธิภาพ<br/>ด้วย Benchmark & Profile]
+        S2[จัดการ Context<br/>และ Concurrency]
+        S3[เขียน Generic Code<br/>ที่ reusable]
+        S4[ออกแบบ HTTP Client<br/>ที่ resilient]
+        S5[ปฏิบัติตาม<br/>Go Idioms]
+    end
+    
+    subgraph Tools["เครื่องมือ"]
+        T1[pprof]
+        T2[trace]
+        T3[golangci-lint]
+        T4[go test -race]
+        T5[gvm]
+    end
+    
+    subgraph Outcomes["ผลลัพธ์"]
+        O1[โค้ดที่<br/>มีประสิทธิภาพสูง]
+        O2[ระบบที่<br/>เสถียรและปลอดภัย]
+        O3[บำรุงรักษา<br/>และขยายง่าย]
+        O4[ผ่านการทดสอบ<br/>และ verified]
+    end
+    
+    Skills --> Outcomes
+    Tools --> Outcomes
+```
+
+**สิ่งที่ได้เรียนรู้ในภาคที่ 5:**
+
+1. **การวัดประสิทธิภาพ (บทที่ 34, 36)**:
+   - เขียน benchmark ด้วย `go test -bench`
+   - ใช้ pprof วิเคราะห์ CPU, Memory, Goroutine
+   - ระบุ bottleneck และ optimize
+
+2. **เทคนิคขั้นสูง (บทที่ 37-39)**:
+   - Context สำหรับ timeout, cancellation, values
+   - Generics สำหรับ type-safe reusable code
+   - OOP patterns ใน Go (composition, interfaces)
+
+3. **เครื่องมือระดับมืออาชีพ (บทที่ 35, 40)**:
+   - HTTP client with retry and circuit breaker
+   - Version management with gvm
+   - Go idioms และ best practices
+
+4. **เอกสารอ้างอิง (บทที่ 42)**:
+   - Cheatsheet สำหรับการค้นหาด่วน
+   - Common patterns และ anti-patterns
+
+พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 6-10** สำหรับการพัฒนา Production-ready applications ด้วยเครื่องมือยอดนิยม, Clean Architecture, DDD, และการผสานระบบภายนอก
 
 ## ภาคที่ 6: เครื่องมือและไลบรารียอดนิยม (บทที่ 43–45)
 
