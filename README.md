@@ -2256,23 +2256,43 @@ srv.ListenAndServe()
 
  
  
-```mermaid
-flowchart TB
-    Client([Client]) -->|HTTP Request<br/>GET /api/users| Server
-
-    subgraph Server [HTTP Server (Go)]
-        Router[Router / ServeMux<br/>- จับคู่ path + method<br/>- อาจมี middleware chain]
-        Middleware[Middleware (ถ้ามี)<br/>- Logging, Auth, Recovery, etc.]
-        Handler[Handler Func<br/>- อ่าน request body/params<br/>- ประมวลผล (DB, external API, etc.)<br/>- เขียน response (JSON, HTML, etc.)]
-        Writer[Response Writer<br/>- กำหนด Header, Status Code<br/>- เขียน response body]
-        
-        Router --> Middleware
-        Middleware --> Handler
-        Handler --> Writer
-    end
-
-    Writer -->|HTTP Response<br/>200 OK, JSON data| Client
-```
+   [Client]
+       |
+       | HTTP Request (GET /api/users)
+       v
++-----------------------------------------------+
+|               HTTP Server (Go)                |
+|  +-----------------------------------------+  |
+|  |           Router / ServeMux             |  |
+|  |  - จับคู่ path + method                  |  |
+|  |  - อาจมี middleware chain               |  |
+|  +-------------------+---------------------+  |
+|                      |                         |
+|                      v                         |
+|  +-----------------------------------------+  |
+|  |            Middleware (ถ้ามี)            |  |
+|  |  - Logging, Auth, Recovery, etc.        |  |
+|  +-------------------+---------------------+  |
+|                      |                         |
+|                      v                         |
+|  +-----------------------------------------+  |
+|  |              Handler Func               |  |
+|  |  - อ่าน request body/params             |  |
+|  |  - ประมวลผล (DB, external API, etc.)   |  |
+|  |  - เขียน response (JSON, HTML, etc.)    |  |
+|  +-------------------+---------------------+  |
+|                      |                         |
+|                      v                         |
+|  +-----------------------------------------+  |
+|  |              Response Writer            |  |
+|  |  - กำหนด Header, Status Code            |  |
+|  |  - เขียน response body                  |  |
+|  +-----------------------------------------+  |
++-----------------------------------------------+
+       |
+       | HTTP Response (200 OK, JSON data)
+       v
+   [Client]
 
  
 **คำอธิบายองค์ประกอบ** (เพื่อนำไปสร้างใน draw.io):
