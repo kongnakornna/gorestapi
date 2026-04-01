@@ -2225,6 +2225,375 @@ type User struct {
 
 ### 13.4 การสืบทอด (embedding) แทน inheritance
 Go ไม่มี inheritance แต่ใช้ composition ผ่าน embedding
+
+## Go: การสืบทอด (Embedding) แทน Inheritance
+
+ในภาษา Go ไม่มีกลไกการสืบทอดแบบ **inheritance** อย่างภาษาเชิงวัตถุอื่น ๆ (เช่น Java, C++, Python) แต่ใช้ **composition** ผ่าน **embedding** (การฝัง struct) เพื่อให้เกิดการ reuse โค้ดและขยายความสามารถ ซึ่งใกล้เคียงกับแนวคิด “มี” (has-a) มากกว่า “เป็น” (is-a)
+
+---
+
+### 1. embedding คืออะไร?
+**Embedding** คือการประกาศ struct ชนิดหนึ่งเป็นฟิลด์แบบไม่ระบุชื่อ (anonymous field) ภายใน struct อื่น ทำให้ฟิลด์และเมธอดของ struct ที่ถูกฝังถูก “เลื่อนขั้น” (promote) มาเป็นส่วนหนึ่งของ struct ภายนอก ราวกับว่า struct ภายนอก “สืบทอด” พฤติกรรมนั้นมา
+
+```go
+type Animal struct {
+    Name string
+}
+
+func (a Animal) Speak() string {
+    return "some sound"
+}
+
+type Dog struct {
+    Animal   // embedding
+    Breed string
+}
+```
+
+### 2. inheritance คืออะไร?
+**Inheritance** (การสืบทอด) เป็นกลไกในภาษา OOP ที่คลาสลูกสามารถสืบทอดฟิลด์และเมธอดจากคลาสแม่ ทำให้เกิดความสัมพันธ์แบบ “is-a” และสามารถ override เมธอดได้
+
+Go ไม่มี inheritance แบบนี้ แต่ใช้ embedding + interface เพื่อให้ได้ผลลัพธ์คล้ายกันโดยเน้นที่ความเรียบง่ายและหลีกเลี่ยงปัญหา “เปรียบเทียบเพชร” (diamond problem) และลดความซับซ้อนของลำดับชั้น
+
+---
+
+### 3. หลักการทำงานของ Embedding
+
+- **Anonymous field**: เมื่อฝัง struct โดยไม่ระบุชื่อฟิลด์ ชื่อของชนิด struct นั้นจะกลายเป็นชื่อฟิลด์โดยปริยาย (เข้าถึงได้ เช่น `dog.Animal`)
+- **Method promotion**: เมธอดของ struct ที่ถูกฝังจะถูกเลื่อนขึ้นมาให้สามารถเรียกผ่าน struct ภายนอกได้โดยตรง (เช่น `dog.Speak()`)
+- **Overriding**: หาก struct ภายนอกมีเมธอดชื่อซ้ำกับเมธอดที่ถูก promote เมธอดของ struct ภายนอกจะถูกเรียกก่อน (shadowing)
+- **Multiple embedding**: สามารถฝังหลาย struct ได้ (คล้าย multiple composition)
+- **Access to embedded fields**: สามารถเข้าถึงฟิลด์ของ struct ที่ถูกฝังได้โดยตรงหรือผ่านชื่อฟิลด์ก็ได้
+
+---
+
+### 4. Dataflow Diagram (รูปแบบ Flowchart TB)
+
+ด้านล่างเป็นผังการไหลของข้อมูลเมื่อมีการเรียกเมธอดบน struct ที่มีการ embedding (สามารถนำไปสร้างใน draw.io ได้ตามรูปแบบด้านล่าง):
+
+```mermaid
+graph TB
+    subgraph Caller
+        A[เรียก dog.Speak]
+    end
+
+    subgraph Dog Struct
+        B{มีเมธอด Speak ใน Dog หรือไม่?}
+        C[เรียก Dog.Speak]
+        D[เรียก Animal.Speak ผ่าน promotion]
+    end
+
+    subgraph Animal Struct
+        E[Animal.Speak]
+        F[คืนค่า string]
+    end
+
+    A --> B
+    B -- มี --> C
+    B -- ไม่มี --> D
+    C --> F
+    D --> E --> F
+    F --> G[ส่งค่ากลับไปยัง Caller]
+```
+
+**คำอธิบายผัง**:
+1. ผู้เรียก (Caller) เรียกเมธอด `Speak()` บนตัวแปร `dog` ซึ่งเป็น struct `Dog`
+2. Go จะตรวจสอบว่า `Dog` มีเมธอด `Speak` ประกาศไว้โดยตรงหรือไม่
+   - **ถ้ามี** → เรียกเมธอดนั้นทันที (overriding)
+   - **ถ้าไม่มี** → ค้นหาเมธอด `Speak` ใน struct ที่ถูกฝัง (`Animal`) เนื่องจากมีการ promote เมธอดขึ้นมา
+3. เมื่อพบเมธอดใน `Animal` จะถูกเรียกและทำงาน
+4. ผลลัพธ์ถูกส่งกลับไปยังผู้เรียก
+
+สำหรับการเข้าถึงฟิลด์ก็มีลักษณะเดียวกัน: ถ้าไม่พบฟิลด์ใน struct หลัก จะค้นหาใน struct ที่ถูกฝังตามลำดับ (ถ้ามีหลายตัว)
+
+---
+
+### 5. ตัวอย่างโค้ดแบบละเอียด
+
+#### 5.1 การฝัง struct พื้นฐาน
+
+```go
+package main
+
+import "fmt"
+
+// Struct พื้นฐาน
+type Animal struct {
+    Name string
+    Age  int
+}
+
+func (a Animal) Speak() string {
+    return "Animal makes a sound"
+}
+
+// Struct Dog ฝัง Animal
+type Dog struct {
+    Animal   // embedding
+    Breed    string
+}
+
+func (d Dog) Speak() string {
+    // Override เมธอด Speak
+    return "Dog barks"
+}
+
+func main() {
+    dog := Dog{
+        Animal: Animal{Name: "Max", Age: 3},
+        Breed:  "Golden Retriever",
+    }
+
+    // เข้าถึงฟิลด์จาก Animal โดยตรง
+    fmt.Println("Name:", dog.Name)        // Max
+    fmt.Println("Age:", dog.Age)          // 3
+    fmt.Println("Breed:", dog.Breed)      // Golden Retriever
+
+    // เรียกเมธอด Speak (ใช้ของ Dog)
+    fmt.Println(dog.Speak())              // Dog barks
+
+    // เรียกเมธอดของ Animal โดยตรง (ถ้าต้องการ)
+    fmt.Println(dog.Animal.Speak())       // Animal makes a sound
+}
+```
+
+#### 5.2 Multiple Embedding
+
+```go
+type Speaker interface {
+    Speak() string
+}
+
+type Dog struct {
+    Name string
+}
+
+func (d Dog) Speak() string {
+    return "Woof!"
+}
+
+type Robot struct {
+    Model string
+}
+
+func (r Robot) Speak() string {
+    return "Beep boop"
+}
+
+// CyborgDog ฝังทั้ง Dog และ Robot
+type CyborgDog struct {
+    Dog
+    Robot
+}
+
+func main() {
+    cd := CyborgDog{
+        Dog:   Dog{Name: "Rex"},
+        Robot: Robot{Model: "X-100"},
+    }
+
+    // ถ้าเมธอด Speak ซ้ำกัน (ทั้ง Dog และ Robot มี) จะเกิด ambiguity
+    // ต้องระบุให้ชัดเจนว่าใช้ของตัวไหน
+    fmt.Println(cd.Dog.Speak())   // Woof!
+    fmt.Println(cd.Robot.Speak()) // Beep boop
+
+    // หากมี interface เป็นตัวรับ ก็สามารถส่ง CyborgDog ไปได้ (เพราะมีเมธอด Speak ผ่านการ promote)
+    var s Speaker = cd.Dog
+    fmt.Println(s.Speak()) // Woof!
+}
+```
+
+#### 5.3 ฝัง interface
+
+สามารถฝัง interface เพื่อให้ struct ต้อง implement เมธอดของ interface นั้น ๆ โดยอัตโนมัติ (ใช้มากในแพ็กเกจมาตรฐาน เช่น `io`)
+
+```go
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+// ReadWriter ฝังทั้ง Reader และ Writer
+type ReadWriter interface {
+    Reader
+    Writer
+}
+
+// MyReadWriter implement ReadWriter
+type MyReadWriter struct{}
+
+func (m MyReadWriter) Read(p []byte) (n int, err error) {
+    // implementation
+    return 0, nil
+}
+
+func (m MyReadWriter) Write(p []byte) (n int, err error) {
+    // implementation
+    return 0, nil
+}
+```
+
+---
+
+### 6. การใช้งานจริง (Real-world Examples)
+
+#### 6.1 HTTP Handler ใน Go
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+// Logger ฝัง log.Logger (สมมติ)
+type Logger struct {
+    Prefix string
+}
+
+func (l Logger) Log(msg string) {
+    fmt.Printf("[%s] %s\n", l.Prefix, msg)
+}
+
+// MyHandler ฝัง Logger และ implement http.Handler
+type MyHandler struct {
+    Logger  // embedding
+    Message string
+}
+
+func (h MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    h.Log("Request received: " + r.URL.Path)
+    fmt.Fprintf(w, h.Message)
+}
+
+func main() {
+    handler := MyHandler{
+        Logger:  Logger{Prefix: "API"},
+        Message: "Hello, world!",
+    }
+    http.Handle("/", handler)
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+#### 6.2 Embedding ใน Database Model (GORM)
+
+ไลบรารี GORM ใช้ embedding เพื่อให้ model มีฟิลด์มาตรฐานอย่าง `ID`, `CreatedAt`, `UpdatedAt`
+
+```go
+import "gorm.io/gorm"
+
+type BaseModel struct {
+    ID        uint           `gorm:"primarykey"`
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+type User struct {
+    BaseModel  // embedding
+    Name       string
+    Email      string
+}
+
+// User จะมีฟิลด์ ID, CreatedAt, UpdatedAt, DeletedAt โดยอัตโนมัติ
+```
+
+---
+
+### 7. เทมเพลตและรูปแบบการใช้งาน
+
+#### 7.1 เทมเพลตสำหรับ struct ที่ใช้ embedding
+
+```go
+// Base struct สำหรับเก็บฟิลด์ทั่วไป
+type Base struct {
+    ID   int
+    Name string
+}
+
+func (b Base) Display() string {
+    return fmt.Sprintf("ID: %d, Name: %s", b.ID, b.Name)
+}
+
+// Derived struct ที่ฝัง Base และเพิ่มฟิลด์พิเศษ
+type Derived struct {
+    Base        // embedding
+    ExtraField string
+}
+
+// ถ้าต้องการ override เมธอด Display
+func (d Derived) Display() string {
+    return d.Base.Display() + ", Extra: " + d.ExtraField
+}
+```
+
+#### 7.2 การใช้ embedding เพื่อจำลองการสืบทอดพฤติกรรม
+
+```go
+type Animal interface {
+    Speak() string
+    Move() string
+}
+
+type DefaultAnimal struct {
+    Name string
+}
+
+func (a DefaultAnimal) Speak() string {
+    return "..."
+}
+
+func (a DefaultAnimal) Move() string {
+    return "moves"
+}
+
+type Cat struct {
+    DefaultAnimal
+}
+
+func (c Cat) Speak() string {
+    return "Meow"
+}
+
+// Cat มีเมธอด Move() มาจาก DefaultAnimal โดยอัตโนมัติ
+```
+
+---
+
+### 8. ข้อดีของ Embedding เมื่อเทียบกับ Inheritance
+
+| คุณสมบัติ               | Embedding (Go)                         | Inheritance (OOP)                |
+|------------------------|----------------------------------------|----------------------------------|
+| ความสัมพันธ์           | “has-a” (composition)                  | “is-a” (inheritance)             |
+| การ reuse โค้ด         | ฝัง struct/interface                   | สืบทอดคลาสแม่                    |
+| Polymorphism           | ผ่าน interface                         | ผ่าน method overriding + subclass|
+| ความซับซ้อนของลำดับชั้น| ระดับชั้นน้อย เรียบง่าย                 | อาจเกิด deep hierarchy            |
+| Diamond problem        | ไม่มี                                   | มีในบางภาษา (C++)                |
+| การทดสอบ (test)       | ง่าย เพราะแยกส่วนประกอบ                | อาจต้อง mock คลาสแม่              |
+
+---
+
+### 9. สรุป
+
+- **Embedding** เป็นวิธีการแทน inheritance ใน Go โดยใช้ composition ผ่าน anonymous field
+- ช่วยให้ reuse โค้ดโดยไม่ต้องสร้างลำดับชั้นที่ซับซ้อน
+- เหมาะกับแนวคิด “โปรแกรมโดยใช้ interface ไม่ใช่ inheritance” (Program to an interface, not an implementation)
+- ใช้กันอย่างแพร่หลายในไลบรารี Go มาตรฐานและเฟรมเวิร์คต่าง ๆ
+
+หากต้องการนำผัง dataflow ไปใช้ใน draw.io สามารถ copy โค้ด Mermaid ด้านบนไปวางใน draw.io (หรือใช้โหมด Mermaid) หรือสร้าง flowchart ด้วยตัวเองตามที่อธิบายไว้
+
+---
+
+**เอกสารอ้างอิง**  
+- [Effective Go - Embedding](https://golang.org/doc/effective_go#embedding)  
+- [The Go Programming Language Specification - Struct types](https://golang.org/ref/spec#Struct_types)
+
+
 ```go
 type Animal struct {
     Name string
