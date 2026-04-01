@@ -1838,48 +1838,8 @@ sequenceDiagram
     deactivate L1
     Note over main: โปรแกรมทำงานต่อ
 ```
-
----
-
-## 2. แผนภาพการไหล (Flowchart) – กระบวนการตัดสินใจของ `recover`
+## การไหล (Flowchart) – กระบวนการตัดสินใจของ `recover`
  
----
-
-## 1. Mermaid Flowchart (ปรับปรุง)
-
-```mermaid
-graph TD
-    Start([เกิด panic]) --> A{ฟังก์ชันนี้มี defer หรือไม่?}
-    
-    A -->|ไม่มี defer| B[ส่ง panic ไปยัง caller]
-    A -->|มี defer| C[execute defer ทั้งหมด<br/>ตามลำดับ LIFO]
-    
-    C --> D{ใน defer มี recover()?}
-    D -->|มี| E[recover จับ panic value]
-    E --> F[หยุดการคลายสแต็กที่ฟังก์ชันนี้]
-    F --> G[ฟังก์ชัน return ปกติ]
-    G --> H([โปรแกรมทำงานต่อ])
-    
-    D -->|ไม่มี recover| B
-    
-    B --> I{caller คือ main?}
-    I -->|ใช่| J[โปรแกรมหยุด<br/>พิมพ์ stack trace]
-    I -->|ไม่ใช่| K[ย้ายไปยัง caller]
-    K --> A
-    
-    style E fill:#9f9,stroke:#333
-    style J fill:#f99,stroke:#333
-    style H fill:#9cf,stroke:#333
-```
-
-**คำอธิบายเพิ่มเติม:**
-- หลังจาก `recover` จับ panic ได้ การคลายสแต็กจะหยุดทันที และฟังก์ชันจะ return ตามปกติโดยไม่ส่ง panic ต่อ
-- หากไม่มี `recover` ใน defer ใด ๆ panic จะถูกส่งขึ้นไปยัง caller ซ้ำจนกว่าจะถึง `main` หรือพบ `recover`
-
----
-
-## 2. ASCII Flowchart (แบบข้อความ)
-
 ```
                      ┌─────────────────────┐
                      │     เกิด panic      │
@@ -2061,6 +2021,7 @@ func PlaceOrder(db *gorm.DB, userID uint, items []CartItem) error {
 - **เลือกใช้ isolation level** หากต้องการปรับระดับความเข้มงวด สามารถตั้งค่าได้ผ่าน `tx.Exec("SET TRANSACTION ISOLATION LEVEL ...")` ก่อนเริ่ม transaction
 
 ## สรุป
+---
 การใช้ GORM transaction ช่วยให้เราสามารถทำ rollback ได้โดยอัตโนมัติเมื่อเกิดความผิดพลาด การเพิ่ม lock ที่แถว stock ช่วยให้ข้อมูลสอดคล้องแม้มีผู้ใช้หลายคนสั่งซื้อพร้อมกัน วิธีนี้ทำให้การทำงานที่ต้องอาศัยความถูกต้องของข้อมูลหลายส่วน (order, stock, receipt) มีความปลอดภัยและเชื่อถือได้
 ---
 
