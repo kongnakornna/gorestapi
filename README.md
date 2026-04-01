@@ -10,6 +10,15 @@ An API dev written in Golang with chi-route and Gorm. Write restful API with fas
 - username : demo4
 - password : demo4
 
+
+![Icmon](https://github.com/user-attachments/assets/8c41aa84-257a-40cd-9141-4a24f4202937)
+
+![Icmon2](https://github.com/user-attachments/assets/fedc022d-1210-42ba-a8de-b311ee1e731c)
+
+![Icmon3](https://github.com/user-attachments/assets/92e759bb-9623-4e3d-ac5d-f82ace5569af)
+
+![Icmon4](https://github.com/user-attachments/assets/61d5121b-3fe8-4249-b8a3-979f36961eb6)
+
 ## Architecture
 
 In this project use 3 layer architecture
