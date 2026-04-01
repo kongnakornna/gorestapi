@@ -999,6 +999,770 @@ outer:
 (เมื่อเจอ (1,1) จะออกจาก outer loop ทันที)
 
 ---
+# 9.1 if-else
+
+## if-else คืออะไร?
+**if-else** คือคำสั่งควบคุมเงื่อนไขในภาษา Go ที่ใช้ตัดสินใจเลือก执行บล็อกโค้ดใดบล็อกหนึ่งตามค่าความจริง (boolean) ของเงื่อนไขที่กำหนด
+
+## if-else มีกี่แบบ?
+ใน Go รูปแบบของ if-else มี 4 แบบหลัก ๆ:
+
+1. **if** – มีเพียงเงื่อนไขเดียว
+2. **if-else** – มีทางเลือกสองทาง
+3. **if-else if-else** – มีหลายทางเลือก
+4. **if พร้อม short statement** – ประกาศตัวแปรชั่วคราวภายในเงื่อนไข
+
+## ใช้อย่างไร ในกรณีไหน?
+- **ตรวจสอบ error**: หลังเรียกฟังก์ชันที่คืนค่า error เช่น `if err != nil { ... }`
+- **ตรวจสอบค่า**: เปรียบเทียบตัวแปรกับค่าคงที่หรือผลลัพธ์
+- **กำหนดค่าเริ่มต้นตามเงื่อนไข**: ใช้ short statement เพื่อประกาศตัวแปรที่ใช้เฉพาะภายใน scope
+- **ร่วมกับ GORM**: ตรวจสอบผลลัพธ์จากฐานข้อมูลก่อนดำเนินการต่อ
+- **ร่วมกับ Redis**: ตรวจสอบการมีอยู่ของ key หรือข้อผิดพลาดจากคำสั่ง Redis
+
+## หลักการทำงาน
+1. ประเมินค่า **boolean expression** ใน `if`
+2. ถ้า `true` → ทำบล็อกใน `if`
+3. ถ้า `false` → ถ้ามี `else` จะทำบล็อกใน `else` (หรือไปตรวจสอบ `else if` ถัดไป)
+4. ตัวแปรที่ประกาศใน **short statement** จะมีขอบเขตอยู่ภายในบล็อก if-else เท่านั้น
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Cond{เงื่อนไขเป็น true?}
+    Cond -- true --> BlockIf[ทำบล็อก if]
+    Cond -- false --> CheckElse{มี else?}
+    CheckElse -- มี --> BlockElse[ทำบล็อก else]
+    CheckElse -- ไม่มี --> End
+    BlockIf --> End([จบ])
+    BlockElse --> End
+```
+
+## ตัวอย่างการใช้งานจริง
+
+### 1. การตรวจสอบ error พื้นฐาน
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    return a / b, nil
+}
+
+func main() {
+    result, err := divide(10, 0)
+    if err != nil {
+        fmt.Println("Error:", err)
+    } else {
+        fmt.Println("Result:", result)
+    }
+}
+```
+
+### 2. if พร้อม short statement (นิยมใช้กับ error)
+```go
+if err := someFunction(); err != nil {
+    // จัดการ error
+    return err
+}
+// ดำเนินการต่อเมื่อไม่มี error
+```
+
+### 3. การใช้ if-else กับ GORM (ค้นหาผู้ใช้ ถ้าไม่พบให้สร้างใหม่)
+```go
+import "gorm.io/gorm"
+
+func GetOrCreateUser(db *gorm.DB, email string) (*User, error) {
+    var user User
+    result := db.Where("email = ?", email).First(&user)
+    
+    if result.Error != nil {
+        if result.Error == gorm.ErrRecordNotFound {
+            // สร้างผู้ใช้ใหม่
+            user = User{Email: email, Name: "New User"}
+            if err := db.Create(&user).Error; err != nil {
+                return nil, err
+            }
+            return &user, nil
+        }
+        return nil, result.Error
+    }
+    return &user, nil
+}
+```
+
+### 4. การใช้ if-else กับ Redis Transaction (ตรวจสอบ key ก่อนทำ multi/exec)
+```go
+import (
+    "context"
+    "github.com/go-redis/redis/v8"
+)
+
+func TransferMoney(ctx context.Context, rdb *redis.Client, fromKey, toKey string, amount int64) error {
+    // ตรวจสอบว่า fromKey มี balance เพียงพอ
+    balance, err := rdb.Get(ctx, fromKey).Int64()
+    if err != nil {
+        if err == redis.Nil {
+            return fmt.Errorf("key %s does not exist", fromKey)
+        }
+        return err
+    }
+    
+    if balance < amount {
+        return fmt.Errorf("insufficient balance")
+    }
+    
+    // ทำ transaction
+    _, err = rdb.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+        pipe.DecrBy(ctx, fromKey, amount)
+        pipe.IncrBy(ctx, toKey, amount)
+        return nil
+    })
+    return err
+}
+```
+
+---
+
+# 9.2 switch
+
+## switch คืออะไร?
+**switch** คือคำสั่งสำหรับเลือกทำบล็อกโค้ดใดบล็อกหนึ่งจากหลายทางเลือก โดยพิจารณาจากค่าของ expression หรือประเภทของตัวแปร
+
+## switch มีกี่แบบ?
+ใน Go มี switch 3 รูปแบบหลัก:
+
+1. **Expression switch** – เปรียบเทียบค่า expression กับ case ต่างๆ
+2. **Type switch** – ใช้กับ interface เพื่อตรวจสอบประเภทของค่า
+3. **Switch without expression** – ใช้เหมือน if-else chain
+
+นอกจากนี้ยังมีคุณสมบัติพิเศษ:
+- **case หลายค่า** – คั่นด้วย comma
+- **fallthrough** – ให้ทำงานต่อไปยัง case ถัดไป (ไม่ต้อง break)
+- **default** – เมื่อไม่มี case ใดตรง
+
+## ใช้อย่างไร ในกรณีไหน?
+- **Expression switch**: ตรวจสอบค่าตัวแปรที่มีหลายค่าที่เป็นไปได้ (enum, status)
+- **Type switch**: รับค่า interface แล้วต้องการจัดการตามประเภทจริง
+- **Switch without expression**: แทน if-else ที่ซับซ้อน อ่านง่ายขึ้น
+- **ร่วมกับ GORM**: ใช้ switch กับฟิลด์ status, type, category
+- **ร่วมกับ Redis**: ใช้ switch กับผลลัพธ์ของคำสั่ง Redis หรือประเภท error
+
+## หลักการทำงาน
+1. ประเมินค่า **expression** (ถ้ามี) หรือไม่ก็ถือว่า expression เป็น `true`
+2. ตรวจสอบ case ตามลำดับจากบนลงล่าง
+3. ถ้า case ตรง → ทำบล็อกนั้น ถ้าไม่มี `fallthrough` จะออกจาก switch ทันที
+4. ถ้าไม่มี case ใดตรง → ทำ `default` (ถ้ามี)
+5. **Type switch** จะทำการ type assertion ใน case
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Eval{ประเมิน expression}
+    Eval --> CheckCase{มี case ที่ตรง?}
+    CheckCase -- มี --> DoCase[ทำบล็อก case]
+    DoCase --> HasFall{มี fallthrough?}
+    HasFall -- ใช่ --> NextCase[ทำ case ถัดไป]
+    HasFall -- ไม่ใช่ --> End
+    NextCase --> End
+    CheckCase -- ไม่มี --> HasDefault{มี default?}
+    HasDefault -- ใช่ --> DoDefault[ทำ default]
+    HasDefault -- ไม่มี --> End
+    DoDefault --> End([จบ])
+```
+
+## ตัวอย่างการใช้งานจริง
+
+### 1. Expression switch พื้นฐาน
+```go
+func getDayName(day int) string {
+    switch day {
+    case 1:
+        return "Monday"
+    case 2:
+        return "Tuesday"
+    case 3, 4, 5: // case หลายค่า
+        return "Weekday"
+    default:
+        return "Weekend"
+    }
+}
+```
+
+### 2. switch พร้อม short statement
+```go
+switch err := someFunc(); err {
+case nil:
+    fmt.Println("success")
+default:
+    fmt.Println("error:", err)
+}
+```
+
+### 3. Type switch
+```go
+func processValue(v interface{}) {
+    switch v := v.(type) {
+    case int:
+        fmt.Printf("int: %d\n", v)
+    case string:
+        fmt.Printf("string: %s\n", v)
+    case bool:
+        fmt.Printf("bool: %t\n", v)
+    default:
+        fmt.Printf("unknown type: %T\n", v)
+    }
+}
+```
+
+### 4. Switch without expression (ใช้แทน if-else)
+```go
+score := 85
+switch {
+case score >= 90:
+    grade = "A"
+case score >= 80:
+    grade = "B"
+case score >= 70:
+    grade = "C"
+default:
+    grade = "F"
+}
+```
+
+### 5. ใช้ switch กับ GORM (จัดการ status ของ order)
+```go
+func ProcessOrder(db *gorm.DB, orderID uint) error {
+    var order Order
+    if err := db.First(&order, orderID).Error; err != nil {
+        return err
+    }
+
+    switch order.Status {
+    case "pending":
+        // ตรวจสอบ stock และทำการจอง
+        if err := ReserveStock(db, order); err != nil {
+            order.Status = "failed"
+        } else {
+            order.Status = "confirmed"
+        }
+    case "confirmed":
+        // ส่งของ
+        order.Status = "shipped"
+    case "shipped":
+        return fmt.Errorf("order already shipped")
+    default:
+        return fmt.Errorf("unknown status: %s", order.Status)
+    }
+
+    return db.Save(&order).Error
+}
+```
+
+### 6. ใช้ switch กับ Redis (จัดการ error types)
+```go
+func GetValue(ctx context.Context, rdb *redis.Client, key string) (string, error) {
+    val, err := rdb.Get(ctx, key).Result()
+    switch err {
+    case nil:
+        return val, nil
+    case redis.Nil:
+        return "", fmt.Errorf("key %s not found", key)
+    default:
+        return "", fmt.Errorf("redis error: %w", err)
+    }
+}
+```
+
+---
+
+# 9.3 for loop
+
+## for loop คืออะไร?
+**for loop** คือโครงสร้างวนซ้ำเพียงหนึ่งเดียวในภาษา Go (ไม่มี while หรือ do-while) แต่สามารถปรับให้มีรูปแบบต่าง ๆ ได้
+
+## for loop มีกี่แบบ?
+for loop มี 4 รูปแบบหลัก:
+
+1. **Classic for** – `for init; condition; post { }`
+2. **While-style** – `for condition { }`
+3. **Infinite loop** – `for { }` (ใช้ break ออก)
+4. **Range loop** – `for index, value := range collection { }` (จะกล่าวในหัวข้อ 9.4)
+
+## ใช้อย่างไร ในกรณีไหน?
+- **Classic for**: เมื่อต้องการกำหนดตัวแปรเริ่มต้น, เงื่อนไข, และการเปลี่ยนแปลงในแต่ละรอบ
+- **While-style**: วนซ้ำตราบใดที่เงื่อนไขยังเป็น true
+- **Infinite loop**: ใช้กับกรณีที่ต้องรอ event หรือต้อง break ตามเงื่อนไขภายใน
+- **ร่วมกับ GORM**: ใช้วนซ้ำสำหรับ batch processing หรือ retry เมื่อเกิด deadlock
+- **ร่วมกับ Redis**: ใช้ retry loop สำหรับการทำ transaction หรือการรอ lock
+
+## หลักการทำงาน
+1. **Classic for**:  
+   - init: ทำงานก่อน loop ครั้งแรก  
+   - condition: ตรวจสอบก่อนแต่ละรอบ ถ้า true ทำ body แล้วไป post  
+   - post: ทำงานหลัง body ก่อนกลับไปตรวจสอบ condition
+2. **While-style**: ตรวจสอบ condition ก่อนแต่ละรอบ ถ้า true ทำ body
+3. **Infinite loop**: ทำงานไปเรื่อย ๆ จนกว่าจะเจอ break
+
+## Dataflow Diagram (Flowchart TB) - Classic for
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Init[init]
+    Init --> Cond{condition true?}
+    Cond -- true --> Body[ทำ body]
+    Body --> Post[post]
+    Post --> Cond
+    Cond -- false --> End([จบ])
+```
+
+## ตัวอย่างการใช้งานจริง
+
+### 1. Classic for loop
+```go
+for i := 0; i < 5; i++ {
+    fmt.Println(i)
+}
+```
+
+### 2. While-style (for condition)
+```go
+sum := 1
+for sum < 1000 {
+    sum += sum
+}
+```
+
+### 3. Infinite loop พร้อม break
+```go
+for {
+    // ทำบางอย่าง
+    if condition {
+        break
+    }
+}
+```
+
+### 4. การใช้ for loop กับ GORM (Batch insert)
+```go
+func BatchCreateUsers(db *gorm.DB, users []User, batchSize int) error {
+    for i := 0; i < len(users); i += batchSize {
+        end := i + batchSize
+        if end > len(users) {
+            end = len(users)
+        }
+        batch := users[i:end]
+        if err := db.Create(&batch).Error; err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+### 5. การใช้ for loop กับ Redis (Retry with backoff)
+```go
+func SetWithRetry(ctx context.Context, rdb *redis.Client, key string, value interface{}, ttl time.Duration) error {
+    var err error
+    for attempt := 0; attempt < 3; attempt++ {
+        err = rdb.Set(ctx, key, value, ttl).Err()
+        if err == nil {
+            return nil
+        }
+        // exponential backoff
+        time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
+    }
+    return fmt.Errorf("failed after 3 attempts: %w", err)
+}
+```
+
+### 6. การใช้ for loop กับ Redis Transaction (WATCH + MULTI/EXEC)
+```go
+func IncrementWithRetry(ctx context.Context, rdb *redis.Client, key string) error {
+    for retries := 0; retries < 10; retries++ {
+        err := rdb.Watch(ctx, func(tx *redis.Tx) error {
+            val, err := tx.Get(ctx, key).Int64()
+            if err != nil && err != redis.Nil {
+                return err
+            }
+            _, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+                pipe.Set(ctx, key, val+1, 0)
+                return nil
+            })
+            return err
+        }, key)
+        if err == nil {
+            return nil
+        }
+        if err == redis.TxFailedErr {
+            // conflict, retry
+            continue
+        }
+        return err
+    }
+    return fmt.Errorf("max retries exceeded")
+}
+```
+
+---
+
+# 9.4 range
+
+## range คืออะไร?
+**range** เป็นคีย์เวิร์ดที่ใช้ร่วมกับ `for` เพื่อวนซ้ำผ่าน elements ของ collection เช่น array, slice, map, string, channel
+
+## range มีกี่แบบ?
+range ใช้ร่วมกับ `for` ในรูปแบบ `for index, value := range collection` แต่รูปแบบที่คืนค่าจะแตกต่างกันไปตามชนิดของ collection:
+
+| Collection | คืนค่าแรก | คืนค่าที่สอง |
+|------------|----------|------------|
+| array, slice | index | value |
+| string | index (byte position) | rune |
+| map | key | value |
+| channel | element | (ไม่มี) |
+
+นอกจากนี้เราสามารถใช้ `_` (underscore) เพื่อละทิ้งค่าใดค่าหนึ่งได้
+
+## ใช้อย่างไร ในกรณีไหน?
+- **Slice/Array**: ใช้เมื่อต้องการเข้าถึงทั้ง index และ value หรือต้องการแค่ value
+- **Map**: ใช้เพื่อวนลูปผ่าน key-value pairs
+- **String**: ใช้เพื่อวนลูปผ่านตัวอักษร (rune) โดยไม่ต้องจัดการ UTF-8 ด้วยตนเอง
+- **Channel**: ใช้เพื่อรับค่าจาก channel จนกว่า channel จะปิด
+- **ร่วมกับ GORM**: ใช้ range วน slice ของ model เพื่อทำ batch operation หรือ transform data
+- **ร่วมกับ Redis**: ใช้ range วน map เพื่อเก็บเป็น Redis hash หรือวน slice ของ keys
+
+## หลักการทำงาน
+1. range จะคืนค่า sequence ของ elements ตามลำดับ
+2. แต่ละรอบจะกำหนดค่าให้กับตัวแปรที่ประกาศทางซ้าย
+3. กับ map ไม่รับประกันลำดับ
+4. กับ string จะวนทีละ rune (ไม่ใช่ byte) ทำให้รองรับ UTF-8
+5. กับ channel จะรับค่าจนกว่า channel จะปิด (range จะจบอัตโนมัติ)
+
+## Dataflow Diagram (Flowchart TB) - range with slice
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Init[ประกาศ range loop]
+    Init --> Next{มี element ถัดไป?}
+    Next -- มี --> Assign[กำหนด index, value]
+    Assign --> Body[ทำ body]
+    Body --> Next
+    Next -- ไม่มี --> End([จบ])
+```
+
+## ตัวอย่างการใช้งานจริง
+
+### 1. range กับ slice
+```go
+nums := []int{2, 4, 6}
+for i, v := range nums {
+    fmt.Printf("index=%d, value=%d\n", i, v)
+}
+// ถ้าต้องการแค่ค่า
+for _, v := range nums {
+    fmt.Println(v)
+}
+```
+
+### 2. range กับ map
+```go
+m := map[string]int{"a": 1, "b": 2}
+for k, v := range m {
+    fmt.Printf("%s -> %d\n", k, v)
+}
+```
+
+### 3. range กับ string (iterate runes)
+```go
+str := "สวัสดี"
+for i, r := range str {
+    fmt.Printf("byte index %d: rune %c\n", i, r)
+}
+```
+
+### 4. range กับ channel
+```go
+ch := make(chan int)
+go func() {
+    for i := 0; i < 5; i++ {
+        ch <- i
+    }
+    close(ch)
+}()
+for v := range ch {
+    fmt.Println(v)
+}
+```
+
+### 5. ใช้ range กับ GORM (วน slice ของ model เพื่อสร้าง Redis hash)
+```go
+func CacheUsers(db *gorm.DB, rdb *redis.Client, ctx context.Context) error {
+    var users []User
+    if err := db.Find(&users).Error; err != nil {
+        return err
+    }
+
+    for _, user := range users {
+        key := fmt.Sprintf("user:%d", user.ID)
+        err := rdb.HSet(ctx, key,
+            "name", user.Name,
+            "email", user.Email,
+        ).Err()
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+### 6. ใช้ range กับ Redis (วน map เพื่อเก็บค่า)
+```go
+func StoreUserAttributes(ctx context.Context, rdb *redis.Client, userID string, attrs map[string]interface{}) error {
+    key := fmt.Sprintf("user:%s:attrs", userID)
+    for field, value := range attrs {
+        if err := rdb.HSet(ctx, key, field, value).Err(); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+---
+
+# 9.6 label และการ break ออกจาก outer loop
+
+## label และการ break ออกจาก outer loop คืออะไร?
+**label** คือการกำหนดชื่อ (identifier) ให้กับ statement (เช่น for loop, switch, select) เพื่อให้สามารถใช้ `break`, `continue`, หรือ `goto` อ้างอิงถึง statement นั้นได้ โดยเฉพาะ `break label` จะออกจาก loop ที่มี label นั้นแม้จะอยู่ใน loop ซ้อนกันหลายชั้น
+
+## label และการ break ออกจาก outer loop มีกี่แบบ?
+มี 3 แบบ:
+1. **label + break**: ออกจาก loop ที่ระบุ (สามารถข้ามหลายชั้นได้)
+2. **label + continue**: ข้ามไปยัง iteration ถัดไปของ loop ที่ระบุ
+3. **label + goto**: (ไม่แนะนำ แต่อนุญาต) กระโดดไปยังตำแหน่งที่กำหนด
+
+## ใช้อย่างไร ในกรณีไหน?
+- ใช้เมื่อมี nested loops และต้องการออกจากทุก loop เมื่อพบเงื่อนไข (เช่น ค้นหา element ใน matrix แล้วหยุดทันที)
+- ใช้เมื่อต้องการ continue ไปยัง outer loop แทนที่จะเป็น inner loop
+- ในงานที่ต้องทำ transaction ที่มีหลายขั้นตอนซ้อนกัน หากเกิด error ควรข้ามทุก loop (เช่น ตรวจสอบข้อมูลหลายชุดและเลิกทำทั้งหมด)
+- **ร่วมกับ GORM**: ใช้ label break ออกจาก nested loops เมื่อพบ error หรือเมื่อต้องการหยุดการประมวลผลทั้งชุด
+- **ร่วมกับ Redis**: ใช้ label break เมื่อเกิดความล้มเหลวใน pipeline หรือ transaction ที่ซ้อนกัน
+
+## หลักการทำงาน
+1. ประกาศ label ก่อน statement ที่ต้องการควบคุม เช่น `OuterLoop: for i := 0; i < n; i++ {`
+2. ใน loop ซ้อน ให้ใช้ `break OuterLoop` เพื่อออกจาก loop ที่มี label `OuterLoop` ทันที
+3. `continue OuterLoop` จะข้าม iteration ปัจจุบันของ outer loop และไป iteration ถัดไป
+4. label ต้องอยู่ภายในฟังก์ชันเดียวกันและเป็น scope ที่ถูกต้อง
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> OuterStart[OuterLoop: for i]
+    OuterStart --> InnerStart[InnerLoop: for j]
+    InnerStart --> Cond{พบเงื่อนไข break?}
+    Cond -- ใช่ --> BreakLabel[break OuterLoop]
+    Cond -- ไม่ใช่ --> ContinueInner[ทำ inner loop ต่อ]
+    ContinueInner --> InnerStart
+    BreakLabel --> End([ออกจาก outer loop])
+    InnerStart --> NoBreak[inner loop จบ]
+    NoBreak --> OuterIter[ไป i ถัดไป]
+    OuterIter --> OuterStart
+    OuterStart --> EndOuter[outer loop จบ]
+    EndOuter --> End
+```
+
+## ตัวอย่างการใช้งานจริง
+
+### 1. break label เพื่อออกจาก nested loops
+```go
+package main
+
+import "fmt"
+
+func main() {
+    matrix := [][]int{
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9},
+    }
+    target := 5
+    found := false
+
+OuterLoop:
+    for i := 0; i < len(matrix); i++ {
+        for j := 0; j < len(matrix[i]); j++ {
+            if matrix[i][j] == target {
+                fmt.Printf("Found %d at (%d, %d)\n", target, i, j)
+                found = true
+                break OuterLoop // ออกจากทั้งสอง loop
+            }
+        }
+    }
+    if !found {
+        fmt.Println("Not found")
+    }
+}
+```
+
+### 2. continue label เพื่อข้าม iteration ของ outer loop
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // สมมติว่าเรามี slice ของ user IDs และต้องการประมวลผลทีละ user
+    // แต่ถ้า user มี error ให้ข้ามไป user ถัดไปเลย
+    users := []string{"user1", "user2", "user3", "user4"}
+
+UserLoop:
+    for _, u := range users {
+        fmt.Printf("Processing %s\n", u)
+        // จำลองการตรวจสอบ permission
+        if u == "user2" {
+            fmt.Printf("  %s has no permission, skip\n", u)
+            continue UserLoop // ข้ามไป user ถัดไป
+        }
+        for i := 0; i < 3; i++ {
+            fmt.Printf("  subtask %d\n", i)
+            if u == "user3" && i == 1 {
+                fmt.Println("  error on user3, skip entire user")
+                continue UserLoop
+            }
+        }
+    }
+}
+```
+
+### 3. ใช้ label break กับ GORM (หยุดการวนซ้ำเมื่อเกิด error)
+```go
+func ProcessOrders(db *gorm.DB, orderIDs []uint) error {
+    var orders []Order
+    if err := db.Where("id IN ?", orderIDs).Find(&orders).Error; err != nil {
+        return err
+    }
+
+    // วนซ้ำแต่ละ order และสินค้าใน order
+MainLoop:
+    for _, order := range orders {
+        fmt.Printf("Processing order %d\n", order.ID)
+        
+        // ตรวจสอบสถานะ order
+        if order.Status == "cancelled" {
+            continue
+        }
+
+        // ดึง order items
+        var items []OrderItem
+        if err := db.Where("order_id = ?", order.ID).Find(&items).Error; err != nil {
+            return err // ถ้า error นี้รุนแรง ให้ break ทั้ง process
+        }
+
+        for _, item := range items {
+            // ตรวจสอบ stock
+            var product Product
+            if err := db.First(&product, item.ProductID).Error; err != nil {
+                // ถ้าไม่พบ product ถือว่า error ร้ายแรง หยุดการทำงานทั้งหมด
+                break MainLoop
+            }
+            if product.Stock < item.Quantity {
+                // ไม่พอ stock ก็หยุดการทำงานทั้งหมด
+                break MainLoop
+            }
+        }
+        // update order status
+        order.Status = "processed"
+        db.Save(&order)
+    }
+    return nil
+}
+```
+
+### 4. ใช้ label break กับ Redis Transaction (หยุด pipeline เมื่อเกิด error ใน loop)
+```go
+func UpdateBalances(ctx context.Context, rdb *redis.Client, updates map[string]int64) error {
+    // ใช้ label เพื่อออกจาก loop ทั้งหมดเมื่อเกิด error ร้ายแรง
+MainLoop:
+    for account, delta := range updates {
+        // ตรวจสอบความถูกต้อง
+        if delta == 0 {
+            continue
+        }
+        // ใช้ WATCH เพื่อทำ optimistic lock
+        err := rdb.Watch(ctx, func(tx *redis.Tx) error {
+            bal, err := tx.Get(ctx, account).Int64()
+            if err != nil && err != redis.Nil {
+                return err
+            }
+            newBal := bal + delta
+            if newBal < 0 {
+                return fmt.Errorf("insufficient balance for %s", account)
+            }
+            _, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+                pipe.Set(ctx, account, newBal, 0)
+                return nil
+            })
+            return err
+        }, account)
+
+        if err != nil {
+            if err == redis.TxFailedErr {
+                // conflict, retry แต่ถ้า retry หลายครั้งอาจต้อง break
+                // ในที่นี้แสดงตัวอย่าง break ออกเมื่อเจอ conflict ที่ไม่สามารถแก้ได้
+                break MainLoop
+            }
+            return err
+        }
+    }
+    return nil
+}
+```
+
+### 5. การใช้ label เพื่อ break จาก switch ภายใน loop (ไม่ต้องใช้ label)
+```go
+// break ใน switch จะออกจาก switch เท่านั้น ไม่ต้องใช้ label
+// แต่ถ้าต้องการออกจาก loop ต้องใช้ label
+func findInMatrix(matrix [][]int, target int) (int, int, bool) {
+    for i, row := range matrix {
+        for j, val := range row {
+            switch {
+            case val == target:
+                return i, j, true
+            case val > target:
+                // ไม่ต้องทำอะไร ไปต่อ
+            }
+        }
+    }
+    return 0, 0, false
+}
+```
+
+## ข้อควรระวัง
+- ใช้ label อย่างระมัดระวัง เพราะอาจทำให้โค้ดอ่านยาก (คล้ายกับ goto)
+- `break label` จะออกจาก statement ที่ label ระบุเท่านั้น ไม่ใช่ทุก statement ที่อยู่ระหว่างทาง
+- `continue label` ใช้ได้เฉพาะกับ loop
+- label ต้องอยู่หน้า statement ที่เป็น loop, switch, select เท่านั้น
+
+---
+
+## แหล่งอ้างอิง
+- [The Go Programming Language Specification - If statements](https://go.dev/ref/spec#If_statements)
+- [The Go Programming Language Specification - Switch statements](https://go.dev/ref/spec#Switch_statements)
+- [The Go Programming Language Specification - For statements](https://go.dev/ref/spec#For_statements)
+- [The Go Programming Language Specification - Break statements](https://go.dev/ref/spec#Break_statements)
+- [Effective Go - Control structures](https://go.dev/doc/effective_go#control-structures)
+- [GORM Documentation](https://gorm.io/docs/)
+- [go-redis Documentation](https://redis.uptrace.dev/)
 
 ## บทที่ 10: ฟังก์ชัน
 
