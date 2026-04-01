@@ -9274,7 +9274,7 @@ func main() {
 ### ความสำเร็จที่ภูมิใจ
 
 ตลอดเส้นทางที่ผ่านมา มีผลงานหลายอย่างที่สร้างความภูมิใจ:
-- **PoC ระบบซ่อมรถออนไลน์** (carsolpf.com/repair) ที่นำ IoT มาติดตามอุณหภูมิ น้ำรั่ว และควัน พร้อม Dashboard แจ้งเตือนแบบ Real-time
+-- **PoC  http://cmoniot.trueddns.com:52160 ที่นำ IoT มาติดตามอุณหภูมิ น้ำรั่ว และควัน พร้อม Dashboard แจ้งเตือนแบบ Real-time
 - **การเป็นวิทยากรและที่ปรึกษา** ถ่ายทอดความรู้ด้าน DevOps, การเขียนโค้ดคุณภาพ, Design Thinking และ Business Model Canvas ให้ทีมพัฒนาทั้งภายในและภายนอกองค์กร
 - **การลดข้อผิดพลาดในการ deploy** จากการนำ Branch Protection และ CI/CD มาบังคับใช้ เพิ่มความมั่นใจให้ทีม
 
@@ -9295,10 +9295,14 @@ func main() {
 ---
  Ref: http://cmoniot.trueddns.com:52160
  
-<img width="1295" height="335" alt="cmonlogo" src="https://github.com/user-attachments/assets/5f81bb6c-ad59-4683-bd4f-450830fe50ed" />
-![Licence](https://github.com/user-attachments/assets/9deb5e2a-f7f2-4dc3-9d23-a17205759220)
-![69605_0](https://github.com/user-attachments/assets/568b9b8d-2756-400b-98c6-ad8c49e026b8)
-![Icmon6](https://github.com/user-attachments/assets/6ef7e87f-1869-4848-ba75-4854b33674f4)
-![Icmon7](https://github.com/user-attachments/assets/6005c922-d4ca-450c-9686-0931cf71a6f9)
- 
+ ![Licence](https://github.com/user-attachments/assets/e2966221-53c5-4315-ae45-276320e5f915)
+
+ ![Icmon6](https://github.com/user-attachments/assets/7d9585a8-0378-4a48-b4ad-b742d4981ed9)
+
+![87796](https://github.com/user-attachments/assets/8b90b10a-e670-48f6-a7a9-a168d3ce42dd)
+
+![87795](https://github.com/user-attachments/assets/5bb131e9-e3fb-4921-8109-f44a58373a4f)
+
+![87793](https://github.com/user-attachments/assets/4bb6d385-8514-4d6f-a330-f5395c57231a)
+
 
