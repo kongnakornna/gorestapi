@@ -4794,7 +4794,480 @@ project-root/
 # ภาคที่ 8: Domain-Driven Design (DDD) กับ Go
 
 ## บทที่ 49: หลักการ DDD และการนำไปใช้ใน Go
+ 
+### บทนำ Domain-Driven Design (DDD) กับ Golang
+Domain-Driven Design (DDD) เป็นแนวทางในการออกแบบซอฟต์แวร์ที่เน้นที่ **โดเมน (domain)** และ **ตรรกะทางธุรกิจ (business logic)** เป็นหลัก โดยแยกความซับซ้อนออกจากรายละเอียดทางเทคนิค Golang (Go) เหมาะกับ DDD เนื่องจากมีลักษณะเด่น:
+- ภาษาที่เรียบง่าย อ่านง่าย
+- รองรับการเขียนโค้ดแบบเชิงวัตถุผ่าน struct และ interface
+- การจัดการ concurrency ที่ดี
+- รองรับการทดสอบหน่วย (unit test) ได้ดี
 
+ในบทความนี้เราจะสำรวจวิธีการนำ DDD ไปใช้ใน Go พร้อมตัวอย่างจริงจากระบบจัดการออเดอร์ (Order Management) และแสดง flow ของข้อมูลผ่านสถาปัตยกรรมแบบ Clean Architecture / DDD Layers
+
+---
+
+### 1. ภาพรวมสถาปัตยกรรม DDD ใน Go
+โดยทั่วไปจะแบ่งออกเป็น 4 ชั้นหลัก:
+
+1. **Interfaces (Presentation Layer)**  
+   รับผิดชอบจัดการกับอินพุต/เอาต์พุตของระบบ เช่น HTTP handlers, gRPC, CLI, หรือ event handlers
+
+2. **Application (Application Layer)**  
+   ประสานงานระหว่างชั้น domain และ interfaces ประกอบด้วย use cases, DTOs (Data Transfer Objects), และ application services
+
+3. **Domain (Domain Layer)**  
+   หัวใจของระบบ: ประกอบด้วย entities, value objects, aggregates, domain services, และ repository interfaces
+
+4. **Infrastructure (Infrastructure Layer)**  
+   จัดการ technical details เช่น การติดต่อฐานข้อมูล, external API, message brokers, และการ implement repository interfaces
+
+---
+
+### 2. Dataflow Diagram (แบบ Flowchart TB – Top to Bottom)
+ด้านล่างคือแผนภาพที่แสดงการไหลของข้อมูลจาก request จนถึง response ในระบบ DDD ที่ใช้ Go  
+สามารถนำไปใช้ใน draw.io โดยใช้ Mermaid syntax นี้:
+
+```mermaid
+flowchart TB
+    subgraph Interfaces
+        A[HTTP Request] --> B[Handler / Controller]
+    end
+
+    subgraph Application
+        B --> C[Application Service / UseCase]
+        C --> D[DTO / Request Model]
+    end
+
+    subgraph Domain
+        D --> E[Aggregate Root<br/>Order]
+        E --> F[Domain Service<br/>OrderService]
+        F --> G[Repository Interface<br/>OrderRepository]
+    end
+
+    subgraph Infrastructure
+        G --> H[Repository Implementation<br/>GORMOrderRepository]
+        H --> I[(Database)]
+    end
+
+    I --> H --> G --> F --> E --> C
+    C --> J[Response DTO]
+    J --> B --> K[HTTP Response]
+```
+
+**คำอธิบายแผนภาพ (แบบละเอียด)**
+- **HTTP Request** ถูกส่งมายัง **Handler** ซึ่งเป็นส่วนของ Interfaces Layer
+- Handler รับ request แล้วแปลงเป็น **DTO / Request Model** (เช่น `CreateOrderRequest`)
+- เรียก **Application Service** เพื่อประมวลผล use case
+- Application Service เรียก **Aggregate Root** (`Order`) และ **Domain Service** (`OrderService`) เพื่อดำเนินการตามกฎธุรกิจ
+- หากจำเป็นต้องบันทึกข้อมูล Aggregate จะใช้ **Repository Interface** ซึ่งถูก implement ไว้ใน Infrastructure Layer
+- **Repository Implementation** (เช่น GORMOrderRepository) ทำงานกับฐานข้อมูลจริง
+- ผลลัพธ์กลับขึ้นมาผ่านทางเดียวกัน แล้วแปลงเป็น **Response DTO** ก่อนส่ง **HTTP Response** กลับไป
+
+---
+
+### 3. ตัวอย่างการใช้งานจริง: ระบบจัดการออเดอร์ (Order Management)
+สมมติเรามีฟีเจอร์ **สร้างออเดอร์** โดยมีเงื่อนไข:
+- ออเดอร์ต้องมีสินค้าอย่างน้อย 1 รายการ
+- ราคาทั้งหมดต้องถูกคำนวณอัตโนมัติจากราคาสินค้าและจำนวน
+- ต้องตรวจสอบว่าสินค้ามีในสต็อกเพียงพอ (ในที่นี้จะจำลองการตรวจสอบง่าย ๆ)
+
+---
+
+### 4. เทมเพลตโครงสร้างโปรเจค (Project Structure)
+```
+order-system/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── internal/
+│   ├── domain/
+│   │   ├── order.go          // aggregate root: Order
+│   │   ├── value_objects.go  // Money, Address, etc.
+│   │   ├── order_repository.go // repository interface
+│   │   └── order_service.go   // domain service
+│   ├── application/
+│   │   ├── create_order.go   // use case
+│   │   └── dto.go            // request/response DTOs
+│   ├── infrastructure/
+│   │   ├── db/
+│   │   │   └── gorm_order_repo.go // repository implementation
+│   │   └── http/
+│   │       └── handler.go    // HTTP handlers
+│   └── interfaces/
+│       └── router.go         // route registration (อาจอยู่ใน infrastructure)
+├── go.mod
+└── go.sum
+```
+
+---
+
+### 5. ตัวอย่างโค้ด
+
+#### 5.1 Domain Layer
+
+**domain/value_objects.go** – Value Objects
+```go
+package domain
+
+import (
+    "errors"
+    "fmt"
+)
+
+// Money value object
+type Money struct {
+    Amount   float64
+    Currency string
+}
+
+func NewMoney(amount float64, currency string) (Money, error) {
+    if amount < 0 {
+        return Money{}, errors.New("amount must be non-negative")
+    }
+    if currency == "" {
+        return Money{}, errors.New("currency is required")
+    }
+    return Money{Amount: amount, Currency: currency}, nil
+}
+
+func (m Money) Add(other Money) (Money, error) {
+    if m.Currency != other.Currency {
+        return Money{}, errors.New("currency mismatch")
+    }
+    return NewMoney(m.Amount+other.Amount, m.Currency)
+}
+```
+
+**domain/order.go** – Aggregate Root
+```go
+package domain
+
+import (
+    "errors"
+    "time"
+)
+
+type OrderStatus string
+
+const (
+    StatusPending   OrderStatus = "pending"
+    StatusConfirmed OrderStatus = "confirmed"
+    StatusCancelled OrderStatus = "cancelled"
+)
+
+type OrderItem struct {
+    ProductID string
+    Quantity  int
+    UnitPrice Money
+    Subtotal  Money
+}
+
+type Order struct {
+    ID         string
+    CustomerID string
+    Items      []OrderItem
+    Total      Money
+    Status     OrderStatus
+    CreatedAt  time.Time
+}
+
+func NewOrder(id, customerID string) *Order {
+    return &Order{
+        ID:         id,
+        CustomerID: customerID,
+        Items:      []OrderItem{},
+        Total:      Money{Amount: 0, Currency: "THB"},
+        Status:     StatusPending,
+        CreatedAt:  time.Now(),
+    }
+}
+
+func (o *Order) AddItem(productID string, quantity int, unitPrice Money) error {
+    if quantity <= 0 {
+        return errors.New("quantity must be positive")
+    }
+    subtotal, err := unitPrice.Add(unitPrice) // ควรคูณ quantity จริง ๆ แต่ตัวอย่าง simplify
+    if err != nil {
+        return err
+    }
+    // จำลองการคูณ: ควร implement คูณใน Money
+    subtotal.Amount = unitPrice.Amount * float64(quantity)
+
+    o.Items = append(o.Items, OrderItem{
+        ProductID: productID,
+        Quantity:  quantity,
+        UnitPrice: unitPrice,
+        Subtotal:  subtotal,
+    })
+    o.recalculateTotal()
+    return nil
+}
+
+func (o *Order) recalculateTotal() {
+    var total float64
+    for _, item := range o.Items {
+        total += item.Subtotal.Amount
+    }
+    o.Total.Amount = total
+}
+```
+
+**domain/order_repository.go** – Repository Interface
+```go
+package domain
+
+import "context"
+
+type OrderRepository interface {
+    Save(ctx context.Context, order *Order) error
+    FindByID(ctx context.Context, id string) (*Order, error)
+}
+```
+
+**domain/order_service.go** – Domain Service (ตัวอย่างการตรวจสอบสต็อก)
+```go
+package domain
+
+import "context"
+
+// OrderDomainService จัดการตรรกะที่เกี่ยวข้องกับหลาย aggregate หรือใช้ external service
+type OrderDomainService struct {
+    // อาจมี repository หรือ service อื่น ๆ
+}
+
+func (s *OrderDomainService) CheckStock(ctx context.Context, items []OrderItem) bool {
+    // ในที่นี้จำลองการตรวจสอบสต็อก (จริง ๆ ควรเรียก external inventory service)
+    for _, item := range items {
+        if item.Quantity > 100 { // สมมติว่าสินค้ามีสต็อกสูงสุด 100
+            return false
+        }
+    }
+    return true
+}
+```
+
+---
+
+#### 5.2 Application Layer
+
+**application/dto.go** – Data Transfer Objects
+```go
+package application
+
+type CreateOrderRequest struct {
+    CustomerID string `json:"customer_id"`
+    Items      []struct {
+        ProductID string  `json:"product_id"`
+        Quantity  int     `json:"quantity"`
+        Price     float64 `json:"price"`
+    } `json:"items"`
+}
+
+type CreateOrderResponse struct {
+    OrderID string  `json:"order_id"`
+    Total   float64 `json:"total"`
+}
+```
+
+**application/create_order.go** – Use Case / Application Service
+```go
+package application
+
+import (
+    "context"
+    "order-system/internal/domain"
+    "github.com/google/uuid"
+)
+
+type CreateOrderUseCase struct {
+    orderRepo domain.OrderRepository
+    domainSvc *domain.OrderDomainService
+}
+
+func NewCreateOrderUseCase(repo domain.OrderRepository, svc *domain.OrderDomainService) *CreateOrderUseCase {
+    return &CreateOrderUseCase{
+        orderRepo: repo,
+        domainSvc: svc,
+    }
+}
+
+func (uc *CreateOrderUseCase) Execute(ctx context.Context, req CreateOrderRequest) (*CreateOrderResponse, error) {
+    // สร้าง aggregate root
+    orderID := uuid.New().String()
+    order := domain.NewOrder(orderID, req.CustomerID)
+
+    // เพิ่มสินค้า
+    for _, item := range req.Items {
+        money, err := domain.NewMoney(item.Price, "THB")
+        if err != nil {
+            return nil, err
+        }
+        if err := order.AddItem(item.ProductID, item.Quantity, money); err != nil {
+            return nil, err
+        }
+    }
+
+    // ตรวจสอบสต็อกโดยใช้ domain service
+    if !uc.domainSvc.CheckStock(ctx, order.Items) {
+        return nil, domain.ErrInsufficientStock
+    }
+
+    // บันทึกผ่าน repository
+    if err := uc.orderRepo.Save(ctx, order); err != nil {
+        return nil, err
+    }
+
+    return &CreateOrderResponse{
+        OrderID: order.ID,
+        Total:   order.Total.Amount,
+    }, nil
+}
+```
+
+---
+
+#### 5.3 Infrastructure Layer
+
+**infrastructure/db/gorm_order_repo.go** – Repository Implementation
+```go
+package db
+
+import (
+    "context"
+    "order-system/internal/domain"
+    "gorm.io/gorm"
+)
+
+type GORMOrderRepository struct {
+    db *gorm.DB
+}
+
+func NewGORMOrderRepository(db *gorm.DB) *GORMOrderRepository {
+    return &GORMOrderRepository{db: db}
+}
+
+func (r *GORMOrderRepository) Save(ctx context.Context, order *domain.Order) error {
+    // เนื่องจาก GORM ทำงานกับ struct ที่มี gorm tags
+    // ในที่นี้สมมติว่าเรา map domain.Order ไปยัง model.OrderModel
+    // แต่เพื่อความง่ายให้ใช้ domain.Order โดยตรง (ถ้ามี gorm tags)
+    return r.db.WithContext(ctx).Save(order).Error
+}
+
+func (r *GORMOrderRepository) FindByID(ctx context.Context, id string) (*domain.Order, error) {
+    var order domain.Order
+    err := r.db.WithContext(ctx).Where("id = ?", id).First(&order).Error
+    if err != nil {
+        return nil, err
+    }
+    return &order, nil
+}
+```
+
+**infrastructure/http/handler.go** – HTTP Handler
+```go
+package http
+
+import (
+    "encoding/json"
+    "net/http"
+    "order-system/internal/application"
+)
+
+type OrderHandler struct {
+    createOrderUC *application.CreateOrderUseCase
+}
+
+func NewOrderHandler(uc *application.CreateOrderUseCase) *OrderHandler {
+    return &OrderHandler{createOrderUC: uc}
+}
+
+func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+    var req application.CreateOrderRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    resp, err := h.createOrderUC.Execute(r.Context(), req)
+    if err != nil {
+        // จัดการ error ตามประเภท domain error
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(resp)
+}
+```
+
+---
+
+#### 5.4 Wiring ทั้งหมด (main.go)
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+    "order-system/internal/application"
+    "order-system/internal/domain"
+    "order-system/infrastructure/db"
+    httpHandler "order-system/infrastructure/http"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+)
+
+func main() {
+    // 1. Infrastructure: ฐานข้อมูล
+    gormDB, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    if err != nil {
+        log.Fatal(err)
+    }
+    gormDB.AutoMigrate(&domain.Order{}) // auto migrate schema
+
+    // 2. Infrastructure: Repository implementation
+    orderRepo := db.NewGORMOrderRepository(gormDB)
+
+    // 3. Domain service
+    domainSvc := &domain.OrderDomainService{}
+
+    // 4. Application use case
+    createOrderUC := application.NewCreateOrderUseCase(orderRepo, domainSvc)
+
+    // 5. HTTP handler
+    orderHandler := httpHandler.NewOrderHandler(createOrderUC)
+
+    // 6. Routing
+    http.HandleFunc("/orders", orderHandler.CreateOrder)
+
+    log.Println("Server started at :8080")
+    log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+---
+
+### 6. ข้อดีและข้อควรระวังเมื่อใช้ DDD กับ Go
+
+**ข้อดี**
+- แยกความรับผิดชอบชัดเจน ทำให้โค้ดง่ายต่อการบำรุงรักษา
+- Domain logic อยู่รวมกัน ไม่กระจัดกระจาย
+- สามารถทดสอบ domain ได้โดยไม่ต้องพึ่งพา infrastructure
+- ใช้ประโยชน์จาก interface ของ Go ในการ decoupling
+
+**ข้อควรระวัง**
+- DDD เหมาะกับโดเมนที่ซับซ้อน หากโดเมนง่ายเกินไปอาจเพิ่มความยุ่งยากโดยไม่จำเป็น
+- ต้องใช้ความระมัดระวังในการออกแบบ aggregate boundaries
+- Go ไม่มี inheritance แต่ใช้ composition แทน ซึ่งต้องทำความเข้าใจ
+- การจัดการ dependency injection ด้วยตนเองอาจทำให้โค้ด wiring ยาว (แต่สามารถใช้ wire หรือ dig ช่วยได้)
+
+---
+
+### สรุป
+การนำ DDD ไปใช้ใน Golang ช่วยให้ซอฟต์แวร์มีโครงสร้างที่ยืดหยุ่น บำรุงรักษาง่าย และสะท้อนความต้องการทางธุรกิจได้ดี โดยอาศัยการแบ่งชั้นและใช้ interface ในการเชื่อมต่อระหว่าง layer ต่าง ๆ แผนภาพ dataflow ที่นำเสนอสามารถนำไปปรับใช้ใน draw.io เพื่อสื่อสารกับทีมพัฒนาได้อย่างมีประสิทธิภาพ
+
+**หมายเหตุ**: ตัวอย่างโค้ดนี้เน้นการอธิบายแนวคิด หากนำไปใช้จริงควรเพิ่ม error handling, logging, และการทดสอบให้ครบถ้วน
 ### 49.1 Domain-Driven Design (DDD) คืออะไร?
 
 Domain-Driven Design เป็นแนวทางการออกแบบซอฟต์แวร์ที่เน้นการสร้างโมเดลที่สะท้อนความรู้ความเข้าใจ (domain knowledge) อย่างแท้จริง โดยมีหลักการสำคัญคือการทำให้ซอฟต์แวร์สอดคล้องกับความต้องการทางธุรกิจผ่านการร่วมมือกันระหว่างนักพัฒนาและผู้เชี่ยวชาญในโดเมน (domain experts)
