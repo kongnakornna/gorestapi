@@ -1,4 +1,4 @@
-# The Complete Go Programming Guide: From Basics to Production-Ready Applications
+# The Complete Go Programming Guide 
 
 **โดย คงนคร จันทะคุณ**  
 kongnakornjantakun@gmail.com  
