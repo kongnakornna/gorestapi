@@ -2251,12 +2251,13 @@ srv.ListenAndServe()
 
 ## พื้นฐานการสร้าง HTTP Server ด้วย Golang
 
-การสร้าง HTTP Server ในภาษา Go (Golang) เป็นเรื่องที่ทำได้ง่ายและมีประสิทธิภาพสูง เนื่องจากภาษา Go มีแพ็คเกจ `net/http` ในมาตรฐานที่ครบครัน รองรับการทำงานแบบ concurrent ผ่าน goroutine ทำให้สามารถรับคำขอพร้อมกันได้โดยไม่ต้องพึ่งพา web framework ภายนอก
+การสร้าง HTTP Server ในภาษา Go (Golang) เป็นเรื่องที่ทำได้ง่ายและมีประสิทธิภาพสูง เนื่องจากภาษา Go มีแพ็คเกจ `net/http` ในมาตรฐานที่ครบครัน รองรับการทำงานแบบ concurrent 
+ผ่าน goroutine ทำให้สามารถรับคำขอพร้อมกันได้โดยไม่ต้องพึ่งพา web framework ภายนอก
 
-ในบทความนี้จะอธิบายตั้งแต่โครงสร้างการทำงาน (dataflow) ผ่านแผนภาพจำลอง (เหมือนกับที่ใช้ draw.io) อธิบายแต่ละส่วนอย่างละเอียด พร้อมตัวอย่างการใช้งานจริง เทมเพลต และโค้ดตัวอย่าง
+ 
  
 ```mermaid
-graph TD
+flowchart TB
     Client([Client]) -->|HTTP Request<br/>GET /api/users| Server
 
     subgraph Server [HTTP Server (Go)]
@@ -2273,6 +2274,7 @@ graph TD
     Writer -->|HTTP Response<br/>200 OK, JSON data| Client
 ```
 
+ 
 **คำอธิบายองค์ประกอบ** (เพื่อนำไปสร้างใน draw.io):
 
 - **Client**: ผู้ใช้หรือโปรแกรมที่ส่ง HTTP request (เช่น browser, mobile app, curl)
