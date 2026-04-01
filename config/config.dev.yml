@@ -55,9 +55,10 @@ email:
   ResetSubject: Your account password reset token
 
 smtpEmail:
-  Host: smtp.gmail.com
-  Port: 587
-  User: icmon0955@gmail.com
-  Password: ok
+  Host:  smtp.icmon.io
+  Port: 2525
+  User: icmon
+  Password: icmon
   UseTls: true
   UseSsl: false
+
