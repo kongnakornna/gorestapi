@@ -2002,7 +2002,7 @@ sequenceDiagram
 
 ---
 
-## 3. แผนภาพแบบมี `recover` หยุดการ unwind
+## 3. แผนภาพแบบมี `recover` หยุดการ unwind (การคลายสแต็ก)
 
 ```mermaid
 sequenceDiagram
