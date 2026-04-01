@@ -3817,60 +3817,781 @@ graph LR
 ผู้ใช้เขียนโค้ด (ไฟล์ `.go`) แล้วสั่ง `go run` ซึ่งจะส่งให้คอมไพเลอร์แปลงเป็นไบนารีและทำงานทันที ผลลัพธ์แสดงบนเทอร์มินัล ผู้ใช้เห็นผลและสามารถปรับปรุงโค้ดต่อไป วงจรนี้แสดงการพัฒนาโปรแกรมแรกด้วย Go
 
 ---
+# ภาคที่ 2: พื้นฐานภาษาและโครงสร้างข้อมูล (บทที่ 6–16)
 
-## ภาคที่ 2: พื้นฐานภาษาและโครงสร้างข้อมูล (บทที่ 6–16)
- ```mermaid
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
+
+```mermaid
 flowchart TD
-    subgraph DataRepresentation[การแทนข้อมูล]
-        A[เลขฐานสอง/ฐานสิบ<br/>บทที่ 6] --> B[เลขฐานสิบหก/ฐานแปด<br/>ASCII/UTF‑8/Rune<br/>บทที่ 7]
+    subgraph DataRepresentation["1. การแทนข้อมูล (บทที่ 6-7)"]
+        direction TB
+        A1["เลขฐานสอง (Binary)<br/>0 และ 1<br/>หน่วยเก็บข้อมูลพื้นฐาน"]
+        A2["เลขฐานสิบ (Decimal)<br/>ที่มนุษย์ใช้"]
+        A3["เลขฐานสิบหก (Hex)<br/>0x0-0xF<br/>แสดงข้อมูลขนาดใหญ่"]
+        A4["เลขฐานแปด (Octal)<br/>0o0-0o7<br/>สิทธิ์ไฟล์ Unix"]
+        A5["ASCII / UTF-8 / Unicode<br/>การแทนข้อความ<br/>Rune: ตัวอักษรเดี่ยว"]
+        
+        A1 --> A3
+        A2 --> A3
+        A3 --> A5
+        A4 --> A5
     end
 
-    subgraph DataStorage[การจัดเก็บข้อมูล]
-        C[ตัวแปร, ค่าคงที่, ชนิดข้อมูล<br/>บทที่ 8] --> D[โครงสร้างควบคุม<br/>if, for, switch<br/>บทที่ 9]
+    subgraph DataStorage["2. การจัดเก็บข้อมูล (บทที่ 8-9)"]
+        direction TB
+        B1["ตัวแปร (Variables)<br/>var, :=<br/>เก็บค่าที่เปลี่ยนได้"]
+        B2["ค่าคงที่ (Constants)<br/>const, iota<br/>ค่าที่ไม่เปลี่ยนแปลง"]
+        B3["ชนิดข้อมูลพื้นฐาน<br/>int, float, string, bool<br/>byte, rune"]
+        B4["โครงสร้างควบคุม<br/>if-else, for, switch<br/>ควบคุมการทำงาน"]
+        
+        B1 --> B4
+        B2 --> B4
+        B3 --> B4
     end
 
-    subgraph CodeOrganization[การจัดระเบียบโค้ด]
-        E[ฟังก์ชัน<br/>บทที่ 10] --> F[แพคเกจและการนำเข้า<br/>บทที่ 11]
-        F --> G[การเริ่มต้นแพคเกจ<br/>init()<br/>บทที่ 12]
+    subgraph CodeOrganization["3. การจัดระเบียบโค้ด (บทที่ 10-12)"]
+        direction TB
+        C1["ฟังก์ชัน (Functions)<br/>func, return<br/>multiple returns<br/>defer, panic/recover"]
+        C2["แพคเกจ (Packages)<br/>package, import<br/>exported/unexported"]
+        C3["การเริ่มต้นแพคเกจ<br/>init()<br/>ลำดับการทำงาน"]
+        
+        C1 --> C2
+        C2 --> C3
     end
 
-    subgraph AdvancedTypes[ชนิดข้อมูลขั้นสูง]
-        H[การสร้างชนิดใหม่<br/>type, struct<br/>บทที่ 13] --> I[เมธอด<br/>receiver<br/>บทที่ 14]
-        I --> J[พอยน์เตอร์<br/>บทที่ 15]
-        J --> K[อินเทอร์เฟซ<br/>บทที่ 16]
+    subgraph AdvancedTypes["4. ชนิดข้อมูลขั้นสูง (บทที่ 13-16)"]
+        direction TB
+        D1["การสร้างชนิดใหม่<br/>type, struct<br/>type alias"]
+        D2["เมธอด (Methods)<br/>func (t T) method()<br/>value receiver<br/>pointer receiver"]
+        D3["พอยน์เตอร์ (Pointers)<br/>*, &<br/>การอ้างอิงที่อยู่<br/>ไม่มี pointer arithmetic"]
+        D4["อินเทอร์เฟซ (Interfaces)<br/>interface{}<br/>implicit implementation<br/>polymorphism"]
+        
+        D1 --> D2
+        D2 --> D3
+        D3 --> D4
+    end
+
+    subgraph Flow["ลำดับการเรียนรู้"]
+        direction LR
+        F1[เข้าใจการแทนข้อมูล] --> F2[รู้จักการจัดเก็บ] --> F3[จัดระเบียบโค้ด] --> F4[สร้างโครงสร้างขั้นสูง]
     end
 
     DataRepresentation --> DataStorage
     DataStorage --> CodeOrganization
     CodeOrganization --> AdvancedTypes
+    Flow -.-> DataRepresentation
 ```
 
-**คำอธิบายภาษาไทย:**
-
-แผนภาพนี้แสดงลำดับการเรียนรู้และความสัมพันธ์ของเนื้อหาในภาคที่ 2 (บทที่ 6–16) ซึ่งครอบคลุมพื้นฐานภาษาและโครงสร้างข้อมูล โดยแบ่งเป็น 4 ช่วงหลัก:
-
-1. **การแทนข้อมูล (บทที่ 6–7)**  
-   - เริ่มจากเลขฐานสอง, ฐานสิบ, ฐานสิบหก, ฐานแปด  
-   - ขยายไปสู่ ASCII, UTF‑8, Unicode และ rune เพื่อให้เข้าใจว่าข้อความและตัวอักษรถูกจัดเก็บอย่างไรในคอมพิวเตอร์
-
-2. **การจัดเก็บข้อมูล (บทที่ 8–9)**  
-   - ตัวแปร, ค่าคงที่, ชนิดข้อมูลพื้นฐาน (int, float, string, bool)  
-   - โครงสร้างควบคุม (if, for, switch) เพื่อควบคุมการทำงานตามเงื่อนไขและการวนซ้ำ
-
-3. **การจัดระเบียบโค้ด (บทที่ 10–12)**  
-   - ฟังก์ชัน (การประกาศ, การคืนค่าหลายค่า, defer, panic/recover)  
-   - แพคเกจและการนำเข้า (import, exported/unexported)  
-   - การเริ่มต้นแพคเกจด้วยฟังก์ชัน init()
-
-4. **ชนิดข้อมูลขั้นสูง (บทที่ 13–16)**  
-   - การสร้างชนิดข้อมูลใหม่ด้วย `type`, struct  
-   - เมธอด (method) ที่ผูกกับ receiver (value receiver vs pointer receiver)  
-   - พอยน์เตอร์ (การอ้างอิง, การเปลี่ยนค่า)  
-   - อินเทอร์เฟซ (interface) สำหรับ polymorphism และการเขียนโค้ดที่ยืดหยุ่น
-
-แผนภาพนี้แสดงการไหลของความรู้ที่ต่อเนื่องกัน: เริ่มจากวิธีที่คอมพิวเตอร์เก็บข้อมูลพื้นฐาน → นำมาสร้างเป็นตัวแปรและควบคุมด้วยโครงสร้าง → จัดระเบียบเป็นฟังก์ชันและแพคเกจ → พัฒนาเป็นชนิดข้อมูลที่ซับซ้อนพร้อมเมธอด, พอยน์เตอร์, และอินเทอร์เฟซ ช่วยให้ผู้เรียนเห็นภาพรวมของการสร้างโปรแกรม Go อย่างเป็นระบบ
 ---
 
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 2 ครอบคลุมบทที่ 6–16 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งแสดงลำดับการเรียนรู้ที่ต่อเนื่องกัน
+
+---
+
+### 1. การแทนข้อมูล (บทที่ 6–7)
+
+**เป้าหมาย:** เข้าใจว่าคอมพิวเตอร์เก็บข้อมูลอย่างไร
+
+#### บทที่ 6: ระบบเลขฐานสองและฐานสิบ
+
+คอมพิวเตอร์ทำงานด้วยไฟฟ้า รู้จักแค่สถานะ "เปิด" (1) และ "ปิด" (0) ดังนั้นข้อมูลทุกชนิดจึงถูกแปลงเป็นเลขฐานสอง (Binary)
+
+| ฐาน | คำอธิบาย | ตัวอย่าง |
+|-----|---------|---------|
+| **ฐานสอง (Binary)** | ตัวเลข 0 และ 1 เท่านั้น<br/>ใช้แสดงข้อมูลระดับเครื่อง | `1010₂` = 10₁₀ |
+| **ฐานสิบ (Decimal)** | ตัวเลข 0-9 ตามที่มนุษย์ใช้ | `10₁₀` |
+| **การแปลง** | ฐานสอง → ฐานสิบ: นำแต่ละหลักคูณ 2^(ตำแหน่ง)<br/>ฐานสิบ → ฐานสอง: หาร 2 ซ้ำๆ เอาเศษ | `1010₂ = 1×8 + 0×4 + 1×2 + 0×1 = 10` |
+
+**Bit, Byte, และหน่วยความจำ**
+- **Bit**: หน่วยย่อยที่สุด (0 หรือ 1)
+- **Byte**: 8 bits = 1 byte (ใช้แทนตัวอักษร 1 ตัวใน ASCII)
+- **หน่วยที่ใหญ่กว่า**: KB (1024 bytes), MB (1024 KB), GB (1024 MB)
+
+#### บทที่ 7: เลขฐานสิบหก, ฐานแปด, ASCII, UTF-8, Unicode, Rune
+
+| หัวข้อ | คำอธิบาย | ตัวอย่าง |
+|-------|---------|---------|
+| **เลขฐานสิบหก (Hexadecimal)** | ใช้เลข 0-9 และตัวอักษร A-F (10-15)<br/>นิยมเขียนนำหน้าด้วย `0x`<br/>1 hex digit = 4 bits (ครึ่ง byte) | `0xFF` = 255₁₀<br/>`0x1A` = 26₁₀ |
+| **เลขฐานแปด (Octal)** | ใช้เลข 0-7<br/>นิยมเขียนนำหน้าด้วย `0o`<br/>ใช้กำหนดสิทธิ์ไฟล์ใน Unix | `0o755` = รหัสสิทธิ์ไฟล์ |
+| **ASCII** | ตารางรหัส 7 bits (0-127)<br/>ครอบคลุมตัวอักษรอังกฤษ, ตัวเลข, เครื่องหมาย | `A` = 65, `a` = 97, `0` = 48 |
+| **Unicode** | มาตรฐานสากลสำหรับตัวอักษรทุกภาษา<br/>มีมากกว่า 140,000 ตัวอักษร | U+0E01 = "ก" (ไทย)<br/>U+4E2D = "中" (จีน) |
+| **UTF-8** | การเข้ารหัส Unicode แบบ variable-length<br/>ใช้ 1-4 bytes ต่อตัวอักษร<br/>เข้ากันได้กับ ASCII | ภาษาอังกฤษ: 1 byte<br/>ภาษาไทย: 3 bytes |
+| **Rune** | ชนิดข้อมูลใน Go สำหรับแทน Unicode code point<br/>`rune` = `int32` alias<br/>ใช้ `'a'` (single quote) | `'ก'` = U+0E01 (3585)<br/>`'A'` = 65 |
+
+**ตัวอย่างใน Go**
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // ตัวเลขฐานต่างๆ
+    binary := 0b1010   // 10
+    octal  := 0o12     // 10
+    hex    := 0xA      // 10
+    
+    fmt.Println(binary, octal, hex)
+    
+    // Rune และ UTF-8
+    text := "Hello, โลก"
+    fmt.Println("Length in bytes:", len(text))        // 11 bytes
+    fmt.Println("Number of runes:", len([]rune(text))) // 8 runes
+    
+    // แสดงแต่ละ rune
+    for i, r := range text {
+        fmt.Printf("Position %d: %c (U+%04X)\n", i, r, r)
+    }
+}
+```
+
+**ความสำคัญของ rune ใน Go**
+- `string` ใน Go เป็น sequence ของ bytes (UTF-8)
+- การวนลูปด้วย `for range` จะได้ rune อัตโนมัติ
+- ใช้ `[]rune(str)` เพื่อจัดการทีละตัวอักษร
+
+---
+
+### 2. การจัดเก็บข้อมูล (บทที่ 8–9)
+
+**เป้าหมาย:** เรียนรู้การประกาศตัวแปรและควบคุมการทำงาน
+
+#### บทที่ 8: ตัวแปร, ค่าคงที่, และชนิดข้อมูลพื้นฐาน
+
+**ตัวแปร (Variables)**
+```go
+// วิธีประกาศ
+var name string = "Go"     // ระบุชนิด
+var version = 1.23          // type inference
+lang := "Golang"            // short declaration (ใช้ภายในฟังก์ชัน)
+
+// ประกาศหลายตัว
+var x, y int = 10, 20
+a, b := "hello", true
+
+// zero value (ค่าเริ่มต้น)
+var i int       // 0
+var s string    // "" (empty string)
+var b bool      // false
+var p *int      // nil
+```
+
+**ค่าคงที่ (Constants)**
+```go
+const Pi = 3.14159
+const (
+    StatusOK    = 200
+    StatusNotFound = 404
+)
+
+// iota: ตัวนับอัตโนมัติ (เริ่มที่ 0)
+const (
+    Sunday = iota     // 0
+    Monday            // 1
+    Tuesday           // 2
+    // ... ไปเรื่อยๆ
+)
+```
+
+**ชนิดข้อมูลพื้นฐาน**
+
+| ชนิด | ขนาด (bit) | ช่วงค่า | ตัวอย่าง |
+|------|-----------|---------|---------|
+| `bool` | 1 | true/false | `var ok bool = true` |
+| `int` | 32/64 | ขึ้นอยู่กับระบบ | `var age int = 30` |
+| `int8` | 8 | -128 ถึง 127 | `var score int8 = 100` |
+| `int16` | 16 | -32768 ถึง 32767 | - |
+| `int32` (rune) | 32 | -2³¹ ถึง 2³¹-1 | `var char rune = 'A'` |
+| `int64` | 64 | -9×10¹⁸ ถึง 9×10¹⁸ | - |
+| `uint` | 32/64 | 0 ถึง 2^n-1 | `var count uint = 100` |
+| `float32` | 32 | ~1.4×10⁻⁴⁵ ถึง 3.4×10³⁸ | `var pi float32 = 3.14` |
+| `float64` | 64 | ~4.9×10⁻³²⁴ ถึง 1.8×10³⁰⁸ | `var price float64 = 99.99` |
+| `string` | - | sequence of bytes | `var name string = "Go"` |
+| `byte` | 8 | alias of uint8 | `var b byte = 'A'` |
+| `rune` | 32 | alias of int32 | `var r rune = 'ก'` |
+
+#### บทที่ 9: คำสั่งควบคุมการทำงาน
+
+**if-else**
+```go
+// if พื้นฐาน
+if x > 0 {
+    fmt.Println("positive")
+} else if x < 0 {
+    fmt.Println("negative")
+} else {
+    fmt.Println("zero")
+}
+
+// if พร้อม short statement
+if err := doSomething(); err != nil {
+    fmt.Println("Error:", err)
+    return
+}
+```
+
+**for loop** (Go มีแค่ `for` ไม่มี `while`)
+```go
+// แบบคลาสสิก (for i := 0; i < 10; i++)
+for i := 0; i < 10; i++ {
+    fmt.Println(i)
+}
+
+// while-style (for condition {})
+count := 0
+for count < 10 {
+    count++
+}
+
+// infinite loop
+for {
+    // ใช้ break ออก
+}
+
+// range (iterating over slices, maps, strings)
+numbers := []int{1, 2, 3}
+for index, value := range numbers {
+    fmt.Printf("index=%d, value=%d\n", index, value)
+}
+
+// range บน string ได้ rune
+for i, r := range "Go" {
+    fmt.Printf("%d: %c\n", i, r)
+}
+```
+
+**switch** (ไม่ต้องใช้ `break`)
+```go
+// switch กับค่า
+switch day := time.Now().Weekday(); day {
+case time.Saturday, time.Sunday:
+    fmt.Println("Weekend")
+default:
+    fmt.Println("Weekday")
+}
+
+// switch แบบไม่มี expression (ใช้แทน if-else chain)
+score := 85
+switch {
+case score >= 90:
+    fmt.Println("A")
+case score >= 80:
+    fmt.Println("B")
+case score >= 70:
+    fmt.Println("C")
+default:
+    fmt.Println("F")
+}
+
+// fallthrough (ไปตรวจ case ถัดไป)
+switch 2 {
+case 1:
+    fmt.Println("1")
+case 2:
+    fmt.Println("2")
+    fallthrough
+case 3:
+    fmt.Println("3")  // จะพิมพ์ "2" และ "3"
+}
+```
+
+---
+
+### 3. การจัดระเบียบโค้ด (บทที่ 10–12)
+
+**เป้าหมาย:** เขียนโค้ดที่เป็นระเบียบ แบ่งเป็นฟังก์ชันและแพคเกจ
+
+#### บทที่ 10: ฟังก์ชัน (Functions)
+
+```go
+// ฟังก์ชันพื้นฐาน
+func add(x int, y int) int {
+    return x + y
+}
+
+// การประกาศแบบสั้น
+func add(x, y int) int {
+    return x + y
+}
+
+// คืนค่าหลายค่า
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
+    }
+    return a / b, nil
+}
+
+// named return values
+func split(sum int) (x, y int) {
+    x = sum * 4 / 9
+    y = sum - x
+    return  // naked return
+}
+
+// variadic parameters (รับพารามิเตอร์จำนวนไม่แน่นอน)
+func sum(numbers ...int) int {
+    total := 0
+    for _, n := range numbers {
+        total += n
+    }
+    return total
+}
+// เรียกใช้: sum(1, 2, 3) หรือ sum([]int{1,2,3}...)
+
+// defer: ทำงานก่อนออกจากฟังก์ชัน
+func readFile(filename string) error {
+    f, err := os.Open(filename)
+    if err != nil {
+        return err
+    }
+    defer f.Close()  // จะถูกเรียกเมื่อฟังก์ชันจบ
+    
+    // อ่านไฟล์...
+    return nil
+}
+
+// panic และ recover
+func safeDivide(a, b int) (result int) {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Recovered from panic:", r)
+            result = 0
+        }
+    }()
+    
+    if b == 0 {
+        panic("division by zero")
+    }
+    return a / b
+}
+```
+
+#### บทที่ 11: แพคเกจและการนำเข้า (Packages and Imports)
+
+**หลักการ**
+- โค้ด Go จัดกลุ่มเป็นแพคเกจ (package)
+- `package main` คือ executable program
+- แพคเกจอื่นๆ คือ reusable libraries
+
+**การตั้งชื่อและ visibility**
+- ตัวพิมพ์ใหญ่: **exported** (สามารถเข้าถึงจากภายนอกแพคเกจได้)
+- ตัวพิมพ์เล็ก: **unexported** (ใช้ภายในแพคเกจเท่านั้น)
+
+**ตัวอย่างโครงสร้างโปรเจกต์**
+```
+myproject/
+├── go.mod
+├── main.go
+└── math/
+    └── math.go
+```
+
+**math/math.go**
+```go
+package math
+
+// Exported function (ขึ้นต้นด้วยตัวพิมพ์ใหญ่)
+func Add(a, b int) int {
+    return a + b
+}
+
+// Unexported function (ใช้ภายในแพคเกจ)
+func subtract(a, b int) int {
+    return a - b
+}
+```
+
+**main.go**
+```go
+package main
+
+import (
+    "fmt"
+    "myproject/math"  // import แพคเกจ custom
+)
+
+func main() {
+    result := math.Add(5, 3)
+    fmt.Println(result)  // 8
+    
+    // math.subtract(5, 3)  // ERROR: ไม่สามารถเข้าถึงได้
+}
+```
+
+#### บทที่ 12: การเริ่มต้นทำงานของแพคเกจ (Package Initialization)
+
+**ลำดับการทำงาน**
+1. ตัวแปรระดับแพคเกจถูกกำหนดค่า
+2. ฟังก์ชัน `init()` ถูกเรียก (เรียงตามลำดับในไฟล์ และข้ามแพคเกจ)
+3. ฟังก์ชัน `main()` ถูกเรียก (เฉพาะแพคเกจ main)
+
+```go
+package main
+
+import "fmt"
+
+var globalVar = initGlobal()
+
+func initGlobal() string {
+    fmt.Println("1. Initializing global variable")
+    return "ready"
+}
+
+func init() {
+    fmt.Println("2. First init function")
+}
+
+func init() {
+    fmt.Println("3. Second init function")
+}
+
+func main() {
+    fmt.Println("4. Main function")
+}
+
+// ผลลัพธ์:
+// 1. Initializing global variable
+// 2. First init function
+// 3. Second init function
+// 4. Main function
+```
+
+**การใช้ init() เพื่อตั้งค่า**
+```go
+package database
+
+import (
+    "database/sql"
+    _ "github.com/lib/pq"  // blank import: เรียกเฉพาะ init()
+)
+
+var DB *sql.DB
+
+func init() {
+    // ตั้งค่า connection pool
+    var err error
+    DB, err = sql.Open("postgres", "connection string")
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+---
+
+### 4. ชนิดข้อมูลขั้นสูง (บทที่ 13–16)
+
+**เป้าหมาย:** สร้างโครงสร้างข้อมูลที่ซับซ้อนและเขียนโค้ดที่ยืดหยุ่น
+
+#### บทที่ 13: การสร้างชนิดข้อมูลใหม่ (Types)
+
+```go
+// type alias
+type MyInt int
+type UserID string
+
+// struct (โครงสร้างข้อมูล)
+type Person struct {
+    Name    string
+    Age     int
+    Address string
+}
+
+// struct พร้อม tags (ใช้กับ JSON, validation)
+type User struct {
+    ID        uint   `json:"id"`
+    Email     string `json:"email" validate:"required,email"`
+    Password  string `json:"-"`  // ไม่ถูกส่งใน JSON
+    CreatedAt time.Time `json:"created_at"`
+}
+
+// embedded struct
+type Employee struct {
+    Person      // embedded field (ไม่ต้องมีชื่อ)
+    Position string
+    Salary   float64
+}
+
+func main() {
+    var id MyInt = 100
+    var uid UserID = "user-123"
+    
+    // สร้าง struct
+    p1 := Person{Name: "Alice", Age: 30}
+    p2 := Person{
+        Name: "Bob",
+        Age:  25,
+    }
+    
+    // เข้าถึง field
+    fmt.Println(p1.Name)
+    p1.Age = 31
+    
+    // embedded struct
+    emp := Employee{
+        Person:   Person{Name: "Charlie", Age: 35},
+        Position: "Developer",
+        Salary:   75000,
+    }
+    fmt.Println(emp.Name)  // เข้าถึง field จาก Person โดยตรง
+}
+```
+
+#### บทที่ 14: เมธอด (Methods)
+
+เมธอดคือฟังก์ชันที่ผูกกับ type (receiver)
+
+```go
+// กำหนด type
+type Rectangle struct {
+    Width, Height float64
+}
+
+// Value receiver (รับสำเนา)
+func (r Rectangle) Area() float64 {
+    return r.Width * r.Height
+}
+
+// Pointer receiver (รับ reference)
+func (r *Rectangle) Scale(factor float64) {
+    r.Width *= factor
+    r.Height *= factor
+}
+
+// ใช้ pointer receiver เมื่อต้องการแก้ไข struct
+func (r *Rectangle) SetWidth(w float64) {
+    r.Width = w
+}
+
+// เมธอดบนชนิดอื่นๆ (ไม่ใช่แค่ struct)
+type Counter int
+
+func (c *Counter) Increment() {
+    *c++
+}
+
+func (c Counter) Value() int {
+    return int(c)
+}
+
+func main() {
+    rect := Rectangle{Width: 10, Height: 5}
+    
+    // value receiver (ไม่แก้ไขต้นฉบับ)
+    area := rect.Area()  // 50
+    
+    // pointer receiver (แก้ไขต้นฉบับ)
+    rect.Scale(2)  // rect เปลี่ยนเป็น Width=20, Height=10
+    
+    // counter
+    var cnt Counter = 5
+    cnt.Increment()
+    fmt.Println(cnt.Value())  // 6
+}
+```
+
+**เมื่อใช้ value receiver vs pointer receiver**
+
+| Value Receiver | Pointer Receiver |
+|----------------|------------------|
+| รับสำเนา ไม่แก้ไขต้นฉบับ | รับ reference แก้ไขต้นฉบับได้ |
+| เหมาะกับ struct เล็ก | เหมาะกับ struct ใหญ่ |
+| เรียกใช้กับ value หรือ pointer ก็ได้ | เรียกใช้กับ value หรือ pointer ก็ได้ |
+| ไม่เปลี่ยนค่าในเมธอด | เปลี่ยนค่าในเมธอดได้ |
+
+#### บทที่ 15: พอยน์เตอร์ (Pointers)
+
+พอยน์เตอร์คือตัวแปรที่เก็บ **ที่อยู่หน่วยความจำ** (memory address)
+
+```go
+func main() {
+    x := 10
+    p := &x  // p ชี้ไปที่ x (เก็บ address)
+    
+    fmt.Println(x)   // 10
+    fmt.Println(p)   // 0xc0000120a0 (address)
+    fmt.Println(*p)  // 10 (dereference: อ่านค่า)
+    
+    // เปลี่ยนค่าผ่าน pointer
+    *p = 20
+    fmt.Println(x)   // 20 (เปลี่ยนแล้ว)
+    
+    // zero value ของ pointer คือ nil
+    var q *int
+    fmt.Println(q)  // nil
+    
+    // สร้าง pointer ใหม่ด้วย new
+    r := new(int)
+    *r = 100
+    fmt.Println(*r)  // 100
+}
+
+// ฟังก์ชันที่รับ pointer
+func increment(p *int) {
+    *p++
+}
+
+// ฟังก์ชันที่คืน pointer
+func newInt(value int) *int {
+    return &value
+}
+
+// เปรียบเทียบ: pass by value vs pass by pointer
+func byValue(x int) {
+    x = 100  // ไม่มีผลนอกฟังก์ชัน
+}
+
+func byPointer(x *int) {
+    *x = 100  // มีผลนอกฟังก์ชัน
+}
+```
+
+**ข้อควรรู้เกี่ยวกับ pointer ใน Go**
+- Go มี pointer แต่ **ไม่มี pointer arithmetic** (ต่างจาก C)
+- ใช้ `&` เพื่อ get address, `*` เพื่อ dereference
+- `nil` pointer dereference ทำให้เกิด panic
+- ใช้ pointer กับ struct ขนาดใหญ่เพื่อประหยัดหน่วยความจำ
+
+#### บทที่ 16: อินเทอร์เฟซ (Interfaces)
+
+Interface กำหนด **พฤติกรรม** (method set) ที่ type ต้องมี
+
+```go
+// ประกาศ interface
+type Speaker interface {
+    Speak() string
+}
+
+type Animal interface {
+    Speak() string
+    Move() string
+}
+
+// type ที่ implement interface
+type Dog struct {
+    Name string
+}
+
+func (d Dog) Speak() string {
+    return "Woof!"
+}
+
+func (d Dog) Move() string {
+    return "Running on 4 legs"
+}
+
+type Cat struct {
+    Name string
+}
+
+func (c Cat) Speak() string {
+    return "Meow!"
+}
+
+func (c Cat) Move() string {
+    return "Walking gracefully"
+}
+
+// ฟังก์ชันที่รับ interface
+func MakeSound(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+func main() {
+    dog := Dog{Name: "Max"}
+    cat := Cat{Name: "Luna"}
+    
+    // Dog และ Cat implement Speaker
+    MakeSound(dog)  // Woof!
+    MakeSound(cat)  // Meow!
+    
+    // empty interface (interface{}) สามารถเก็บค่าใดก็ได้
+    var anything interface{}
+    anything = 42
+    anything = "hello"
+    anything = Dog{Name: "Buddy"}
+    
+    // type assertion (ตรวจสอบชนิด)
+    val, ok := anything.(Dog)
+    if ok {
+        fmt.Println(val.Speak())
+    }
+    
+    // type switch
+    switch v := anything.(type) {
+    case int:
+        fmt.Println("int:", v)
+    case string:
+        fmt.Println("string:", v)
+    case Dog:
+        fmt.Println("Dog:", v.Name)
+    default:
+        fmt.Println("unknown type")
+    }
+}
+```
+
+**Interface Composition** (การรวม interface)
+```go
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+
+// ประกอบ interface
+type ReadWriter interface {
+    Reader
+    Writer
+}
+```
+
+**ข้อดีของ interface**
+- **Polymorphism**: เขียนโค้ดที่ทำงานกับ type ต่างๆ ที่มีพฤติกรรมเดียวกัน
+- **Decoupling**: แยก implementation ออกจาก contract
+- **Testability**: สร้าง mock ได้ง่าย
+
+**Interface ใน Go ต่างจากภาษา OOP อื่น**
+- Go interface **implement implicitly** (ไม่ต้องประกาศ implements)
+- Interface เป็น **ค่าที่มี 2 ส่วน**: dynamic type + dynamic value
+- Interface สามารถเป็น `nil` (ถ้า type เป็น nil และ value เป็น nil)
+
+---
+
+## สรุปภาคที่ 2: ความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart LR
+    subgraph Knowledge["องค์ความรู้"]
+        K1[การแทนข้อมูล<br/>บทที่ 6-7] --> K2[การจัดเก็บ<br/>บทที่ 8-9]
+        K2 --> K3[การจัดระเบียบ<br/>บทที่ 10-12]
+        K3 --> K4[ชนิดข้อมูลขั้นสูง<br/>บทที่ 13-16]
+    end
+    
+    subgraph Skills["ทักษะที่ได้"]
+        S1[เข้าใจการทำงาน<br/>ระดับบิต/ไบต์]
+        S2[เขียนโปรแกรม<br/>แบบมีเงื่อนไข]
+        S3[แบ่งโค้ดเป็น<br/>ฟังก์ชัน/แพคเกจ]
+        S4[สร้าง struct,<br/>methods, interfaces]
+    end
+    
+    K1 --> S1
+    K2 --> S2
+    K3 --> S3
+    K4 --> S4
+```
+
+**สิ่งที่ได้เรียนรู้**
+1. **บทที่ 6-7**: รู้ว่าคอมพิวเตอร์จัดเก็บข้อมูลอย่างไร (Binary, Hex, UTF-8, Rune)
+2. **บทที่ 8-9**: ประกาศตัวแปรและควบคุมการทำงานด้วย if, for, switch
+3. **บทที่ 10-12**: จัดระเบียบโค้ดด้วยฟังก์ชันและแพคเกจ
+4. **บทที่ 13-16**: สร้าง struct, กำหนดเมธอด, ใช้ pointer, และออกแบบ interface
+
+พื้นฐานเหล่านี้จะนำไปใช้ใน **ภาคที่ 3** เพื่อจัดการโปรเจกต์, สร้าง test, และใช้ slice/map ในการจัดการข้อมูลจำนวนมาก
 ## ภาคที่ 3: การจัดการโปรเจกต์และโครงสร้างข้อมูลขั้นสูง (บทที่ 17–23)
 
 **แผนภาพ: การจัดการโปรเจกต์ → ทดสอบ → คอลเลกชัน → ข้อผิดพลาด**
