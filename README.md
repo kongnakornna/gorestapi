@@ -2088,7 +2088,7 @@ fmt.Println("This will execute") // บรรทัดนี้จะถูก e
 
 ระหว่างการคลายสแต็ก:
 - การทำงานปกติของฟังก์ชันปัจจุบัน **หยุดทันที**
-- คำสั่ง `defer` **ทั้งหมด** ในฟังก์ชันนั้นจะถูกเรียก执行 (execute) ตามลำดับ LIFO (ประกาศทีหลังเรียกก่อน)
+- คำสั่ง `defer` **ทั้งหมด** ในฟังก์ชันนั้นจะถูกเรียก (execute) ตามลำดับ LIFO (ประกาศทีหลังเรียกก่อน)
 - จากนั้น panic value จะถูกส่งขึ้นไปยังฟังก์ชันที่เรียก (caller) และทำซ้ำขั้นตอนเดิม
 
 หากไม่มี `recover()` ใดๆ จับ panic ไว้ กระบวนการจะดำเนินไปจนถึง `main` แล้วโปรแกรมจะหยุดพร้อมแสดง stack trace  
@@ -2116,7 +2116,84 @@ main() → level1() → level2() → level3()
                                    ↓
                          ถ้าไม่มี recover → โปรแกรมหยุด
 ```
+## `recover` คืออะไร
 
+`recover` เป็น built-in function ในภาษา Go ที่ใช้ **กู้คืนโปรแกรมจากภาวะ panic** ช่วยให้โปรแกรมไม่ต้องหยุดทำงานทั้งระบบเมื่อเกิดข้อผิดพลาดร้ายแรง โดยสามารถจับค่า panic ที่เกิดขึ้นและทำให้โปรแกรมทำงานต่อไปได้ตามปกติ
+
+---
+
+### หลักการทำงาน
+
+- `recover` จะทำงานได้ **เฉพาะเมื่อถูกเรียกภายใน `defer` function** เท่านั้น  
+- หากเรียกนอก `defer` หรือไม่มี panic เกิดขึ้น `recover()` จะคืนค่า `nil`  
+- เมื่อ panic เกิดขึ้นและมี `defer` ที่เรียก `recover()` ค่า panic จะถูกจับไว้ และ **การคลายสแต็ก (stack unwinding) จะหยุด** ที่ฟังก์ชันนั้น  
+- `recover()` คืนค่าที่เป็น `interface{}` ซึ่งคือค่าที่ส่งเข้าไปใน `panic` (เช่น ข้อความ error, struct, ฯลฯ)
+
+---
+
+### ตัวอย่างการใช้งาน
+
+```go
+package main
+
+import "fmt"
+
+func safeDivision(a, b int) {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("กู้คืนจาก panic:", r)
+            fmt.Println("โปรแกรมทำงานต่อ")
+        }
+    }()
+
+    if b == 0 {
+        panic("ตัวหารเป็นศูนย์")
+    }
+    fmt.Println("ผลลัพธ์:", a/b)
+}
+
+func main() {
+    safeDivision(10, 2) // ทำงานปกติ → ผลลัพธ์: 5
+    safeDivision(10, 0) // เกิด panic แต่ recover จับได้
+    fmt.Println("จบโปรแกรม")
+}
+```
+
+**ผลลัพธ์:**
+```
+ผลลัพธ์: 5
+กู้คืนจาก panic: ตัวหารเป็นศูนย์
+โปรแกรมทำงานต่อ
+จบโปรแกรม
+```
+
+---
+
+### ข้อควรระวัง
+
+1. **ต้องอยู่ใน `defer` เท่านั้น**  
+   - การเรียก `recover()` นอก `defer` จะไม่มีผลและคืนค่า `nil` เสมอ
+
+2. **ใช้เฉพาะเมื่อจำเป็น**  
+   - โดยทั่วไปควรจัดการ error ผ่าน `error` return value มากกว่าใช้ `panic`/`recover`  
+   - `panic`/`recover` เหมาะสำหรับกรณีที่ไม่ควรเกิดขึ้น (programmer error, initialization failure ที่ไม่สามารถดำเนินต่อได้)
+
+3. **`recover` คืนค่าเป็น `interface{}`**  
+   - ต้องทำ type assertion หรือ type switch เพื่อใช้งานค่าที่ได้
+
+---
+
+### ความสัมพันธ์กับ `panic` และ `defer`
+
+```
+panic เกิดขึ้น → คลายสแต็ก (unwind stack) → execute defer → ถ้ามี recover() → จับค่า panic → หยุด unwind → โปรแกรมทำงานต่อ
+```
+
+**สรุป:** `recover` คือกลไกในการจับ panic ช่วยให้โปรแกรม Go มีความยืดหยุ่นในการจัดการกับข้อผิดพลาดร้ายแรงโดยไม่ต้องหยุดทำงานทั้งระบบ เหมาะสำหรับใช้ใน library หรือ middleware ที่ต้องการป้องกันการ crash ของโปรแกรมหลัก
+
+---
+
+ 
 **สรุป:** การคลายสแต็กคือการเดินกลับขึ้น call stack พร้อม deferred functions เพื่อให้โอกาสในการ cleanup หรือกู้คืน (recover) ก่อนที่โปรแกรมจะจบ
  
 ### ตัวอย่าง
@@ -2288,32 +2365,41 @@ sequenceDiagram
     deactivate L1
     Note over main: โปรแกรมทำงานต่อ
 ```
+ ----------------
+ **การคลายสแต็ก (stack unwinding)** คือกระบวนการที่เกิดขึ้นเมื่อเกิด `panic` ใน Go โดยโปรแกรมจะ **ย้อนกลับไปตามลำดับการเรียกฟังก์ชัน (call stack)** จากฟังก์ชันที่เกิด panic ขึ้นไปยังฟังก์ชันที่เรียกมันเรื่อยๆ จนถึง `main` (หรือจนกว่าจะเจอ `recover`)  
 
----
+ระหว่างการคลายสแต็ก:
+- การทำงานปกติของฟังก์ชันปัจจุบัน **หยุดทันที**
+- คำสั่ง `defer` **ทั้งหมด** ในฟังก์ชันนั้นจะถูกเรียก执行 (execute) ตามลำดับ LIFO (ประกาศทีหลังเรียกก่อน)
+- จากนั้น panic value จะถูกส่งขึ้นไปยังฟังก์ชันที่เรียก (caller) และทำซ้ำขั้นตอนเดิม
 
-## 4. แผนภาพรวมการไหลของ panic (ปรับปรุงจากที่มี)
+หากไม่มี `recover()` ใดๆ จับ panic ไว้ กระบวนการจะดำเนินไปจนถึง `main` แล้วโปรแกรมจะหยุดพร้อมแสดง stack trace  
+หากมี `recover()` ภายใน `defer` ของฟังก์ชันใด ณ จุดนั้น panic จะถูกจับไว้ และ **การคลายสแต็กจะหยุด** โปรแกรมจะทำงานต่อจากฟังก์ชันนั้นตามปกติ
 
-```mermaid
-graph TD
-    subgraph เกิด panic
-        P[panic value] --> S{มี defer ในฟังก์ชันปัจจุบัน?}
-        S -->|ใช่| D[execute defer LIFO]
-        S -->|ไม่| U[ส่ง panic ไปยัง caller]
-        D --> R{ใน defer มี recover?}
-        R -->|มี| REC[recover จับ panic,<br/>โปรแกรมทำงานต่อ]
-        R -->|ไม่มี| U
-        U --> C{caller = main?}
-        C -->|ใช่| EXIT[โปรแกรมหยุด<br/>พิมพ์ stack trace]
-        C -->|ไม่| S2{มี defer ใน caller?}
-        S2 -->|ใช่| D
-        S2 -->|ไม่| U
-    end
+### ตัวอย่างภาพจากแผนภาพ (แบบย่อ)
+```
+main() → level1() → level2() → level3()
+                                   |
+                              panic เกิด
+                                   ↓
+                         execute defer (level3)
+                                   ↓
+                         panic ส่งขึ้น → level2()
+                                   ↓
+                         execute defer (level2)
+                                   ↓
+                         panic ส่งขึ้น → level1()
+                                   ↓
+                         execute defer (level1)
+                                   ↓
+                         panic ส่งขึ้น → main()
+                                   ↓
+                         execute defer (main)
+                                   ↓
+                         ถ้าไม่มี recover → โปรแกรมหยุด
 ```
 
----
-
- 
- 
+**สรุป:** การคลายสแต็กคือการเดินกลับขึ้น call stack พร้อม deferred functions เพื่อให้โอกาสในการ cleanup หรือกู้คืน (recover) ก่อนที่โปรแกรมจะจบ
  
 ```go
 package main
@@ -2345,6 +2431,222 @@ func main() {
 ### สรุป
 `defer` ช่วยให้โค้ดสะอาดและปลอดภัย เพราะรับประกันการทำความสะอาด (เช่น ปิดไฟล์) แม้ในกรณีที่มีการ `return` ก่อนถึงคำสั่งปิดหรือเกิด panic
 
+----------------------
+# recover
+## `recover` คืออะไร
+
+`recover` เป็น built-in function ในภาษา Go ที่ใช้ **กู้คืนโปรแกรมจากภาวะ panic** ช่วยให้โปรแกรมไม่ต้องหยุดทำงานทั้งระบบเมื่อเกิดข้อผิดพลาดร้ายแรง โดยสามารถจับค่า panic ที่เกิดขึ้นและทำให้โปรแกรมทำงานต่อไปได้ตามปกติ
+
+---
+
+### หลักการทำงาน
+
+- `recover` จะทำงานได้ **เฉพาะเมื่อถูกเรียกภายใน `defer` function** เท่านั้น  
+- หากเรียกนอก `defer` หรือไม่มี panic เกิดขึ้น `recover()` จะคืนค่า `nil`  
+- เมื่อ panic เกิดขึ้นและมี `defer` ที่เรียก `recover()` ค่า panic จะถูกจับไว้ และ **การคลายสแต็ก (stack unwinding) จะหยุด** ที่ฟังก์ชันนั้น  
+- `recover()` คืนค่าที่เป็น `interface{}` ซึ่งคือค่าที่ส่งเข้าไปใน `panic` (เช่น ข้อความ error, struct, ฯลฯ)
+
+---
+
+### ตัวอย่างการใช้งาน
+
+```go
+package main
+
+import "fmt"
+
+func safeDivision(a, b int) {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("กู้คืนจาก panic:", r)
+            fmt.Println("โปรแกรมทำงานต่อ")
+        }
+    }()
+
+    if b == 0 {
+        panic("ตัวหารเป็นศูนย์")
+    }
+    fmt.Println("ผลลัพธ์:", a/b)
+}
+
+func main() {
+    safeDivision(10, 2) // ทำงานปกติ → ผลลัพธ์: 5
+    safeDivision(10, 0) // เกิด panic แต่ recover จับได้
+    fmt.Println("จบโปรแกรม")
+}
+```
+
+**ผลลัพธ์:**
+```
+ผลลัพธ์: 5
+กู้คืนจาก panic: ตัวหารเป็นศูนย์
+โปรแกรมทำงานต่อ
+จบโปรแกรม
+```
+
+---
+
+### ข้อควรระวัง
+
+1. **ต้องอยู่ใน `defer` เท่านั้น**  
+   - การเรียก `recover()` นอก `defer` จะไม่มีผลและคืนค่า `nil` เสมอ
+
+2. **ใช้เฉพาะเมื่อจำเป็น**  
+   - โดยทั่วไปควรจัดการ error ผ่าน `error` return value มากกว่าใช้ `panic`/`recover`  
+   - `panic`/`recover` เหมาะสำหรับกรณีที่ไม่ควรเกิดขึ้น (programmer error, initialization failure ที่ไม่สามารถดำเนินต่อได้)
+
+3. **`recover` คืนค่าเป็น `interface{}`**  
+   - ต้องทำ type assertion หรือ type switch เพื่อใช้งานค่าที่ได้
+
+---
+
+### ความสัมพันธ์กับ `panic` และ `defer`
+
+```
+panic เกิดขึ้น → คลายสแต็ก (unwind stack) → execute defer → ถ้ามี recover() → จับค่า panic → หยุด unwind → โปรแกรมทำงานต่อ
+```
+
+**สรุป:** `recover` คือกลไกในการจับ panic ช่วยให้โปรแกรม Go มีความยืดหยุ่นในการจัดการกับข้อผิดพลาดร้ายแรงโดยไม่ต้องหยุดทำงานทั้งระบบ เหมาะสำหรับใช้ใน library หรือ middleware ที่ต้องการป้องกันการ crash ของโปรแกรมหลัก
+
+---
+ 
+
+เพื่อให้เห็นภาพการทำงานของ **`recover`** อย่างชัดเจน ผมขอเสนอแผนภาพ 3 แบบ ดังนี้
+
+---
+
+## 1. แผนภาพลำดับ (Sequence Diagram) – เปรียบเทียบแบบมี/ไม่มี `recover`
+
+### กรณี **ไม่มี recover** (โปรแกรมหยุด)
+
+```mermaid
+sequenceDiagram
+    participant main
+    participant L1 as level1()
+    participant L2 as level2()
+    participant L3 as level3()
+
+    main->>L1: call level1()
+    activate L1
+    L1->>L2: call level2()
+    activate L2
+    L2->>L3: call level3()
+    activate L3
+    L3-->>L3: panic("error")
+    Note over L3: execute defer (L3)
+    L3-->>L2: panic ส่งขึ้น
+    deactivate L3
+    Note over L2: execute defer (L2)
+    L2-->>L1: panic ส่งขึ้น
+    deactivate L2
+    Note over L1: execute defer (L1)
+    L1-->>main: panic ส่งขึ้น
+    deactivate L1
+    Note over main: execute defer (main)<br/>โปรแกรมหยุด
+```
+
+### กรณี **มี recover** (โปรแกรมทำงานต่อ)
+
+```mermaid
+sequenceDiagram
+    participant main
+    participant L1 as level1()
+    participant L2 as level2()
+    participant L3 as level3()
+
+    main->>L1: call level1()
+    activate L1
+    L1->>L2: call level2()
+    activate L2
+    L2->>L3: call level3()
+    activate L3
+    L3-->>L3: panic("error")
+    Note over L3: execute defer (L3)
+    L3-->>L2: panic ส่งขึ้น
+    deactivate L3
+    Note over L2: defer มี recover()<br/>จับ panic และหยุด unwind
+    L2-->>L1: return ปกติ (ไม่มี panic)
+    deactivate L2
+    L1-->>main: return ปกติ
+    deactivate L1
+    Note over main: โปรแกรมทำงานต่อ
+```
+
+---
+
+## 2. แผนภาพการไหล (Flowchart) – กระบวนการตัดสินใจของ `recover`
+
+```mermaid
+graph TD
+    A[เกิด panic] --> B{มี defer ในฟังก์ชันนี้?}
+    B -->|ไม่มี| C[ส่ง panic ไปยัง caller]
+    B -->|มี| D[execute defer ตามลำดับ LIFO]
+    D --> E{ใน defer มี recover()?}
+    E -->|มี| F[recover จับ panic value]
+    F --> G[หยุดการคลายสแต็กที่ฟังก์ชันนี้]
+    G --> H[ฟังก์ชัน return ปกติ]
+    H --> I[โปรแกรมทำงานต่อ]
+    
+    E -->|ไม่มี| C
+    C --> J{caller คือ main?}
+    J -->|ใช่| K[โปรแกรมหยุด พิมพ์ stack trace]
+    J -->|ไม่ใช่| B
+```
+
+---
+
+## 3. แผนภาพเปรียบเทียบแบบ ASCII (แบบกระชับ)
+
+```
+ไม่มี recover:                               มี recover:
+
+main() ──┐                                main() ──┐
+         │                                          │
+level1() │         panic value                      │
+         │            ▲                             │
+level2() │            │                             │
+         │            │                             │
+level3() │   panic    │      level3() ── panic
+         │     │      │               │
+         │     ▼      │               ▼
+         │  (defer)   │            (defer)
+         │            │               │
+         ▼            │               ▼
+    panic ส่งขึ้น     │         recover() จับ panic
+         │            │               │
+         ▼            │               ▼
+    (defer level2)    │          return ปกติ
+         │            │               │
+         ▼            │               ▼
+    panic ส่งขึ้น     │          level2() ──┐
+         │            │                    │
+         ▼            │                    ▼
+    (defer level1)    │               level1() ──┐
+         │            │                         │
+         ▼            │                         ▼
+    panic ส่งขึ้น     │                    main() ──┐
+         │            │                           │
+         ▼            │                           ▼
+    (defer main)      │                     โปรแกรมทำงานต่อ
+         │
+         ▼
+    โปรแกรมหยุด
+```
+
+---
+
+## วิธีใช้งาน
+
+1. คัดลอกโค้ด Mermaid ด้านบน  
+2. วางในไฟล์ Markdown ที่รองรับ Mermaid (GitHub, GitLab, Notion, Obsidian, ฯลฯ)  
+3. ระบบจะแสดงผลเป็นแผนภาพอัตโนมัติ  
+
+หากต้องการภาพนิ่ง (PNG/SVG) สามารถนำโค้ดไปวางที่ [Mermaid Live](https://mermaid.live/) แล้วดาวน์โหลดภาพได้
+
+---
+
+แผนภาพเหล่านี้ช่วยให้เห็นภาพรวมของ **`recover`** ได้ชัดเจนยิ่งขึ้น โดยเฉพาะบทบาทในการ **หยุดการคลายสแต็ก** และทำให้โปรแกรมดำเนินต่อไปได้อย่างปลอดภัย
+---------------------
 
 
 
