@@ -998,247 +998,134 @@ outer:
 ```
 (เมื่อเจอ (1,1) จะออกจาก outer loop ทันที)
 
---- 
-# Queue Processor
-
-## Queue Processor คืออะไร?
-**Queue Processor** คือระบบหรือคอมโพเนนต์ที่ทำหน้าที่ประมวลผลงาน (jobs/tasks) ที่ถูกส่งเข้ามาในคิว (queue) ตามลำดับ FIFO (First-In-First-Out) หรือตามลำดับความสำคัญ โดยจะดึงงานจากคิวมาประมวลผลแบบ asynchronous ช่วยลดภาระของ main thread, ป้องกันการ overload, และทำให้ระบบสามารถขยายขนาดได้ง่าย
-
-## Queue Processor มีกี่แบบ?
-แบ่งตามสถาปัตยกรรมและการจัดการได้หลายรูปแบบ:
-
-1. **Simple In-Memory Queue** – ใช้ slice + channel ใน Go เหมาะกับงานภายในแอปพลิเคชันเดียว
-2. **Worker Pool** – มี worker หลายตัวดึงงานจาก queue เดียวกัน ใช้ concurrency
-3. **Priority Queue** – จัดเรียงตาม priority (heap)
-4. **Message Broker** – Redis (List, Stream, Pub/Sub), RabbitMQ, Kafka, AWS SQS เป็นระบบคิวภายนอก
-5. **Delayed / Scheduled Queue** – รองรับการประมวลผลตามเวลาที่กำหนด
-6. **Transactional Queue** – รองรับการ commit/rollback เช่น Redis Streams + consumer group
-
-## ใช้อย่างไร ในกรณีไหน?
-- **ลดภาระ synchronous API** – รับ request แล้วส่งเข้า queue ตอบกลับทันที
-- **งานที่ใช้เวลานาน** – ส่งอีเมล, ประมวลผลรูปภาพ, อัปเดตข้อมูลจำนวนมาก
-- **Retry & Backoff** – ทำงานที่อาจล้มเหลวแล้วลองใหม่
-- **กระจายโหลด** – มี worker หลายตัวบนหลายเครื่อง
-- **ร่วมกับ GORM + Redis Transaction** – เช่น รับ order เข้า queue, เมื่อประมวลผลสำเร็จจะอัปเดตฐานข้อมูล (INSERT/UPDATE/DELETE) ภายใต้ transaction และ commit หากสำเร็จ หรือ rollback หาก error
-
-## หลักการทำงาน
-1. **Producer** สร้าง job และส่งเข้า queue (push)
-2. **Queue** จัดเก็บ job (อาจเป็น Redis List, SQS, etc.)
-3. **Processor (Consumer)** ดึง job จาก queue (pop) ตามกลไก (polling, push, pub/sub)
-4. **Processor** ประมวลผล job (เรียก business logic, เรียก API, ทำงาน DB)
-5. **Acknowledge / Remove** เมื่อประมวลผลสำเร็จ, ถ้าล้มเหลวอาจ retry หรือส่งไป dead letter queue
-
-## Dataflow Diagram (Flowchart TB)
-
-```mermaid
-graph TB
-    subgraph Producer
-        A[API / Service] --> B[Create Job]
-        B --> C[Push to Queue]
-    end
-
-    subgraph Queue Storage
-        D[(Redis List / SQS / Kafka)]
-    end
-
-    subgraph Consumer
-        E[Queue Processor] --> F[Pop Job]
-        F --> G[Process Job]
-        G --> H{Success?}
-        H -- Yes --> I[Acknowledge / Remove]
-        H -- No --> J{Retry?}
-        J -- Yes --> K[Requeue or Delay]
-        J -- No --> L[Dead Letter Queue]
-    end
-
-    C --> D
-    D --> E
-```
-
-## ตัวอย่างการใช้งานจริง (Go + Redis + GORM)
-
-### โครงสร้าง Job
-```go
-type Job struct {
-    ID         string    `json:"id"`
-    Type       string    `json:"type"`       // "email", "order_processing"
-    Payload    []byte    `json:"payload"`
-    RetryCount int       `json:"retry_count"`
-    CreatedAt  time.Time `json:"created_at"`
-}
-```
-
-### Producer: สร้าง job และ push ไป Redis (LPUSH หรือ RPUSH)
-```go
-func EnqueueJob(ctx context.Context, rdb *redis.Client, queueName string, job Job) error {
-    data, _ := json.Marshal(job)
-    return rdb.LPush(ctx, queueName, data).Err()
-}
-```
-
-### Consumer: วน loop ดึง job และประมวลผล
-```go
-func ProcessQueue(ctx context.Context, rdb *redis.Client, db *gorm.DB, queueName string) {
-    for {
-        // ใช้ BRPOP เพื่อรอ job (blocking)
-        result, err := rdb.BRPop(ctx, 0, queueName).Result()
-        if err != nil {
-            log.Printf("BRPop error: %v", err)
-            continue
-        }
-        // result[0] = queue name, result[1] = job data
-        var job Job
-        if err := json.Unmarshal([]byte(result[1]), &job); err != nil {
-            log.Printf("Unmarshal error: %v", err)
-            continue
-        }
-
-        // ประมวลผล job โดยใช้ transaction
-        if err := processJob(ctx, db, job); err != nil {
-            log.Printf("Job %s failed: %v", job.ID, err)
-            // handle retry logic
-        }
-    }
-}
-```
-
-### processJob พร้อม transaction (GORM) และ Redis
-```go
-func processJob(ctx context.Context, db *gorm.DB, job Job) error {
-    // เริ่ม transaction
-    tx := db.Begin()
-    defer func() {
-        if r := recover(); r != nil {
-            tx.Rollback()
-        }
-    }()
-
-    switch job.Type {
-    case "order_processing":
-        var order Order
-        if err := json.Unmarshal(job.Payload, &order); err != nil {
-            tx.Rollback()
-            return err
-        }
-
-        // INSERT order
-        if err := tx.Create(&order).Error; err != nil {
-            tx.Rollback()
-            return err
-        }
-
-        // UPDATE inventory
-        for _, item := range order.Items {
-            if err := tx.Model(&Product{}).Where("id = ?", item.ProductID).
-                Update("stock", gorm.Expr("stock - ?", item.Quantity)).Error; err != nil {
-                tx.Rollback()
-                return err
-            }
-        }
-
-        // DELETE temporary data
-        if err := tx.Where("order_id = ?", order.ID).Delete(&TempOrder{}).Error; err != nil {
-            tx.Rollback()
-            return err
-        }
-
-        // ใช้ Redis เพื่อบันทึก log
-        rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
-        if err := rdb.Set(ctx, fmt.Sprintf("order:%d:processed", order.ID), time.Now().Unix(), 0).Err(); err != nil {
-            tx.Rollback()
-            return err
-        }
-
-        // commit transaction
-        if err := tx.Commit().Error; err != nil {
-            return err
-        }
-
-    default:
-        return fmt.Errorf("unknown job type: %s", job.Type)
-    }
-    return nil
-}
-```
-
 ---
-
 # 9.1 if-else
 
 ## if-else คืออะไร?
-if-else เป็นคำสั่งควบคุมเงื่อนไขที่ใช้ตัดสินใจเลือกบล็อกโค้ดที่จะทำงานตามค่าความจริง (boolean) ของเงื่อนไข
+**if-else** คือคำสั่งควบคุมเงื่อนไขในภาษา Go ที่ใช้ตัดสินใจเลือก执行บล็อกโค้ดใดบล็อกหนึ่งตามค่าความจริง (boolean) ของเงื่อนไขที่กำหนด
 
 ## if-else มีกี่แบบ?
-- if (แบบเดี่ยว)
-- if-else (สองทางเลือก)
-- if-else if-else (หลายทางเลือก)
-- if พร้อม short statement (ประกาศตัวแปรภายในเงื่อนไข)
+ใน Go รูปแบบของ if-else มี 4 แบบหลัก ๆ:
+
+1. **if** – มีเพียงเงื่อนไขเดียว
+2. **if-else** – มีทางเลือกสองทาง
+3. **if-else if-else** – มีหลายทางเลือก
+4. **if พร้อม short statement** – ประกาศตัวแปรชั่วคราวภายในเงื่อนไข
 
 ## ใช้อย่างไร ในกรณีไหน?
-- ตรวจสอบ error หลังเรียกฟังก์ชัน
-- ตรวจสอบค่าก่อนทำ SQL (INSERT/UPDATE/DELETE)
-- ตรวจสอบผลลัพธ์จาก Redis ก่อน commit/rollback
-- ควบคุม logic ใน Queue Processor (เช่น retry, fallback)
+- **ตรวจสอบ error**: หลังเรียกฟังก์ชันที่คืนค่า error เช่น `if err != nil { ... }`
+- **ตรวจสอบค่า**: เปรียบเทียบตัวแปรกับค่าคงที่หรือผลลัพธ์
+- **กำหนดค่าเริ่มต้นตามเงื่อนไข**: ใช้ short statement เพื่อประกาศตัวแปรที่ใช้เฉพาะภายใน scope
+- **ร่วมกับ GORM**: ตรวจสอบผลลัพธ์จากฐานข้อมูลก่อนดำเนินการต่อ
+- **ร่วมกับ Redis**: ตรวจสอบการมีอยู่ของ key หรือข้อผิดพลาดจากคำสั่ง Redis
 
 ## หลักการทำงาน
-1. ประเมิน boolean expression
-2. ถ้า true → ทำบล็อก if
-3. ถ้า false → ทำบล็อก else (ถ้ามี)
-4. ตัวแปรใน short statement มีขอบเขตภายในบล็อก
+1. ประเมินค่า **boolean expression** ใน `if`
+2. ถ้า `true` → ทำบล็อกใน `if`
+3. ถ้า `false` → ถ้ามี `else` จะทำบล็อกใน `else` (หรือไปตรวจสอบ `else if` ถัดไป)
+4. ตัวแปรที่ประกาศใน **short statement** จะมีขอบเขตอยู่ภายในบล็อก if-else เท่านั้น
 
 ## Dataflow Diagram (Flowchart TB)
 
 ```mermaid
 graph TB
-    Start([เริ่ม]) --> Cond{เงื่อนไข true?}
-    Cond -- true --> IfBlock[ทำ if block]
-    Cond -- false --> ElseBlock[ทำ else block]
-    IfBlock --> End([จบ])
-    ElseBlock --> End
+    Start([เริ่ม]) --> Cond{เงื่อนไขเป็น true?}
+    Cond -- true --> BlockIf[ทำบล็อก if]
+    Cond -- false --> CheckElse{มี else?}
+    CheckElse -- มี --> BlockElse[ทำบล็อก else]
+    CheckElse -- ไม่มี --> End
+    BlockIf --> End([จบ])
+    BlockElse --> End
 ```
 
-## ตัวอย่างกับ GORM / Redis / Queue Processor
+## ตัวอย่างการใช้งานจริง
 
-### ตรวจสอบ error ก่อน commit
+### 1. การตรวจสอบ error พื้นฐาน
 ```go
-func UpdateOrderStatus(db *gorm.DB, orderID uint, status string) error {
-    tx := db.Begin()
-    defer func() {
-        if r := recover(); r != nil {
-            tx.Rollback()
-        }
-    }()
+package main
 
-    if err := tx.Model(&Order{}).Where("id = ?", orderID).Update("status", status).Error; err != nil {
-        tx.Rollback()
-        return err
-    }
+import (
+    "errors"
+    "fmt"
+)
 
-    // ถ้า update สำเร็จ commit
-    if err := tx.Commit().Error; err != nil {
-        return err
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("division by zero")
     }
-    return nil
+    return a / b, nil
+}
+
+func main() {
+    result, err := divide(10, 0)
+    if err != nil {
+        fmt.Println("Error:", err)
+    } else {
+        fmt.Println("Result:", result)
+    }
 }
 ```
 
-### ใช้ใน Queue Processor: ตรวจสอบ retry count
+### 2. if พร้อม short statement (นิยมใช้กับ error)
 ```go
-func processJobWithRetry(job Job) error {
-    err := processJob(job)
-    if err != nil {
-        if job.RetryCount < 3 {
-            job.RetryCount++
-            // re-queue with delay
-            requeueWithDelay(job, time.Second * time.Duration(job.RetryCount))
-            return nil // not considered error now
-        } else {
-            // move to dead letter queue
-            sendToDLQ(job)
-            return fmt.Errorf("max retries exceeded: %v", err)
+if err := someFunction(); err != nil {
+    // จัดการ error
+    return err
+}
+// ดำเนินการต่อเมื่อไม่มี error
+```
+
+### 3. การใช้ if-else กับ GORM (ค้นหาผู้ใช้ ถ้าไม่พบให้สร้างใหม่)
+```go
+import "gorm.io/gorm"
+
+func GetOrCreateUser(db *gorm.DB, email string) (*User, error) {
+    var user User
+    result := db.Where("email = ?", email).First(&user)
+    
+    if result.Error != nil {
+        if result.Error == gorm.ErrRecordNotFound {
+            // สร้างผู้ใช้ใหม่
+            user = User{Email: email, Name: "New User"}
+            if err := db.Create(&user).Error; err != nil {
+                return nil, err
+            }
+            return &user, nil
         }
+        return nil, result.Error
     }
-    return nil
+    return &user, nil
+}
+```
+
+### 4. การใช้ if-else กับ Redis Transaction (ตรวจสอบ key ก่อนทำ multi/exec)
+```go
+import (
+    "context"
+    "github.com/go-redis/redis/v8"
+)
+
+func TransferMoney(ctx context.Context, rdb *redis.Client, fromKey, toKey string, amount int64) error {
+    // ตรวจสอบว่า fromKey มี balance เพียงพอ
+    balance, err := rdb.Get(ctx, fromKey).Int64()
+    if err != nil {
+        if err == redis.Nil {
+            return fmt.Errorf("key %s does not exist", fromKey)
+        }
+        return err
+    }
+    
+    if balance < amount {
+        return fmt.Errorf("insufficient balance")
+    }
+    
+    // ทำ transaction
+    _, err = rdb.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+        pipe.DecrBy(ctx, fromKey, amount)
+        pipe.IncrBy(ctx, toKey, amount)
+        return nil
+    })
+    return err
 }
 ```
 
@@ -1247,93 +1134,151 @@ func processJobWithRetry(job Job) error {
 # 9.2 switch
 
 ## switch คืออะไร?
-switch คือคำสั่งเลือกทำงานตามค่าของ expression หรือประเภทของ interface (type switch) เหมาะกับหลายทางเลือก
+**switch** คือคำสั่งสำหรับเลือกทำบล็อกโค้ดใดบล็อกหนึ่งจากหลายทางเลือก โดยพิจารณาจากค่าของ expression หรือประเภทของตัวแปร
 
 ## switch มีกี่แบบ?
-- Expression switch
-- Type switch
-- Switch without expression (ใช้แทน if-else chain)
-- สามารถใช้ fallthrough, multiple case
+ใน Go มี switch 3 รูปแบบหลัก:
+
+1. **Expression switch** – เปรียบเทียบค่า expression กับ case ต่างๆ
+2. **Type switch** – ใช้กับ interface เพื่อตรวจสอบประเภทของค่า
+3. **Switch without expression** – ใช้เหมือน if-else chain
+
+นอกจากนี้ยังมีคุณสมบัติพิเศษ:
+- **case หลายค่า** – คั่นด้วย comma
+- **fallthrough** – ให้ทำงานต่อไปยัง case ถัดไป (ไม่ต้อง break)
+- **default** – เมื่อไม่มี case ใดตรง
 
 ## ใช้อย่างไร ในกรณีไหน?
-- เปลี่ยนการทำงานตาม status, type ของงาน (Queue Processor)
-- Type switch สำหรับ interface{} ที่รับ payload ต่างกัน
-- ควบคุมการทำ SQL หลายประเภท (INSERT/UPDATE/DELETE)
+- **Expression switch**: ตรวจสอบค่าตัวแปรที่มีหลายค่าที่เป็นไปได้ (enum, status)
+- **Type switch**: รับค่า interface แล้วต้องการจัดการตามประเภทจริง
+- **Switch without expression**: แทน if-else ที่ซับซ้อน อ่านง่ายขึ้น
+- **ร่วมกับ GORM**: ใช้ switch กับฟิลด์ status, type, category
+- **ร่วมกับ Redis**: ใช้ switch กับผลลัพธ์ของคำสั่ง Redis หรือประเภท error
 
 ## หลักการทำงาน
-1. ประเมิน expression (หรือใช้ true)
-2. ตรวจสอบ case ตามลำดับ
-3. ถ้า case ตรง → ทำบล็อก ถ้าไม่มี fallthrough จะออกทันที
-4. Type switch จะทำ type assertion
+1. ประเมินค่า **expression** (ถ้ามี) หรือไม่ก็ถือว่า expression เป็น `true`
+2. ตรวจสอบ case ตามลำดับจากบนลงล่าง
+3. ถ้า case ตรง → ทำบล็อกนั้น ถ้าไม่มี `fallthrough` จะออกจาก switch ทันที
+4. ถ้าไม่มี case ใดตรง → ทำ `default` (ถ้ามี)
+5. **Type switch** จะทำการ type assertion ใน case
 
 ## Dataflow Diagram (Flowchart TB)
 
 ```mermaid
 graph TB
-    Start([เริ่ม]) --> Eval{Expression / Type}
-    Eval --> Case1{case 1?} -- true --> Block1[block 1]
-    Case1 -- false --> Case2{case 2?} -- true --> Block2
-    Case2 -- false --> Default[default block]
-    Block1 --> End([จบ])
-    Block2 --> End
-    Default --> End
+    Start([เริ่ม]) --> Eval{ประเมิน expression}
+    Eval --> CheckCase{มี case ที่ตรง?}
+    CheckCase -- มี --> DoCase[ทำบล็อก case]
+    DoCase --> HasFall{มี fallthrough?}
+    HasFall -- ใช่ --> NextCase[ทำ case ถัดไป]
+    HasFall -- ไม่ใช่ --> End
+    NextCase --> End
+    CheckCase -- ไม่มี --> HasDefault{มี default?}
+    HasDefault -- ใช่ --> DoDefault[ทำ default]
+    HasDefault -- ไม่มี --> End
+    DoDefault --> End([จบ])
 ```
 
-## ตัวอย่างกับ GORM / Redis / Queue Processor
+## ตัวอย่างการใช้งานจริง
 
-### Expression switch สำหรับประมวลผล job หลายประเภท
+### 1. Expression switch พื้นฐาน
 ```go
-func handleJob(job Job) error {
-    switch job.Type {
-    case "email":
-        return sendEmail(job.Payload)
-    case "order_processing":
-        return processOrder(job.Payload)
-    case "report_generation":
-        return generateReport(job.Payload)
+func getDayName(day int) string {
+    switch day {
+    case 1:
+        return "Monday"
+    case 2:
+        return "Tuesday"
+    case 3, 4, 5: // case หลายค่า
+        return "Weekday"
     default:
-        return fmt.Errorf("unknown job type: %s", job.Type)
+        return "Weekend"
     }
 }
 ```
 
-### Type switch สำหรับ payload ที่หลากหลาย
+### 2. switch พร้อม short statement
 ```go
-func processPayload(payload interface{}) error {
-    switch v := payload.(type) {
-    case Order:
-        // insert order
-        return db.Create(&v).Error
-    case EmailData:
-        // send email
-        return emailService.Send(v)
+switch err := someFunc(); err {
+case nil:
+    fmt.Println("success")
+default:
+    fmt.Println("error:", err)
+}
+```
+
+### 3. Type switch
+```go
+func processValue(v interface{}) {
+    switch v := v.(type) {
+    case int:
+        fmt.Printf("int: %d\n", v)
     case string:
-        // treat as log message
-        log.Println(v)
-        return nil
+        fmt.Printf("string: %s\n", v)
+    case bool:
+        fmt.Printf("bool: %t\n", v)
     default:
-        return fmt.Errorf("unsupported payload type: %T", v)
+        fmt.Printf("unknown type: %T\n", v)
     }
 }
 ```
 
-### ใช้กับ Redis transaction: commit/rollback ตามผลลัพธ์
+### 4. Switch without expression (ใช้แทน if-else)
 ```go
-func executeRedisPipeline(rdb *redis.Client, cmds []redis.Cmder) error {
-    pipe := rdb.Pipeline()
-    for _, cmd := range cmds {
-        switch cmd.Name() {
-        case "set":
-            args := cmd.Args()
-            pipe.Set(ctx, args[1].(string), args[2], 0)
-        case "incr":
-            pipe.Incr(ctx, cmd.Args()[1].(string))
-        default:
-            return fmt.Errorf("unsupported command")
-        }
+score := 85
+switch {
+case score >= 90:
+    grade = "A"
+case score >= 80:
+    grade = "B"
+case score >= 70:
+    grade = "C"
+default:
+    grade = "F"
+}
+```
+
+### 5. ใช้ switch กับ GORM (จัดการ status ของ order)
+```go
+func ProcessOrder(db *gorm.DB, orderID uint) error {
+    var order Order
+    if err := db.First(&order, orderID).Error; err != nil {
+        return err
     }
-    _, err := pipe.Exec(ctx)
-    return err
+
+    switch order.Status {
+    case "pending":
+        // ตรวจสอบ stock และทำการจอง
+        if err := ReserveStock(db, order); err != nil {
+            order.Status = "failed"
+        } else {
+            order.Status = "confirmed"
+        }
+    case "confirmed":
+        // ส่งของ
+        order.Status = "shipped"
+    case "shipped":
+        return fmt.Errorf("order already shipped")
+    default:
+        return fmt.Errorf("unknown status: %s", order.Status)
+    }
+
+    return db.Save(&order).Error
+}
+```
+
+### 6. ใช้ switch กับ Redis (จัดการ error types)
+```go
+func GetValue(ctx context.Context, rdb *redis.Client, key string) (string, error) {
+    val, err := rdb.Get(ctx, key).Result()
+    switch err {
+    case nil:
+        return val, nil
+    case redis.Nil:
+        return "", fmt.Errorf("key %s not found", key)
+    default:
+        return "", fmt.Errorf("redis error: %w", err)
+    }
 }
 ```
 
@@ -1342,48 +1287,79 @@ func executeRedisPipeline(rdb *redis.Client, cmds []redis.Cmder) error {
 # 9.3 for loop
 
 ## for loop คืออะไร?
-คำสั่งวนซ้ำเพียงหนึ่งเดียวใน Go ใช้สำหรับทำซ้ำบล็อกโค้ดตามเงื่อนไข
+**for loop** คือโครงสร้างวนซ้ำเพียงหนึ่งเดียวในภาษา Go (ไม่มี while หรือ do-while) แต่สามารถปรับให้มีรูปแบบต่าง ๆ ได้
 
 ## for loop มีกี่แบบ?
-- Classic: `for init; condition; post { }`
-- While-style: `for condition { }`
-- Infinite: `for { }`
-- Range loop (แยกใน 9.4)
+for loop มี 4 รูปแบบหลัก:
+
+1. **Classic for** – `for init; condition; post { }`
+2. **While-style** – `for condition { }`
+3. **Infinite loop** – `for { }` (ใช้ break ออก)
+4. **Range loop** – `for index, value := range collection { }` (จะกล่าวในหัวข้อ 9.4)
 
 ## ใช้อย่างไร ในกรณีไหน?
-- Batch processing ข้อมูลในฐานข้อมูล
-- Retry loop สำหรับ Redis transaction ที่ล้มเหลว (WATCH)
-- Poll queue (Queue Processor) อย่างต่อเนื่อง
-- วน slice เพื่อทำ INSERT/UPDATE/DELETE หลายรายการ
+- **Classic for**: เมื่อต้องการกำหนดตัวแปรเริ่มต้น, เงื่อนไข, และการเปลี่ยนแปลงในแต่ละรอบ
+- **While-style**: วนซ้ำตราบใดที่เงื่อนไขยังเป็น true
+- **Infinite loop**: ใช้กับกรณีที่ต้องรอ event หรือต้อง break ตามเงื่อนไขภายใน
+- **ร่วมกับ GORM**: ใช้วนซ้ำสำหรับ batch processing หรือ retry เมื่อเกิด deadlock
+- **ร่วมกับ Redis**: ใช้ retry loop สำหรับการทำ transaction หรือการรอ lock
 
 ## หลักการทำงาน
-1. init ทำงานครั้งแรก
-2. ตรวจสอบ condition; ถ้า true → เข้า body
-3. หลัง body ทำงาน post แล้วกลับไปตรวจสอบ condition อีกครั้ง
+1. **Classic for**:  
+   - init: ทำงานก่อน loop ครั้งแรก  
+   - condition: ตรวจสอบก่อนแต่ละรอบ ถ้า true ทำ body แล้วไป post  
+   - post: ทำงานหลัง body ก่อนกลับไปตรวจสอบ condition
+2. **While-style**: ตรวจสอบ condition ก่อนแต่ละรอบ ถ้า true ทำ body
+3. **Infinite loop**: ทำงานไปเรื่อย ๆ จนกว่าจะเจอ break
 
-## Dataflow Diagram (Flowchart TB) - Classic
+## Dataflow Diagram (Flowchart TB) - Classic for
 
 ```mermaid
 graph TB
     Start([เริ่ม]) --> Init[init]
     Init --> Cond{condition true?}
-    Cond -- true --> Body[body]
+    Cond -- true --> Body[ทำ body]
     Body --> Post[post]
     Post --> Cond
     Cond -- false --> End([จบ])
 ```
 
-## ตัวอย่างกับ GORM / Redis / Queue Processor
+## ตัวอย่างการใช้งานจริง
 
-### Batch INSERT หลายรายการ
+### 1. Classic for loop
 ```go
-func BatchInsertOrders(db *gorm.DB, orders []Order, batchSize int) error {
-    for i := 0; i < len(orders); i += batchSize {
+for i := 0; i < 5; i++ {
+    fmt.Println(i)
+}
+```
+
+### 2. While-style (for condition)
+```go
+sum := 1
+for sum < 1000 {
+    sum += sum
+}
+```
+
+### 3. Infinite loop พร้อม break
+```go
+for {
+    // ทำบางอย่าง
+    if condition {
+        break
+    }
+}
+```
+
+### 4. การใช้ for loop กับ GORM (Batch insert)
+```go
+func BatchCreateUsers(db *gorm.DB, users []User, batchSize int) error {
+    for i := 0; i < len(users); i += batchSize {
         end := i + batchSize
-        if end > len(orders) {
-            end = len(orders)
+        if end > len(users) {
+            end = len(users)
         }
-        batch := orders[i:end]
+        batch := users[i:end]
         if err := db.Create(&batch).Error; err != nil {
             return err
         }
@@ -1392,7 +1368,23 @@ func BatchInsertOrders(db *gorm.DB, orders []Order, batchSize int) error {
 }
 ```
 
-### Retry loop สำหรับ Redis transaction
+### 5. การใช้ for loop กับ Redis (Retry with backoff)
+```go
+func SetWithRetry(ctx context.Context, rdb *redis.Client, key string, value interface{}, ttl time.Duration) error {
+    var err error
+    for attempt := 0; attempt < 3; attempt++ {
+        err = rdb.Set(ctx, key, value, ttl).Err()
+        if err == nil {
+            return nil
+        }
+        // exponential backoff
+        time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
+    }
+    return fmt.Errorf("failed after 3 attempts: %w", err)
+}
+```
+
+### 6. การใช้ for loop กับ Redis Transaction (WATCH + MULTI/EXEC)
 ```go
 func IncrementWithRetry(ctx context.Context, rdb *redis.Client, key string) error {
     for retries := 0; retries < 10; retries++ {
@@ -1411,28 +1403,12 @@ func IncrementWithRetry(ctx context.Context, rdb *redis.Client, key string) erro
             return nil
         }
         if err == redis.TxFailedErr {
-            continue // retry
+            // conflict, retry
+            continue
         }
         return err
     }
     return fmt.Errorf("max retries exceeded")
-}
-```
-
-### Queue Processor worker loop
-```go
-func worker(rdb *redis.Client, queueName string) {
-    for {
-        // blocking pop
-        result, err := rdb.BRPop(ctx, 0, queueName).Result()
-        if err != nil {
-            log.Println("BRPop error:", err)
-            time.Sleep(time.Second)
-            continue
-        }
-        jobData := result[1]
-        // process job...
-    }
 }
 ```
 
@@ -1441,47 +1417,106 @@ func worker(rdb *redis.Client, queueName string) {
 # 9.4 range
 
 ## range คืออะไร?
-range ใช้ร่วมกับ for เพื่อวนซ้ำผ่าน elements ของ array, slice, map, string, channel
+**range** เป็นคีย์เวิร์ดที่ใช้ร่วมกับ `for` เพื่อวนซ้ำผ่าน elements ของ collection เช่น array, slice, map, string, channel
 
 ## range มีกี่แบบ?
-- Slice/array: `for i, v := range slice`
-- Map: `for k, v := range m`
-- String: `for i, r := range str` (วนทีละ rune)
-- Channel: `for v := range ch`
-- สามารถใช้ `_` ละทิ้งค่าใดค่าหนึ่ง
+range ใช้ร่วมกับ `for` ในรูปแบบ `for index, value := range collection` แต่รูปแบบที่คืนค่าจะแตกต่างกันไปตามชนิดของ collection:
+
+| Collection | คืนค่าแรก | คืนค่าที่สอง |
+|------------|----------|------------|
+| array, slice | index | value |
+| string | index (byte position) | rune |
+| map | key | value |
+| channel | element | (ไม่มี) |
+
+นอกจากนี้เราสามารถใช้ `_` (underscore) เพื่อละทิ้งค่าใดค่าหนึ่งได้
 
 ## ใช้อย่างไร ในกรณีไหน?
-- วนผ่านผลลัพธ์จาก GORM (slice of models)
-- อ่านข้อมูลจาก Redis hash / map
-- ดึงข้อมูลจาก channel ใน queue processor
-- แปลง struct slice เป็น map
+- **Slice/Array**: ใช้เมื่อต้องการเข้าถึงทั้ง index และ value หรือต้องการแค่ value
+- **Map**: ใช้เพื่อวนลูปผ่าน key-value pairs
+- **String**: ใช้เพื่อวนลูปผ่านตัวอักษร (rune) โดยไม่ต้องจัดการ UTF-8 ด้วยตนเอง
+- **Channel**: ใช้เพื่อรับค่าจาก channel จนกว่า channel จะปิด
+- **ร่วมกับ GORM**: ใช้ range วน slice ของ model เพื่อทำ batch operation หรือ transform data
+- **ร่วมกับ Redis**: ใช้ range วน map เพื่อเก็บเป็น Redis hash หรือวน slice ของ keys
 
 ## หลักการทำงาน
-1. range จะคืนค่า sequence ของ elements
-2. แต่ละรอบกำหนดค่าลงตัวแปร
+1. range จะคืนค่า sequence ของ elements ตามลำดับ
+2. แต่ละรอบจะกำหนดค่าให้กับตัวแปรที่ประกาศทางซ้าย
 3. กับ map ไม่รับประกันลำดับ
-4. กับ string วนทีละ rune (ไม่ใช่ byte)
-5. กับ channel วนจนกว่า channel ปิด
+4. กับ string จะวนทีละ rune (ไม่ใช่ byte) ทำให้รองรับ UTF-8
+5. กับ channel จะรับค่าจนกว่า channel จะปิด (range จะจบอัตโนมัติ)
 
 ## Dataflow Diagram (Flowchart TB) - range with slice
 
 ```mermaid
 graph TB
-    Start([เริ่ม]) --> Init[for index, value := range collection]
+    Start([เริ่ม]) --> Init[ประกาศ range loop]
     Init --> Next{มี element ถัดไป?}
-    Next -- true --> Assign[กำหนด index, value]
+    Next -- มี --> Assign[กำหนด index, value]
     Assign --> Body[ทำ body]
     Body --> Next
-    Next -- false --> End([จบ])
+    Next -- ไม่มี --> End([จบ])
 ```
 
-## ตัวอย่างกับ GORM / Redis / Queue Processor
+## ตัวอย่างการใช้งานจริง
 
-### วน slice ของ model เพื่อ UPDATE
+### 1. range กับ slice
 ```go
-func UpdateProducts(db *gorm.DB, products []Product) error {
-    for _, p := range products {
-        if err := db.Model(&Product{}).Where("id = ?", p.ID).Updates(p).Error; err != nil {
+nums := []int{2, 4, 6}
+for i, v := range nums {
+    fmt.Printf("index=%d, value=%d\n", i, v)
+}
+// ถ้าต้องการแค่ค่า
+for _, v := range nums {
+    fmt.Println(v)
+}
+```
+
+### 2. range กับ map
+```go
+m := map[string]int{"a": 1, "b": 2}
+for k, v := range m {
+    fmt.Printf("%s -> %d\n", k, v)
+}
+```
+
+### 3. range กับ string (iterate runes)
+```go
+str := "สวัสดี"
+for i, r := range str {
+    fmt.Printf("byte index %d: rune %c\n", i, r)
+}
+```
+
+### 4. range กับ channel
+```go
+ch := make(chan int)
+go func() {
+    for i := 0; i < 5; i++ {
+        ch <- i
+    }
+    close(ch)
+}()
+for v := range ch {
+    fmt.Println(v)
+}
+```
+
+### 5. ใช้ range กับ GORM (วน slice ของ model เพื่อสร้าง Redis hash)
+```go
+func CacheUsers(db *gorm.DB, rdb *redis.Client, ctx context.Context) error {
+    var users []User
+    if err := db.Find(&users).Error; err != nil {
+        return err
+    }
+
+    for _, user := range users {
+        key := fmt.Sprintf("user:%d", user.ID)
+        err := rdb.HSet(ctx, key,
+            "name", user.Name,
+            "email", user.Email,
+        ).Err()
+        if err != nil {
             return err
         }
     }
@@ -1489,9 +1524,9 @@ func UpdateProducts(db *gorm.DB, products []Product) error {
 }
 ```
 
-### วน map เพื่อ INSERT ลง Redis hash
+### 6. ใช้ range กับ Redis (วน map เพื่อเก็บค่า)
 ```go
-func StoreUserAttrs(ctx context.Context, rdb *redis.Client, userID string, attrs map[string]interface{}) error {
+func StoreUserAttributes(ctx context.Context, rdb *redis.Client, userID string, attrs map[string]interface{}) error {
     key := fmt.Sprintf("user:%s:attrs", userID)
     for field, value := range attrs {
         if err := rdb.HSet(ctx, key, field, value).Err(); err != nil {
@@ -1502,148 +1537,189 @@ func StoreUserAttrs(ctx context.Context, rdb *redis.Client, userID string, attrs
 }
 ```
 
-### วน channel ใน Queue Processor (รับจาก Redis Pub/Sub)
-```go
-func SubscribeQueue(ctx context.Context, pubsub *redis.PubSub) {
-    ch := pubsub.Channel()
-    for msg := range ch {
-        // msg.Payload contains job data
-        var job Job
-        json.Unmarshal([]byte(msg.Payload), &job)
-        processJob(job)
-    }
-}
-```
-
 ---
 
 # 9.6 label และการ break ออกจาก outer loop
 
 ## label และการ break ออกจาก outer loop คืออะไร?
-label คือการกำหนดชื่อให้กับ statement (เช่น for, switch, select) เพื่อใช้ `break label` หรือ `continue label` ออกจากลูปหลายชั้นหรือข้าม iteration ของ outer loop
+**label** คือการกำหนดชื่อ (identifier) ให้กับ statement (เช่น for loop, switch, select) เพื่อให้สามารถใช้ `break`, `continue`, หรือ `goto` อ้างอิงถึง statement นั้นได้ โดยเฉพาะ `break label` จะออกจาก loop ที่มี label นั้นแม้จะอยู่ใน loop ซ้อนกันหลายชั้น
 
-## มีกี่แบบ?
-- `break label` – ออกจากลูปที่ label ระบุ
-- `continue label` – ข้ามไป iteration ถัดไปของลูปที่ label ระบุ
-- `goto label` – (ไม่แนะนำ) กระโดดไปตำแหน่ง label
+## label และการ break ออกจาก outer loop มีกี่แบบ?
+มี 3 แบบ:
+1. **label + break**: ออกจาก loop ที่ระบุ (สามารถข้ามหลายชั้นได้)
+2. **label + continue**: ข้ามไปยัง iteration ถัดไปของ loop ที่ระบุ
+3. **label + goto**: (ไม่แนะนำ แต่อนุญาต) กระโดดไปยังตำแหน่งที่กำหนด
 
 ## ใช้อย่างไร ในกรณีไหน?
-- ค้นหาข้อมูลใน nested loops แล้วต้องการหยุดทั้งหมดเมื่อเจอ
-- ประมวลผล nested struct (เช่น order -> items) และต้องการยกเลิกการประมวลผลทั้งหมดเมื่อ error
-- ในการทำ SQL transaction ซ้อน loop: ถ้า error ต้อง rollback ทั้ง transaction
+- ใช้เมื่อมี nested loops และต้องการออกจากทุก loop เมื่อพบเงื่อนไข (เช่น ค้นหา element ใน matrix แล้วหยุดทันที)
+- ใช้เมื่อต้องการ continue ไปยัง outer loop แทนที่จะเป็น inner loop
+- ในงานที่ต้องทำ transaction ที่มีหลายขั้นตอนซ้อนกัน หากเกิด error ควรข้ามทุก loop (เช่น ตรวจสอบข้อมูลหลายชุดและเลิกทำทั้งหมด)
+- **ร่วมกับ GORM**: ใช้ label break ออกจาก nested loops เมื่อพบ error หรือเมื่อต้องการหยุดการประมวลผลทั้งชุด
+- **ร่วมกับ Redis**: ใช้ label break เมื่อเกิดความล้มเหลวใน pipeline หรือ transaction ที่ซ้อนกัน
 
 ## หลักการทำงาน
-1. ประกาศ label ก่อน loop ที่ต้องการควบคุม
-2. ภายใน loop ซ้อน ใช้ `break label` เพื่อออกจาก loop ที่มี label ทันที
-3. `continue label` จะข้าม iteration ของ loop ที่มี label ไป iteration ถัดไป
+1. ประกาศ label ก่อน statement ที่ต้องการควบคุม เช่น `OuterLoop: for i := 0; i < n; i++ {`
+2. ใน loop ซ้อน ให้ใช้ `break OuterLoop` เพื่อออกจาก loop ที่มี label `OuterLoop` ทันที
+3. `continue OuterLoop` จะข้าม iteration ปัจจุบันของ outer loop และไป iteration ถัดไป
+4. label ต้องอยู่ภายในฟังก์ชันเดียวกันและเป็น scope ที่ถูกต้อง
 
 ## Dataflow Diagram (Flowchart TB)
 
 ```mermaid
 graph TB
-    Start([เริ่ม]) --> OuterStart[OuterLoop: for ...]
-    OuterStart --> InnerStart[InnerLoop: for ...]
+    Start([เริ่ม]) --> OuterStart[OuterLoop: for i]
+    OuterStart --> InnerStart[InnerLoop: for j]
     InnerStart --> Cond{พบเงื่อนไข break?}
     Cond -- ใช่ --> BreakLabel[break OuterLoop]
-    Cond -- ไม่ใช่ --> ContinueInner[ทำ inner ต่อไป]
+    Cond -- ไม่ใช่ --> ContinueInner[ทำ inner loop ต่อ]
     ContinueInner --> InnerStart
     BreakLabel --> End([ออกจาก outer loop])
+    InnerStart --> NoBreak[inner loop จบ]
+    NoBreak --> OuterIter[ไป i ถัดไป]
+    OuterIter --> OuterStart
+    OuterStart --> EndOuter[outer loop จบ]
+    EndOuter --> End
 ```
 
-## ตัวอย่างกับ GORM / Redis / Queue Processor
+## ตัวอย่างการใช้งานจริง
 
-### ค้นหา user ในหลายกลุ่ม แล้วหยุดเมื่อพบ (nested loops)
+### 1. break label เพื่อออกจาก nested loops
 ```go
-func FindUserInGroups(groups [][]User, targetID uint) (*User, bool) {
+package main
+
+import "fmt"
+
+func main() {
+    matrix := [][]int{
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9},
+    }
+    target := 5
+    found := false
+
 OuterLoop:
-    for _, group := range groups {
-        for _, user := range group {
-            if user.ID == targetID {
-                return &user, true
-            }
-            // ถ้ามีเงื่อนไขอื่นเช่น user disabled
-            if user.Disabled {
-                // ข้าม group นี้ทั้งหมด
-                continue OuterLoop
+    for i := 0; i < len(matrix); i++ {
+        for j := 0; j < len(matrix[i]); j++ {
+            if matrix[i][j] == target {
+                fmt.Printf("Found %d at (%d, %d)\n", target, i, j)
+                found = true
+                break OuterLoop // ออกจากทั้งสอง loop
             }
         }
     }
-    return nil, false
+    if !found {
+        fmt.Println("Not found")
+    }
 }
 ```
 
-### ใน Queue Processor: ตรวจสอบข้อมูลหลายชั้นและ rollback transaction เมื่อ error
+### 2. continue label เพื่อข้าม iteration ของ outer loop
 ```go
-func ProcessOrderWithItems(order Order, items []Item) error {
-    tx := db.Begin()
-    defer func() {
-        if r := recover(); r != nil {
-            tx.Rollback()
-        }
-    }()
+package main
 
-    // INSERT order
-    if err := tx.Create(&order).Error; err != nil {
-        tx.Rollback()
+import "fmt"
+
+func main() {
+    // สมมติว่าเรามี slice ของ user IDs และต้องการประมวลผลทีละ user
+    // แต่ถ้า user มี error ให้ข้ามไป user ถัดไปเลย
+    users := []string{"user1", "user2", "user3", "user4"}
+
+UserLoop:
+    for _, u := range users {
+        fmt.Printf("Processing %s\n", u)
+        // จำลองการตรวจสอบ permission
+        if u == "user2" {
+            fmt.Printf("  %s has no permission, skip\n", u)
+            continue UserLoop // ข้ามไป user ถัดไป
+        }
+        for i := 0; i < 3; i++ {
+            fmt.Printf("  subtask %d\n", i)
+            if u == "user3" && i == 1 {
+                fmt.Println("  error on user3, skip entire user")
+                continue UserLoop
+            }
+        }
+    }
+}
+```
+
+### 3. ใช้ label break กับ GORM (หยุดการวนซ้ำเมื่อเกิด error)
+```go
+func ProcessOrders(db *gorm.DB, orderIDs []uint) error {
+    var orders []Order
+    if err := db.Where("id IN ?", orderIDs).Find(&orders).Error; err != nil {
         return err
     }
 
+    // วนซ้ำแต่ละ order และสินค้าใน order
 MainLoop:
-    for _, item := range items {
-        // ตรวจสอบ stock
-        var product Product
-        if err := tx.First(&product, item.ProductID).Error; err != nil {
-            tx.Rollback()
-            break MainLoop
+    for _, order := range orders {
+        fmt.Printf("Processing order %d\n", order.ID)
+        
+        // ตรวจสอบสถานะ order
+        if order.Status == "cancelled" {
+            continue
         }
-        if product.Stock < item.Quantity {
-            // ไม่พอ stock -> rollback ทั้งหมด
-            tx.Rollback()
-            return fmt.Errorf("insufficient stock for product %d", product.ID)
-        }
-        // UPDATE stock
-        if err := tx.Model(&Product{}).Where("id = ?", item.ProductID).
-            Update("stock", gorm.Expr("stock - ?", item.Quantity)).Error; err != nil {
-            tx.Rollback()
-            break MainLoop
-        }
-        // INSERT order item
-        if err := tx.Create(&item).Error; err != nil {
-            tx.Rollback()
-            break MainLoop
-        }
-    }
 
-    // ถ้าผ่านทุก loop ให้ commit
-    return tx.Commit().Error
+        // ดึง order items
+        var items []OrderItem
+        if err := db.Where("order_id = ?", order.ID).Find(&items).Error; err != nil {
+            return err // ถ้า error นี้รุนแรง ให้ break ทั้ง process
+        }
+
+        for _, item := range items {
+            // ตรวจสอบ stock
+            var product Product
+            if err := db.First(&product, item.ProductID).Error; err != nil {
+                // ถ้าไม่พบ product ถือว่า error ร้ายแรง หยุดการทำงานทั้งหมด
+                break MainLoop
+            }
+            if product.Stock < item.Quantity {
+                // ไม่พอ stock ก็หยุดการทำงานทั้งหมด
+                break MainLoop
+            }
+        }
+        // update order status
+        order.Status = "processed"
+        db.Save(&order)
+    }
+    return nil
 }
 ```
 
-### ใช้ label break ใน Redis pipeline loop
+### 4. ใช้ label break กับ Redis Transaction (หยุด pipeline เมื่อเกิด error ใน loop)
 ```go
-func UpdateManyAccounts(ctx context.Context, rdb *redis.Client, updates map[string]int64) error {
+func UpdateBalances(ctx context.Context, rdb *redis.Client, updates map[string]int64) error {
+    // ใช้ label เพื่อออกจาก loop ทั้งหมดเมื่อเกิด error ร้ายแรง
 MainLoop:
-    for acc, delta := range updates {
+    for account, delta := range updates {
+        // ตรวจสอบความถูกต้อง
+        if delta == 0 {
+            continue
+        }
+        // ใช้ WATCH เพื่อทำ optimistic lock
         err := rdb.Watch(ctx, func(tx *redis.Tx) error {
-            bal, err := tx.Get(ctx, acc).Int64()
+            bal, err := tx.Get(ctx, account).Int64()
             if err != nil && err != redis.Nil {
                 return err
             }
             newBal := bal + delta
             if newBal < 0 {
-                return fmt.Errorf("insufficient balance for %s", acc)
+                return fmt.Errorf("insufficient balance for %s", account)
             }
             _, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-                pipe.Set(ctx, acc, newBal, 0)
+                pipe.Set(ctx, account, newBal, 0)
                 return nil
             })
             return err
-        }, acc)
+        }, account)
+
         if err != nil {
             if err == redis.TxFailedErr {
-                // conflict, retry outer loop
-                // ในที่นี้อาจทำ continue MainLoop เพื่อ retry
-                continue MainLoop
+                // conflict, retry แต่ถ้า retry หลายครั้งอาจต้อง break
+                // ในที่นี้แสดงตัวอย่าง break ออกเมื่อเจอ conflict ที่ไม่สามารถแก้ได้
+                break MainLoop
             }
             return err
         }
@@ -1652,23 +1728,41 @@ MainLoop:
 }
 ```
 
----
+### 5. การใช้ label เพื่อ break จาก switch ภายใน loop (ไม่ต้องใช้ label)
+```go
+// break ใน switch จะออกจาก switch เท่านั้น ไม่ต้องใช้ label
+// แต่ถ้าต้องการออกจาก loop ต้องใช้ label
+func findInMatrix(matrix [][]int, target int) (int, int, bool) {
+    for i, row := range matrix {
+        for j, val := range row {
+            switch {
+            case val == target:
+                return i, j, true
+            case val > target:
+                // ไม่ต้องทำอะไร ไปต่อ
+            }
+        }
+    }
+    return 0, 0, false
+}
+```
 
-## สรุป
-- **Queue Processor** ช่วยให้ระบบทำงานแบบ asynchronous, เพิ่มความเสถียรและ scalability
-- **if-else, switch** ใช้ควบคุม logic ตามเงื่อนไขและประเภทของงาน
-- **for loop, range** ใช้สำหรับ batch processing, retry และการวนผ่านข้อมูล
-- **label** มีประโยชน์เมื่อต้องการควบคุม nested loops อย่างแม่นยำ โดยเฉพาะใน transaction ที่ต้อง rollback ทั้งชุด
-
-สามารถนำตัวอย่างโค้ดไปปรับใช้กับ GORM และ Redis ร่วมกับ Queue Processor เพื่อสร้างระบบที่ robust และรองรับการทำงานที่มีความซับซ้อนได้
+## ข้อควรระวัง
+- ใช้ label อย่างระมัดระวัง เพราะอาจทำให้โค้ดอ่านยาก (คล้ายกับ goto)
+- `break label` จะออกจาก statement ที่ label ระบุเท่านั้น ไม่ใช่ทุก statement ที่อยู่ระหว่างทาง
+- `continue label` ใช้ได้เฉพาะกับ loop
+- label ต้องอยู่หน้า statement ที่เป็น loop, switch, select เท่านั้น
 
 ---
 
 ## แหล่งอ้างอิง
+- [The Go Programming Language Specification - If statements](https://go.dev/ref/spec#If_statements)
+- [The Go Programming Language Specification - Switch statements](https://go.dev/ref/spec#Switch_statements)
+- [The Go Programming Language Specification - For statements](https://go.dev/ref/spec#For_statements)
+- [The Go Programming Language Specification - Break statements](https://go.dev/ref/spec#Break_statements)
 - [Effective Go - Control structures](https://go.dev/doc/effective_go#control-structures)
 - [GORM Documentation](https://gorm.io/docs/)
 - [go-redis Documentation](https://redis.uptrace.dev/)
-- [Redis Streams](https://redis.io/docs/data-types/streams/)
 
 ## บทที่ 10: ฟังก์ชัน
 
