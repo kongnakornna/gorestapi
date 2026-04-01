@@ -1916,91 +1916,136 @@ func main() {
 ผมจะแปลงแผนภาพ ASCII ที่คุณมีให้เป็น **Mermaid diagram** ซึ่งสามารถแสดงผลเป็นกราฟิกสวยงามในเอกสาร Markdown หรือแพลตฟอร์มที่รองรับ (GitHub, GitLab, Notion, ฯลฯ) โดยแบ่งเป็น 3 แผนภาพหลัก:
 
 ---
+เนื่องจากคุณต้องการ **แผนภาพภาพแทนข้อความ** ผมขอเสนอแผนภาพรูปแบบ **Mermaid** ซึ่งสามารถนำไปแสดงผลเป็นกราฟิกในแพลตฟอร์มที่รองรับ (GitHub, Notion, ฯลฯ) โดยไม่ต้องวาดเองครับ
 
-## 1. แผนภาพ Sequence – การเรียกฟังก์ชันและ unwind stack (เทียบเท่า ASCII เดิม)
+---
+
+## 1. แผนภาพการไหลของข้อมูล (Data Flow) เมื่อเกิด panic  (หยุดการทำงาน)
+
+```mermaid
+graph TD
+    subgraph main
+        M1[defer f1]
+        M2[call level1]
+        M3[รับ panic]
+        M4{มี recover?}
+        M5[handle]
+        M6[exit]
+    end
+
+    subgraph level1
+        L1[defer f2]
+        L2[call level2]
+        L3[รับ panic]
+        L4{มี recover?}
+        L5[handle]
+        L6[unwind]
+    end
+
+    subgraph level2
+        N1[defer f3]
+        N2[call level3]
+        N3[panic value]
+        N4{มี recover?}
+        N5[handle]
+        N6[unwind]
+    end
+
+    M2 --> L2
+    L2 --> N2
+    N2 --> N3
+    N3 -->|panic ส่งขึ้น| L3
+    L3 --> L4
+    L4 -->|ไม่มี| L6
+    L6 -->|panic ส่งขึ้น| M3
+    M3 --> M4
+    M4 -->|ไม่มี| M6
+    M4 -->|มี| M5
+    L4 -->|มี| L5
+    N4 -->|มี| N5
+
+    style N3 fill:#f99,stroke:#333
+    style L3 fill:#f99,stroke:#333
+    style M3 fill:#f99,stroke:#333
+```
+
+**คำอธิบาย**:  
+- แผนภาพนี้แสดงการเกิด panic ที่ `level2` (หรือ `level3`)  
+- ค่า panic จะไหลขึ้นบนผ่านแต่ละฟังก์ชัน  
+- แต่ละระดับสามารถมี `recover` ใน `defer` เพื่อจับ panic และหยุดการส่งต่อ  
+
+---
+
+## 2. แผนภาพ Call Stack และการไหลของ panic (แบบลำดับเวลา)
 
 ```mermaid
 sequenceDiagram
     participant main
-    participant level1
-    participant level2
-    participant level3
+    participant L1 as level1
+    participant L2 as level2
+    participant L3 as level3
 
-    main->>level1: เรียก level1()
-    activate level1
-    level1->>level2: เรียก level2()
-    activate level2
-    level2->>level3: เรียก level3()
-    activate level3
-
-    Note over level3: panic เกิดขึ้น (ค่า "error")
-    level3-->>level3: execute defer ใน level3
-    level3-->>level2: panic ส่งขึ้น (unwind)
-    deactivate level3
-
-    Note over level2: execute defer ใน level2
-    level2-->>level1: panic ส่งขึ้น
-    deactivate level2
-
-    Note over level1: execute defer ใน level1
-    level1-->>main: panic ส่งขึ้น
-    deactivate level1
-
-    Note over main: execute defer ใน main<br/>ถ้าไม่มี recover → โปรแกรมหยุด
+    main->>L1: เรียก level1()
+    activate L1
+    L1->>L2: เรียก level2()
+    activate L2
+    L2->>L3: เรียก level3()
+    activate L3
+    L3-->>L3: panic เกิดขึ้น (ค่า "error")
+    Note over L3: execute defer (level3)
+    L3-->>L2: panic ส่งขึ้น
+    deactivate L3
+    Note over L2: execute defer (level2)
+    L2-->>L1: panic ส่งขึ้น
+    deactivate L2
+    Note over L1: execute defer (level1)
+    L1-->>main: panic ส่งขึ้น
+    deactivate L1
+    Note over main: execute defer (main)<br/>โปรแกรมหยุด (ถ้าไม่มี recover)
 ```
 
 ---
 
-## 2. แผนภาพการไหลของข้อมูล (Data Flow) แบบ Flowchart
+## 3. แผนภาพแบบมี `recover` หยุดการ unwind
 
 ```mermaid
-flowchart TD
-    P[เกิด panic ที่ level3] --> D3{มี defer ใน level3?}
-    D3 -->|ใช่| E3[execute defer LIFO]
-    E3 --> R3{ใน defer มี recover?}
-    R3 -->|มี| STOP[จับ panic, หยุด unwind,<br/>โปรแกรมทำงานต่อ]
-    R3 -->|ไม่มี| UP2[ส่ง panic ขึ้น level2]
-    
-    D3 -->|ไม่| UP2
-    
-    UP2 --> D2{มี defer ใน level2?}
-    D2 -->|ใช่| E2[execute defer LIFO]
-    E2 --> R2{ใน defer มี recover?}
-    R2 -->|มี| STOP
-    R2 -->|ไม่มี| UP1[ส่ง panic ขึ้น level1]
-    
-    D2 -->|ไม่| UP1
-    
-    UP1 --> D1{มี defer ใน level1?}
-    D1 -->|ใช่| E1[execute defer LIFO]
-    E1 --> R1{ใน defer มี recover?}
-    R1 -->|มี| STOP
-    R1 -->|ไม่มี| UP0[ส่ง panic ขึ้น main]
-    
-    D1 -->|ไม่| UP0
-    
-    UP0 --> D0{มี defer ใน main?}
-    D0 -->|ใช่| E0[execute defer LIFO]
-    E0 --> R0{ใน defer มี recover?}
-    R0 -->|มี| STOP
-    R0 -->|ไม่มี| EXIT[โปรแกรมหยุด,<br/>พิมพ์ stack trace]
-    
-    D0 -->|ไม่| EXIT
+sequenceDiagram
+    participant main
+    participant L1 as level1
+    participant L2 as level2
+    participant L3 as level3
+
+    main->>L1: เรียก level1()
+    activate L1
+    L1->>L2: เรียก level2()
+    activate L2
+    L2->>L3: เรียก level3()
+    activate L3
+    L3-->>L3: panic เกิดขึ้น (ค่า "error")
+    Note over L3: execute defer (level3)
+    L3-->>L2: panic ส่งขึ้น
+    deactivate L3
+    Note over L2: defer มี recover()<br/>จับ panic และหยุด unwind
+    L2-->>L1: return ปกติ (ไม่มี panic)
+    deactivate L2
+    L1-->>main: return ปกติ
+    deactivate L1
+    Note over main: โปรแกรมทำงานต่อ
 ```
 
 ---
 
-## 3. แผนภาพ LIFO ของ `defer` (เพิ่มเติมเพื่อความเข้าใจ)
+## วิธีนำไปใช้
 
-```mermaid
-graph LR
-    subgraph ฟังก์ชัน level2
-        A[defer f2_1] --> B[defer f2_2] --> C[defer f2_3]
-    end
-    D[เรียกใช้เมื่อฟังก์ชันจบ] --> C
-    C --> B
-    B --> A
-```
+1. **คัดลอกโค้ด Mermaid** ด้านบน  
+2. **วางในไฟล์ Markdown** ที่รองรับ Mermaid (GitHub, GitLab, Notion, Obsidian, ฯลฯ)  
+3. **ระบบจะเรนเดอร์เป็นแผนภาพกราฟิก** อัตโนมัติ  
+
+หากต้องการ **ภาพนิ่ง** (PNG, SVG) สามารถใช้เครื่องมือออนไลน์ เช่น [Mermaid Live](https://mermaid.live/) วางโค้ดแล้วดาวน์โหลดภาพได้ครับ
+
+---
+
+เนื้อหาของคุณเดิมมีแผนภาพแบบ ASCII อยู่แล้ว การเพิ่ม Mermaid จะช่วยให้เห็นภาพชัดเจนและดูเป็นมืออาชีพมากขึ้น หากต้องการให้ช่วยปรับแต่งเพิ่มเติมก็บอกได้นะครับ
 
 --- 
 
