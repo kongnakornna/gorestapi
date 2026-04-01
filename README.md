@@ -855,13 +855,18 @@ func (m *MyStruct) Get(key string) (int, bool) {
 
 ### Dataflow Diagram (Flowchart TB) - CAS Loop
 
-```mermaid
-graph TB
-    A[อ่านค่า old] --> B[คำนวณ new]
-    B --> C{CAS(old, new)}
-    C -- true --> D[สำเร็จ]
-    C -- false --> A
-```
+graph LR
+    A[Input] --> B[Stage 1: Read]
+    B --> C[Stage 2: Process]
+    C --> D[Stage 3: Write]
+    
+    subgraph Fan-out
+        C --> E[Worker 1]
+        C --> F[Worker 2]
+        E --> G[Fan-in]
+        F --> G
+        G --> D
+    end
 
 ### ตัวอย่างการใช้งานจริง: ตัวนับแบบ atomic
 ```go
