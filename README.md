@@ -1551,16 +1551,75 @@ Go ใช้ **embedding** ซึ่งไม่ใช่ inheritance แท้ 
 4. Child สามารถ override เมธอดได้โดยการประกาศเมธอดชื่อเดียวกัน
 5. ไม่สามารถแปลงจาก Child เป็น Parent ได้โดยอัตโนมัติ (ต้องใช้ interface)
 
-## Dataflow Diagram (Flowchart TB) - Embedding
+## Diagram: Method Promotion with Embedding
 
 ```mermaid
 graph TB
-    A[type Animal struct] --> B[type Dog struct<br/>Animal]
-    B --> C[dog := Dog{...}]
-    C --> D[เรียก dog.Speak()<br/>พบเมธอดใน Dog?]
-    D -- มี --> E[เรียก Dog.Speak]
-    D -- ไม่มี --> F[เรียก Animal.Speak]
+    Start([Start: dog.Speak()]) --> CheckOuter{Does Dog have its own Speak method?}
+    CheckOuter -- Yes --> CallOuter[Call Dog.Speak]
+    CheckOuter -- No --> Promote[Promote Animal.Speak]
+    Promote --> CallAnimal[Call Animal.Speak]
+    CallOuter --> Return[Return result]
+    CallAnimal --> Return
+    Return --> End([End])
 ```
+
+## Explanation
+
+1. **Outer struct** (`Dog`) embeds an inner struct (`Animal`) as an anonymous field.
+2. When a method is called on the outer struct (`dog.Speak()`), Go first checks if the outer struct defines that method directly.
+   - If **yes**, that method is invoked (overriding).
+   - If **no**, Go looks for the method in the embedded struct(s) and promotes it.
+3. The promoted method is called as if it were part of the outer struct.
+4. The result is returned to the caller.
+
+## Example Code
+
+```go
+type Animal struct {
+    Name string
+}
+
+func (a Animal) Speak() string {
+    return "Animal sound"
+}
+
+type Dog struct {
+    Animal   // embedded
+    Breed string
+}
+
+func (d Dog) Speak() string {
+    return "Woof!"   // overrides Animal.Speak
+}
+
+func main() {
+    dog := Dog{Animal: Animal{Name: "Max"}, Breed: "Golden"}
+    fmt.Println(dog.Speak()) // Woof!
+}
+```
+
+## Field Access Flow
+
+For fields, the same promotion applies. If a field is not found in the outer struct, Go looks into embedded structs.
+
+```mermaid
+graph TB
+    StartField([dog.Name]) --> CheckOuterField{Does Dog have Name field?}
+    CheckOuterField -- No --> LookEmbedded[Look in embedded Animal]
+    LookEmbedded --> Found[Return Animal.Name]
+    CheckOuterField -- Yes --> ReturnOuter[Return Dog.Name]
+    Found --> EndField([End])
+    ReturnOuter --> EndField
+```
+
+## Key Points
+
+- **Embedding is not inheritance**: It is composition (has‑a), not is‑a.
+- **Method promotion** allows calling embedded methods directly.
+- **Overriding** is possible by defining a method with the same name on the outer struct.
+- **Multiple embedding** is allowed; if two embedded structs have the same method name, you must qualify the call.
+ 
 
 ## ตัวอย่างการใช้งานจริง: ระบบพาหนะ
 ```go
