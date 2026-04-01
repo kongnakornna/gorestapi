@@ -13260,46 +13260,712 @@ flowchart LR
 
 ## ภาคที่ 6: เครื่องมือและไลบรารียอดนิยม (บทที่ 43–45)
 
-**แผนภาพ: Router → Config → CLI → Logger → ORM → Email**
+## แผนภาพ Data Flow (Flowchart TB)
 
 ```mermaid
-graph LR
-    subgraph Router[เราเตอร์]
-        R1[chi] --> R2[มิดเดิลแวร์]
+flowchart TB
+    subgraph Entry["จุดเริ่มต้น (Entry Points)"]
+        A1["CLI Application<br/>cobra"]
+        A2["HTTP Server<br/>chi"]
+        A3["Configuration<br/>viper"]
     end
 
-    subgraph Config[การตั้งค่า]
-        V1[viper] --> V2[config.yaml]
-        V2 --> R1
+    subgraph Core["แกนหลัก (Core Layer)"]
+        B1["Routing & Middleware<br/>chi"]
+        B2["Business Logic<br/>Custom Handlers"]
+        B3["Validation<br/>go-playground/validator"]
+        B4["Authentication<br/>golang-jwt/jwt"]
     end
 
-    subgraph CLI[บรรทัดคำสั่ง]
-        C1[cobra] --> C2[คำสั่ง]
-        C2 --> V1
+    subgraph DataLayer["ชั้นข้อมูล (Data Layer)"]
+        C1["ORM<br/>GORM"]
+        C2["Database<br/>PostgreSQL/MySQL"]
+        C3["Migration<br/>AutoMigrate / golang-migrate"]
+        C4["Query Builder<br/>GORM"]
     end
 
-    subgraph Logger[การบันทึก]
-        Z1[zap] --> Z2[บันทึกแบบมีโครงสร้าง]
+    subgraph Output["ชั้นส่งออก (Output Layer)"]
+        D1["Logging<br/>zap"]
+        D2["Email<br/>gomail + hermes"]
+        D3["Response<br/>JSON/XML"]
     end
 
-    subgraph ORM[ORM]
-        G1[GORM] --> G2[การจัดการฐานข้อมูล]
+    subgraph External["ระบบภายนอก (External Systems)"]
+        E1["SMTP Server<br/>Gmail / SendGrid"]
+        E2["Database Server"]
+        E3["File System"]
     end
 
-    subgraph Email[อีเมล]
-        M1[gomail] --> M2[hermes]
-        M2 --> M3[HTML Email]
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> C1
+    C1 --> C2
+    C1 --> C3
+    C1 --> C4
+    C2 --> E2
+    C3 --> E2
+    B2 --> D1
+    B2 --> D2
+    D2 --> E1
+    B2 --> D3
+    D3 --> A2
+
+    subgraph Tools["เครื่องมือพัฒนา (Development Tools)"]
+        F1["air<br/>(hot reload)"]
+        F2["golangci-lint<br/>(linter)"]
+        F3["dlv<br/>(debugger)"]
+        F4["go mod<br/>(dependency)"]
     end
 
-    R2 --> Z1
-    R2 --> G1
-    G1 --> M1
+    A1 -.-> F1
+    A2 -.-> F1
+    B1 -.-> F2
+    B2 -.-> F2
+    C1 -.-> F3
+    A1 -.-> F4
+    A2 -.-> F4
 ```
 
-**คำอธิบาย:**  
-การกำหนดค่า (viper) จะถูกโหลดจากไฟล์ `config.yaml` และใช้ใน router (chi) ส่วน cobra ใช้สร้าง CLI ที่อาจเรียกใช้ viper หรือ chi ได้ ระหว่างการทำงาน router จะเรียก logger (zap) และ ORM (GORM) ซึ่ง GORM สามารถเชื่อมต่อกับ gomail เพื่อส่งอีเมลผ่าน hermes ที่สร้าง HTML template
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 6 ครอบคลุมบทที่ 43–45 โดยนำเสนอเครื่องมือและไลบรารียอดนิยมที่ใช้ในงานพัฒนา Go ระดับ Production แต่ละตัวมีหน้าที่และตำแหน่งในสถาปัตยกรรมของแอปพลิเคชัน ดังแสดงในแผนภาพ Data Flow ด้านบน
+
+### 1. chi – เราเตอร์และมิดเดิลแวร์ (บทที่ 43)
+
+**บทบาท:** รับ HTTP request, ส่งต่อผ่าน middleware chain, จับคู่ route, และส่งไปยัง handler ที่เหมาะสม
+
+**โครงสร้างข้อมูล:** chi ใช้ `chi.Router` ซึ่งเป็น interface ที่สืบทอดจาก `http.Handler` มีความสามารถในการเพิ่ม middleware, สร้าง route group, และจับคู่ pattern เช่น `/users/{id}`
+
+**ตัวอย่างการใช้งานจริง:**
+
+```go
+package main
+
+import (
+    "context"
+    "encoding/json"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/chi/v5/middleware"
+    "github.com/go-chi/cors"
+    "github.com/go-chi/httprate"
+)
+
+type User struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+}
+
+var users = map[int]User{
+    1: {ID: 1, Name: "John"},
+}
+
+func main() {
+    r := chi.NewRouter()
+
+    // Global middleware
+    r.Use(middleware.Logger)
+    r.Use(middleware.Recoverer)
+    r.Use(middleware.RealIP)
+    r.Use(middleware.Timeout(60 * time.Second))
+
+    // CORS
+    r.Use(cors.Handler(cors.Options{
+        AllowedOrigins:   []string{"*"},
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+        AllowCredentials: false,
+        MaxAge:           300,
+    }))
+
+    // Rate limiting
+    r.Use(httprate.LimitByIP(100, 1*time.Minute))
+
+    // Public routes
+    r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte("OK"))
+    })
+
+    // API v1
+    r.Route("/api/v1", func(r chi.Router) {
+        r.Get("/users", listUsers)
+        r.Get("/users/{id}", getUser)
+        r.Post("/users", createUser)
+    })
+
+    // Start server with graceful shutdown
+    srv := &http.Server{
+        Addr:         ":8080",
+        Handler:      r,
+        ReadTimeout:  15 * time.Second,
+        WriteTimeout: 15 * time.Second,
+    }
+
+    go func() {
+        log.Println("Server starting on :8080")
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("Server failed: %v", err)
+        }
+    }()
+
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    log.Println("Shutting down...")
+
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    srv.Shutdown(ctx)
+}
+
+func listUsers(w http.ResponseWriter, r *http.Request) {
+    json.NewEncoder(w).Encode(users)
+}
+
+func getUser(w http.ResponseWriter, r *http.Request) {
+    id := chi.URLParam(r, "id")
+    // ... implementation
+}
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+    // ... implementation
+}
+```
 
 ---
+
+### 2. viper – การจัดการ Configuration (บทที่ 43)
+
+**บทบาท:** โหลดค่าตั้งค่าจากหลายแหล่ง (ไฟล์, environment variables, flags) และให้ API สำหรับอ่านค่า
+
+**โครงสร้างข้อมูล:** viper ใช้ `map[string]interface{}` ภายใน เก็บค่าจากทุกแหล่ง โดยมีลำดับความสำคัญ: flags > env > config file > defaults
+
+**ตัวอย่างการใช้งานจริง:**
+
+```go
+package config
+
+import (
+    "fmt"
+    "strings"
+    "time"
+
+    "github.com/spf13/viper"
+)
+
+type Config struct {
+    Server   ServerConfig
+    Database DatabaseConfig
+    JWT      JWTConfig
+}
+
+type ServerConfig struct {
+    Port int    `mapstructure:"port"`
+    Mode string `mapstructure:"mode"`
+}
+
+type DatabaseConfig struct {
+    Host     string `mapstructure:"host"`
+    Port     int    `mapstructure:"port"`
+    User     string `mapstructure:"user"`
+    Password string `mapstructure:"password"`
+    Name     string `mapstructure:"name"`
+}
+
+type JWTConfig struct {
+    Secret string        `mapstructure:"secret"`
+    Expiry time.Duration `mapstructure:"expiry"`
+}
+
+func Load() (*Config, error) {
+    viper.SetConfigName("config")
+    viper.SetConfigType("yaml")
+    viper.AddConfigPath(".")
+    viper.AddConfigPath("./config")
+
+    viper.AutomaticEnv()
+    viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+    // Defaults
+    viper.SetDefault("server.port", 8080)
+    viper.SetDefault("server.mode", "debug")
+    viper.SetDefault("jwt.expiry", "15m")
+
+    if err := viper.ReadInConfig(); err != nil {
+        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+            return nil, fmt.Errorf("read config: %w", err)
+        }
+    }
+
+    var cfg Config
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return nil, fmt.Errorf("unmarshal: %w", err)
+    }
+    return &cfg, nil
+}
+```
+
+**ไฟล์ config.yaml:**
+```yaml
+server:
+  port: 9090
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: ${DB_PASSWORD}   # จาก environment
+  name: myapp
+jwt:
+  secret: ${JWT_SECRET}
+```
+
+---
+
+### 3. cobra – การสร้าง CLI (บทที่ 43)
+
+**บทบาท:** จัดโครงสร้างคำสั่ง (commands), flags, arguments, และ generate help/documentation
+
+**โครงสร้างข้อมูล:** แต่ละคำสั่งคือ `cobra.Command` ที่มี fields เช่น Use, Short, Run, Flags
+
+**ตัวอย่างการใช้งานจริง:**
+
+```go
+package cmd
+
+import (
+    "fmt"
+    "os"
+
+    "github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+    Use:   "myapp",
+    Short: "MyApp CLI",
+    Long:  `A sample CLI application built with cobra.`,
+    Run: func(cmd *cobra.Command, args []string) {
+        fmt.Println("Hello from MyApp")
+    },
+}
+
+var serveCmd = &cobra.Command{
+    Use:   "serve",
+    Short: "Start the HTTP server",
+    RunE: func(cmd *cobra.Command, args []string) error {
+        port, _ := cmd.Flags().GetInt("port")
+        fmt.Printf("Starting server on :%d\n", port)
+        // start server...
+        return nil
+    },
+}
+
+func init() {
+    serveCmd.Flags().IntP("port", "p", 8080, "port to listen on")
+    rootCmd.AddCommand(serveCmd)
+}
+
+func Execute() {
+    if err := rootCmd.Execute(); err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
+    }
+}
+```
+
+```go
+// main.go
+package main
+
+import "myapp/cmd"
+
+func main() {
+    cmd.Execute()
+}
+```
+
+---
+
+### 4. zap – Structured Logging (บทที่ 43)
+
+**บทบาท:** บันทึก log แบบมีโครงสร้าง (JSON) ด้วยประสิทธิภาพสูง รองรับระดับความรุนแรง และการแยก output
+
+**โครงสร้างข้อมูล:** zap ใช้ `zap.Logger` ซึ่งมี methods เช่น `Info`, `Error` พร้อม fields ที่กำหนดด้วย `zap.String`, `zap.Int` เป็นต้น
+
+**ตัวอย่างการใช้งานจริง:**
+
+```go
+package logger
+
+import (
+    "os"
+
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+)
+
+var Log *zap.Logger
+var Sugar *zap.SugaredLogger
+
+func Init(level string, output string) error {
+    var lvl zapcore.Level
+    switch level {
+    case "debug":
+        lvl = zapcore.DebugLevel
+    case "info":
+        lvl = zapcore.InfoLevel
+    case "warn":
+        lvl = zapcore.WarnLevel
+    case "error":
+        lvl = zapcore.ErrorLevel
+    default:
+        lvl = zapcore.InfoLevel
+    }
+
+    encoderConfig := zapcore.EncoderConfig{
+        TimeKey:        "time",
+        LevelKey:       "level",
+        NameKey:        "logger",
+        CallerKey:      "caller",
+        MessageKey:     "msg",
+        StacktraceKey:  "stacktrace",
+        LineEnding:     zapcore.DefaultLineEnding,
+        EncodeLevel:    zapcore.LowercaseLevelEncoder,
+        EncodeTime:     zapcore.ISO8601TimeEncoder,
+        EncodeDuration: zapcore.SecondsDurationEncoder,
+        EncodeCaller:   zapcore.ShortCallerEncoder,
+    }
+
+    var ws zapcore.WriteSyncer
+    if output == "stdout" {
+        ws = zapcore.AddSync(os.Stdout)
+    } else {
+        // file output
+        ws = zapcore.AddSync(&lumberjack.Logger{
+            Filename:   output,
+            MaxSize:    100,
+            MaxBackups: 3,
+            MaxAge:     28,
+            Compress:   true,
+        })
+    }
+
+    core := zapcore.NewCore(
+        zapcore.NewJSONEncoder(encoderConfig),
+        ws,
+        lvl,
+    )
+    Log = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+    Sugar = Log.Sugar()
+    return nil
+}
+```
+
+**การใช้งานใน HTTP middleware:**
+
+```go
+func LoggingMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+        next.ServeHTTP(rw, r)
+        duration := time.Since(start)
+
+        Log.Info("HTTP request",
+            zap.String("method", r.Method),
+            zap.String("path", r.URL.Path),
+            zap.Int("status", rw.status),
+            zap.Duration("duration", duration),
+            zap.String("ip", r.RemoteAddr),
+        )
+    })
+}
+```
+
+---
+
+### 5. GORM – ORM ทรงพลัง (บทที่ 44)
+
+**บทบาท:** แมป struct กับตารางฐานข้อมูล, จัดการ CRUD, transactions, associations, และ migrations
+
+**โครงสร้างข้อมูล:** ใช้ `gorm.DB` เป็น session สำหรับ query, `gorm.Model` สำหรับ fields พื้นฐาน (ID, CreatedAt, UpdatedAt, DeletedAt)
+
+**ตัวอย่างการใช้งานจริง (model และ repository):**
+
+```go
+// models/user.go
+package models
+
+import (
+    "time"
+
+    "gorm.io/gorm"
+)
+
+type User struct {
+    ID        uint           `gorm:"primaryKey" json:"id"`
+    Username  string         `gorm:"size:50;uniqueIndex;not null" json:"username"`
+    Email     string         `gorm:"size:100;uniqueIndex;not null" json:"email"`
+    Password  string         `gorm:"size:255;not null" json:"-"`
+    CreatedAt time.Time      `json:"created_at"`
+    UpdatedAt time.Time      `json:"updated_at"`
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// repositories/user_repo.go
+package repositories
+
+import (
+    "context"
+    "errors"
+
+    "gorm.io/gorm"
+    "myapp/models"
+)
+
+type UserRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+    return &UserRepository{db: db}
+}
+
+func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
+    return r.db.WithContext(ctx).Create(user).Error
+}
+
+func (r *UserRepository) GetByID(ctx context.Context, id uint) (*models.User, error) {
+    var user models.User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, nil
+    }
+    return &user, err
+}
+
+func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
+    return r.db.WithContext(ctx).Save(user).Error
+}
+```
+
+**การใช้งาน transaction พร้อม locking:**
+
+```go
+func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order) error {
+    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        // Lock product rows
+        for _, item := range order.Items {
+            var product models.Product
+            if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&product, item.ProductID).Error; err != nil {
+                return err
+            }
+            if product.Stock < item.Quantity {
+                return errors.New("insufficient stock")
+            }
+            product.Stock -= item.Quantity
+            if err := tx.Save(&product).Error; err != nil {
+                return err
+            }
+        }
+        if err := tx.Create(order).Error; err != nil {
+            return err
+        }
+        return nil
+    })
+}
+```
+
+---
+
+### 6. gomail + hermes – การส่งอีเมล (บทที่ 45)
+
+**บทบาท:** สร้างและส่งอีเมลแบบ HTML ที่สวยงาม พร้อม fallback text
+
+**โครงสร้างข้อมูล:** 
+- `gomail.Dialer` สำหรับเชื่อมต่อ SMTP
+- `gomail.Message` สำหรับสร้างอีเมล (From, To, Subject, Body, Attachments)
+- `hermes.Hermes` สำหรับสร้าง HTML email จาก template
+
+**ตัวอย่างการใช้งานจริง:**
+
+```go
+package email
+
+import (
+    "bytes"
+    "fmt"
+    "html/template"
+    "time"
+
+    "github.com/matcornic/hermes/v2"
+    "gopkg.in/gomail.v2"
+)
+
+type Config struct {
+    SMTPHost     string
+    SMTPPort     int
+    SMTPUser     string
+    SMTPPassword string
+    FromEmail    string
+    FromName     string
+    AppURL       string
+    AppName      string
+    AppLogo      string
+}
+
+type EmailService struct {
+    dialer  *gomail.Dialer
+    hermes  hermes.Hermes
+    from    string
+}
+
+func New(cfg Config) *EmailService {
+    dialer := gomail.NewDialer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword)
+
+    h := hermes.Hermes{
+        Product: hermes.Product{
+            Name: cfg.AppName,
+            Link: cfg.AppURL,
+            Logo: cfg.AppLogo,
+        },
+        Theme: new(hermes.Flat),
+    }
+
+    return &EmailService{
+        dialer: dialer,
+        hermes: h,
+        from:   fmt.Sprintf("%s <%s>", cfg.FromName, cfg.FromEmail),
+    }
+}
+
+func (s *EmailService) SendWelcome(to, name, verifyURL string) error {
+    email := hermes.Email{
+        Body: hermes.Body{
+            Name: name,
+            Intros: []string{
+                fmt.Sprintf("Welcome to %s!", s.hermes.Product.Name),
+                "We're excited to have you on board.",
+            },
+            Actions: []hermes.Action{
+                {
+                    Instructions: "Please verify your email address:",
+                    Button: hermes.Button{
+                        Color: "#22BC66",
+                        Text:  "Verify Email",
+                        Link:  verifyURL,
+                    },
+                },
+            },
+            Outros: []string{
+                "If you didn't create an account, ignore this email.",
+            },
+        },
+    }
+
+    html, err := s.hermes.GenerateHTML(email)
+    if err != nil {
+        return err
+    }
+    text := fmt.Sprintf("Welcome %s! Please verify: %s", name, verifyURL)
+
+    return s.send(to, "Welcome to "+s.hermes.Product.Name, html, text)
+}
+
+func (s *EmailService) send(to, subject, htmlBody, textBody string) error {
+    m := gomail.NewMessage()
+    m.SetHeader("From", s.from)
+    m.SetHeader("To", to)
+    m.SetHeader("Subject", subject)
+    m.SetBody("text/plain", textBody)
+    m.AddAlternative("text/html", htmlBody)
+
+    return s.dialer.DialAndSend(m)
+}
+```
+
+**การใช้งานใน handler:**
+
+```go
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+    // ... create user ...
+    verifyURL := fmt.Sprintf("%s/verify?token=%s", h.config.AppURL, token)
+    if err := h.emailService.SendWelcome(user.Email, user.Name, verifyURL); err != nil {
+        log.Printf("Failed to send welcome email: %v", err)
+        // ไม่ fail การ register
+    }
+    // ...
+}
+```
+
+---
+
+## เทมเพลตและตัวอย่างโค้ดเพิ่มเติม
+
+### เทมเพลตโครงสร้างโปรเจกต์สำหรับภาคนี้
+
+```
+myapp/
+├── cmd/
+│   ├── api/
+│   │   └── main.go          # ใช้ chi
+│   └── cli/
+│       └── main.go          # ใช้ cobra
+├── internal/
+│   ├── config/
+│   │   └── config.go        # viper
+│   ├── handlers/
+│   │   └── user.go
+│   ├── models/
+│   │   └── user.go
+│   ├── repository/
+│   │   └── user.go          # GORM
+│   └── logger/
+│       └── logger.go        # zap
+├── pkg/
+│   └── email/
+│       └── email.go         # gomail + hermes
+├── config.yaml
+├── go.mod
+└── go.sum
+```
+
+### Checklist การเลือกใช้เครื่องมือ
+
+| เครื่องมือ | เมื่อควรใช้ | ทางเลือก |
+|-----------|-----------|---------|
+| chi | ต้องการ router น้ำหนักเบา เร็ว รองรับ middleware มาตรฐาน | gin, echo |
+| viper | ต้องการ config ที่ยืดหยุ่น (file, env, flags) | envconfig, koanf |
+| cobra | สร้าง CLI ที่มีหลายคำสั่ง | urfave/cli |
+| zap | ต้องการ logging ที่เร็วมาก ใช้ structured | slog, logrus |
+| GORM | ต้องการ ORM ที่ครบฟีเจอร์, associations | sqlx, sqlc |
+| gomail + hermes | ต้องการส่งอีเมล HTML สวยงาม | sendgrid, mailgun |
+
+---
+
+## สรุป
+
+ภาคที่ 6 นำเสนอชุดเครื่องมือที่จำเป็นสำหรับการพัฒนาแอปพลิเคชัน Go ในระดับ Production:
+
+- **chi** จัดการ HTTP routing และ middleware อย่างมีประสิทธิภาพ
+- **viper** จัดการ configuration จากหลายแหล่ง
+- **cobra** สร้าง CLI ที่มีโครงสร้างชัดเจน
+- **zap** บันทึก structured logs ด้วยความเร็วสูง
+- **GORM** จัดการฐานข้อมูลผ่าน ORM ที่ทรงพลัง
+- **gomail + hermes** สร้างและส่งอีเมล HTML ที่สวยงาม
+
+เครื่องมือเหล่านี้ทำงานสอดคล้องกันตามแผนภาพ Data Flow ที่แสดงไว้ ช่วยให้การพัฒนาเป็นระบบ มีประสิทธิภาพ และบำรุงรักษาง่าย
 
 ## ภาคที่ 7: การออกแบบสถาปัตยกรรมและ Workflow (บทที่ 46–48)
 เราจะนำเสนอแผนภาพใหม่สำหรับภาคที่ 7 (บทที่ 46–48) พร้อมคำอธิบายภาษาไทยแบบละเอียด โดยเน้นให้เห็นภาพรวมของสถาปัตยกรรม Clean Architecture, Blueprint สำหรับโปรเจกต์ระดับ Production, และการจัดการ Workflow รวมถึง Task Management
