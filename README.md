@@ -2248,10 +2248,21 @@ srv := &http.Server{
 }
 srv.ListenAndServe()
 ```
+## พื้นฐานการสร้าง HTTP Server ในภาษา Go (Golang)  
 
- ┌─────────────────────────────────────────────────────────────────────────────┐
- │                              HTTP Client (Browser, curl, etc.)              │
- └─────────────────────────────────────────────────────────────────────────────┘
+การพัฒนา HTTP Server ด้วยภาษา Go เป็นเรื่องที่ทำได้ง่ายและมีประสิทธิภาพสูง เนื่องจากภาษามี `net/http` package ที่ทรงพลังอยู่ในมาตรฐานแล้ว 
+โดยไม่ต้องพึ่งเฟรมเวิร์กภายนอก บทความนี้จะอธิบายตั้งแต่พื้นฐาน โครงสร้างภายใน แผนภาพการทำงาน พร้อมตัวอย่างโค้ดและเทมเพลตสำหรับนำไปใช้จริง
+
+---
+
+### 1. แผนภาพการทำงานของ HTTP Server (สำหรับ draw.io)
+
+แผนภาพด้านล่างแสดงองค์ประกอบหลักของ HTTP Server ใน Go และการทำงานร่วมกันระหว่าง client, router, handler, middleware และ response
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              HTTP Client (Browser, curl, etc.)              │
+└─────────────────────────────────────────────────────────────────────────────┘
                                        │
                                        │ HTTP Request (GET /api/users)
                                        ▼
@@ -2260,9 +2271,9 @@ srv.ListenAndServe()
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │                         Multiplexer (ServeMux)                        │  │
 │  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────┐   │  │
-│  │  │ /api/users  │───▶│   Handler   │   │      Middleware         │   │  │
+│  │  │ /api/users  │───▶│   Handler   │    │      Middleware         │   │  │
 │  │  └─────────────┘    └─────────────┘    │  - Logging              │   │  │
-│  │  ┌─────────────┐                       │  - Authentication       │   │  │
+│  │  ┌─────────────┐                      │  - Authentication       │   │  │
 │  │  │ /static/    │───▶│ FileServer   │  │  - Recovery (panic)     │   │  │
 │  │  └─────────────┘    └─────────────┘    └─────────────────────────┘   │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -2278,69 +2289,66 @@ srv.ListenAndServe()
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                    Client                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
-
-### อธิบายรายละเอียดแต่ละส่วน
-
-#### 1. การเริ่มต้น HTTP Server
-
-Go ใช้ `http.ListenAndServe(addr string, handler http.Handler)` เพื่อเริ่มต้น server  
-- `addr` เช่น `":8080"` (ฟังทุก interface ที่พอร์ต 8080)  
-- `handler` มักเป็น `http.ServeMux` หรือ `nil` (ใช้ DefaultServeMux)
-
-```go
-http.ListenAndServe(":8080", nil)
 ```
 
-#### 2. Router (ServeMux)
-
-ServeMux คือ multiplexer ที่จับคู่ URL pattern กับ handler  
-สามารถสร้างแบบใหม่หรือใช้ตัว default ก็ได้  
-
-```go
-mux := http.NewServeMux()
-mux.HandleFunc("/hello", helloHandler)
-mux.HandleFunc("/users/", usersHandler) // path prefix
-```
-
-#### 3. Handler
-
-Handler คือฟังก์ชันที่รับ `http.ResponseWriter` และ `*http.Request`  
-
-```go
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hello, World!")
-}
-```
-
-#### 4. Request และ Response
-
-- `*http.Request` มีข้อมูลเกี่ยวกับ request เช่น method, URL, headers, body  
-- `http.ResponseWriter` ใช้เขียน response (status code, headers, body)  
-
-#### 5. Middleware
-
-Middleware คือฟังก์ชันที่รับ `http.Handler` แล้วคืน `http.Handler` ใหม่ ซึ่งสามารถแทรก logic ก่อน/หลัง handler จริง  
-
-```go
-func loggingMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        log.Printf("%s %s", r.Method, r.URL.Path)
-        next.ServeHTTP(w, r)
-    })
-}
-```
-
-#### 6. การทำงานแบบ Concurrent
-
-ทุก request จะถูกจัดการใน goroutine ใหม่ ทำให้ server สามารถรับ request พร้อมกันได้เป็นจำนวนมากโดยไม่ต้องจัดการ thread ด้วยตัวเอง
+**คำอธิบายแผนภาพ:**
+- **Client** ส่ง HTTP request ไปยัง server
+- **ServeMux (router)** ทำหน้าที่จับคู่ path (route) กับ handler ที่ลงทะเบียนไว้
+- **Middleware** เป็นฟังก์ชันที่ทำงานก่อนหรือหลัง handler (chain) เช่น การ log, auth, panic recovery
+- **Handler** เป็นฟังก์ชันที่ประมวลผล request และสร้าง response ผ่าน `http.ResponseWriter`
+- **Response** ถูกส่งกลับไปยัง client
 
 ---
 
-### ตัวอย่างการใช้งานจริง
+### 2. องค์ประกอบหลักของ HTTP Server ใน Go
 
-#### ตัวอย่างที่ 1: REST API พื้นฐาน (CRUD users)
+#### 2.1 net/http – คลังหลัก
+- `http.HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))` – ลงทะเบียน handler สำหรับ pattern
+- `http.ListenAndServe(addr string, handler http.Handler)` – เริ่มต้น server
 
-สร้าง server ที่รองรับ GET /users และ POST /users
+#### 2.2 Handler
+Handler ใด ๆ ที่ implement interface `http.Handler`:
+```go
+type Handler interface {
+    ServeHTTP(http.ResponseWriter, *http.Request)
+}
+```
+หรือใช้ `http.HandlerFunc` เพื่อแปลงฟังก์ชันให้เป็น handler
+
+#### 2.3 ServeMux (Router)
+`http.NewServeMux()` สร้าง router ใหม่ สามารถใช้ pattern แบบ exact match หรือ path prefix (ด้วย trailing slash `/`)
+
+#### 2.4 Middleware
+ฟังก์ชันที่รับ `http.Handler` แล้วคืน `http.Handler` เพื่อแทรก logic ก่อนถึง handler จริง
+
+#### 2.5 Context
+`http.Request` มี `Context()` สำหรับส่งข้อมูลข้าม middleware และ handler เช่น user ID, timeout
+
+---
+
+### 3. ตัวอย่างการใช้งานจริง
+
+#### 3.1 HTTP Server พื้นฐาน (Hello World)
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello, World!")
+}
+
+func main() {
+    http.HandleFunc("/", helloHandler) // ลงทะเบียน handler
+    http.ListenAndServe(":8080", nil)  // เริ่ม server ใช้ default ServeMux
+}
+```
+
+#### 3.2 REST API – การจัดการ users
 
 ```go
 package main
@@ -2349,17 +2357,18 @@ import (
     "encoding/json"
     "log"
     "net/http"
+    "strconv"
     "strings"
 )
 
 type User struct {
-    ID   string `json:"id"`
+    ID   int    `json:"id"`
     Name string `json:"name"`
 }
 
 var users = []User{
-    {ID: "1", Name: "John"},
-    {ID: "2", Name: "Jane"},
+    {ID: 1, Name: "Alice"},
+    {ID: 2, Name: "Bob"},
 }
 
 func usersHandler(w http.ResponseWriter, r *http.Request) {
@@ -2373,6 +2382,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
             http.Error(w, err.Error(), http.StatusBadRequest)
             return
         }
+        newUser.ID = len(users) + 1
         users = append(users, newUser)
         w.WriteHeader(http.StatusCreated)
         json.NewEncoder(w).Encode(newUser)
@@ -2381,36 +2391,38 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func userByIDHandler(w http.ResponseWriter, r *http.Request) {
+    // /users/{id}
+    pathParts := strings.Split(r.URL.Path, "/")
+    if len(pathParts) < 3 {
+        http.Error(w, "Invalid path", http.StatusBadRequest)
+        return
+    }
+    id, err := strconv.Atoi(pathParts[2])
+    if err != nil {
+        http.Error(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+    for _, u := range users {
+        if u.ID == id {
+            json.NewEncoder(w).Encode(u)
+            return
+        }
+    }
+    http.Error(w, "User not found", http.StatusNotFound)
+}
+
 func main() {
     mux := http.NewServeMux()
     mux.HandleFunc("/users", usersHandler)
+    mux.HandleFunc("/users/", userByIDHandler) // ใช้ trailing slash สำหรับ prefix
 
     log.Println("Server starting on :8080")
     log.Fatal(http.ListenAndServe(":8080", mux))
 }
 ```
 
-#### ตัวอย่างที่ 2: Static File Server
-
-```go
-package main
-
-import (
-    "log"
-    "net/http"
-)
-
-func main() {
-    // ให้บริการไฟล์จากโฟลเดอร์ ./static
-    fs := http.FileServer(http.Dir("./static"))
-    http.Handle("/static/", http.StripPrefix("/static/", fs))
-
-    log.Println("Static server on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}
-```
-
-#### ตัวอย่างที่ 3: Server พร้อม Middleware (Logging + Recovery)
+#### 3.3 การใช้ middleware – Logging และ Recovery
 
 ```go
 package main
@@ -2422,16 +2434,16 @@ import (
     "time"
 )
 
-// Middleware: Logging
+// Logging middleware
 func loggingMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         start := time.Now()
         next.ServeHTTP(w, r)
-        log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
+        log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
     })
 }
 
-// Middleware: Recovery จาก panic
+// Recovery middleware (catch panic)
 func recoveryMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         defer func() {
@@ -2444,28 +2456,173 @@ func recoveryMiddleware(next http.Handler) http.Handler {
     })
 }
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hello, World!")
-}
-
 func panicHandler(w http.ResponseWriter, r *http.Request) {
     panic("something went wrong")
 }
 
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello with middleware")
+}
+
 func main() {
     mux := http.NewServeMux()
-    mux.HandleFunc("/hello", helloHandler)
+    mux.HandleFunc("/", helloHandler)
     mux.HandleFunc("/panic", panicHandler)
 
-    // ต่อ middleware (order matters: recovery อยู่ข้างนอกสุด)
-    handler := recoveryMiddleware(loggingMiddleware(mux))
+    // Chain middleware
+    handler := loggingMiddleware(recoveryMiddleware(mux))
 
-    log.Println("Server with middleware on :8080")
+    log.Println("Server starting on :8080")
     log.Fatal(http.ListenAndServe(":8080", handler))
 }
 ```
 
-#### ตัวอย่างที่ 4: การใช้ Context เพื่อ Timeout และ Cancel
+#### 3.4 Serving static files
+
+```go
+func main() {
+    fs := http.FileServer(http.Dir("./static"))
+    http.Handle("/static/", http.StripPrefix("/static/", fs))
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+---
+
+### 4. เทมเพลตและโครงสร้างโปรเจกต์ (สำหรับโปรเจกต์จริง)
+
+สำหรับโปรเจกต์ที่มีขนาดใหญ่ขึ้น ควรแบ่งโครงสร้างเป็น package ต่าง ๆ อย่างชัดเจน
+
+```
+myproject/
+├── cmd/
+│   └── server/
+│       └── main.go           # entry point
+├── internal/
+│   ├── handlers/             # handlers สำหรับแต่ละ route
+│   │   ├── user.go
+│   │   └── health.go
+│   ├── middleware/           # middleware components
+│   │   ├── logging.go
+│   │   └── auth.go
+│   ├── models/               # data structures
+│   │   └── user.go
+│   └── service/              # business logic
+│       └── user_service.go
+├── static/                   # static files (CSS, JS, images)
+├── go.mod
+└── go.sum
+```
+
+**ตัวอย่าง `cmd/server/main.go`:**
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+    "myproject/internal/handlers"
+    "myproject/internal/middleware"
+)
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/users", handlers.UsersHandler)
+    mux.HandleFunc("/users/", handlers.UserByIDHandler)
+    mux.HandleFunc("/health", handlers.HealthHandler)
+
+    // Static files
+    fs := http.FileServer(http.Dir("./static"))
+    mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+    // Apply middleware chain
+    handler := middleware.Logging(middleware.Recovery(mux))
+
+    log.Println("Server starting on :8080")
+    log.Fatal(http.ListenAndServe(":8080", handler))
+}
+```
+
+**ตัวอย่าง `internal/handlers/user.go`:**
+
+```go
+package handlers
+
+import (
+    "encoding/json"
+    "net/http"
+    "strconv"
+    "strings"
+    "myproject/internal/models"
+    "myproject/internal/service"
+)
+
+func UsersHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    switch r.Method {
+    case http.MethodGet:
+        users := service.GetAllUsers()
+        json.NewEncoder(w).Encode(users)
+    case http.MethodPost:
+        var u models.User
+        if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+        created := service.CreateUser(u)
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(created)
+    default:
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+    }
+}
+
+func UserByIDHandler(w http.ResponseWriter, r *http.Request) {
+    parts := strings.Split(r.URL.Path, "/")
+    if len(parts) < 3 {
+        http.Error(w, "Invalid path", http.StatusBadRequest)
+        return
+    }
+    id, err := strconv.Atoi(parts[2])
+    if err != nil {
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        return
+    }
+    user, err := service.GetUserByID(id)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusNotFound)
+        return
+    }
+    json.NewEncoder(w).Encode(user)
+}
+```
+
+**ตัวอย่าง `internal/middleware/logging.go`:**
+
+```go
+package middleware
+
+import (
+    "log"
+    "net/http"
+    "time"
+)
+
+func Logging(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        next.ServeHTTP(w, r)
+        log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
+    })
+}
+```
+
+---
+
+### 5. การใช้งานจริง: Server ที่รองรับหลาย environment
+
+สำหรับการ deploy จริง มักใช้ environment variables และ graceful shutdown
 
 ```go
 package main
@@ -2475,115 +2632,61 @@ import (
     "fmt"
     "log"
     "net/http"
+    "os"
+    "os/signal"
+    "syscall"
     "time"
 )
 
-func longProcessHandler(w http.ResponseWriter, r *http.Request) {
-    // สร้าง context ที่จะ timeout หลังจาก 2 วินาที
-    ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-    defer cancel()
-
-    // จำลองงานที่ใช้เวลา 3 วินาที
-    select {
-    case <-time.After(3 * time.Second):
-        fmt.Fprintf(w, "Done")
-    case <-ctx.Done():
-        http.Error(w, "Request timeout", http.StatusRequestTimeout)
+func main() {
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
     }
-}
 
-func main() {
-    http.HandleFunc("/long", longProcessHandler)
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}
-```
-
----
-
-### เทมเพลตโครงสร้างโปรเจค HTTP Server
-
-สำหรับการพัฒนา API ขนาดใหญ่ ควรแยกส่วนต่างๆ ออกเป็นแพ็คเกจ:
-
-```
-myapi/
-├── main.go                 // จุดเริ่มต้น, server config
-├── handlers/
-│   ├── user.go             // handlers สำหรับ user
-│   └── product.go
-├── middleware/
-│   ├── auth.go
-│   ├── logging.go
-│   └── recovery.go
-├── models/
-│   └── user.go             // structs และ DB logic
-├── routes/
-│   └── routes.go           // รวม router
-└── utils/
-    └── response.go         // helper สำหรับ JSON response
-```
-
-**ตัวอย่าง main.go แบบมีโครงสร้าง:**
-
-```go
-package main
-
-import (
-    "log"
-    "net/http"
-    "myapi/middleware"
-    "myapi/routes"
-)
-
-func main() {
-    router := routes.NewRouter() // คืนค่า *http.ServeMux ที่ลงทะเบียน handler ครบ
-
-    // ครอบด้วย middleware ระดับ global
-    handler := middleware.Recovery(middleware.Logging(router))
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hello from Go server on port %s", port)
+    })
 
     srv := &http.Server{
-        Addr:         ":8080",
-        Handler:      handler,
-        ReadTimeout:  10 * time.Second,
-        WriteTimeout: 10 * time.Second,
+        Addr:    ":" + port,
+        Handler: mux,
     }
 
-    log.Println("Starting server on :8080")
-    log.Fatal(srv.ListenAndServe())
-}
-```
+    // Graceful shutdown
+    go func() {
+        log.Printf("Server starting on port %s", port)
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("listen: %s\n", err)
+        }
+    }()
 
-**routes/routes.go:**
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    log.Println("Shutting down server...")
 
-```go
-package routes
-
-import (
-    "myapi/handlers"
-    "net/http"
-)
-
-func NewRouter() *http.ServeMux {
-    mux := http.NewServeMux()
-    mux.HandleFunc("GET /users", handlers.GetUsers)
-    mux.HandleFunc("POST /users", handlers.CreateUser)
-    // ... routes อื่นๆ
-    return mux
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Fatal("Server forced to shutdown:", err)
+    }
+    log.Println("Server exited")
 }
 ```
 
 ---
 
-### สรุป
+### 6. สรุป
 
-- Go มี `net/http` ที่ทรงพลังพอสำหรับการสร้าง HTTP server ตั้งแต่เล็กไปจนถึงใหญ่
-- การออกแบบควรแยก routing, middleware, handler และ business logic ออกจากกัน เพื่อความ maintainable
-- การใช้ middleware pattern ช่วยเพิ่ม modularity และ reuse code
-- ควรใช้ `http.Server` พร้อม timeout และ context เพื่อความปลอดภัยและป้องกันการกินทรัพยากร
-
-คุณสามารถนำเทมเพลตและตัวอย่างข้างต้นไปปรับใช้กับโปรเจคจริงได้ทันที หากต้องการเพิ่มเติมเช่นการเชื่อมต่อฐานข้อมูล, JWT authentication, หรือ graceful shutdown ก็สามารถต่อยอดได้โดยใช้แนวทางเดียวกัน
+- Go มี `net/http` ที่ทรงพลังสำหรับสร้าง HTTP server ได้อย่างรวดเร็ว
+- ใช้ `http.HandleFunc` หรือ `http.ServeMux` เพื่อกำหนด routing
+- Middleware ช่วยเพิ่มฟังก์ชัน cross-cutting เช่น logging, auth, recovery
+- ควรออกแบบโครงสร้างโปรเจกต์ให้แยกส่วน (handlers, services, models) เพื่อความยืดหยุ่นและทดสอบง่าย
+- การใช้ context และ graceful shutdown ช่วยให้ server ทำงานได้เสถียรใน production
 
  
----
 
 ## บทที่ 27: Enum, Iota และ Bitmask
 
