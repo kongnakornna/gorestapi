@@ -2248,9 +2248,8 @@ srv := &http.Server{
 }
 srv.ListenAndServe()
 ```
+
 <img width="1778" height="2732" alt="rest" src="https://github.com/user-attachments/assets/81aabd3b-5d2c-4662-9121-49c455a2eb7f" />
-
-
 
 ### อธิบายรายละเอียดแต่ละส่วน
 
