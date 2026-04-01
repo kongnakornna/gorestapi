@@ -2622,6 +2622,308 @@ type MyInt = int // alias, MyInt และ int ใช้แทนกันได
 ความแตกต่าง: type definition (type MyInt int) สร้างชนิดใหม่, alias แค่ชื่ออื่น
 
 ---
+## Go: Type Alias (type alias)
+
+ในภาษา Go การประกาศชนิดข้อมูลใหม่ทำได้ผ่านคีย์เวิร์ด `type` ซึ่งมี 2 รูปแบบหลัก:
+
+1. **Type definition** (`type NewType ExistingType`) — สร้างชนิดข้อมูลใหม่ที่แตกต่างจากชนิดเดิม แม้โครงสร้างจะเหมือนกันก็ไม่สามารถนำมาใช้แทนกันได้โดยตรง
+2. **Type alias** (`type NewType = ExistingType`) — สร้างชื่ออื่น (alias) ให้กับชนิดเดิม โดยที่ `NewType` และ `ExistingType` ถือว่าเป็นชนิดเดียวกันอย่างสมบูรณ์ (identical)
+
+---
+
+### 1. type alias คืออะไร?
+
+**Type alias** คือการตั้งชื่ออื่นให้กับชนิดข้อมูลที่มีอยู่แล้ว โดยใช้เครื่องหมาย `=` ระหว่างชื่อใหม่และชนิดเดิม หลังจากประกาศแล้ว ชื่อ alias สามารถใช้แทนชนิดเดิมได้ทุกประการ
+
+```go
+type MyInt = int   // MyInt เป็น alias ของ int
+var a MyInt = 10   // a เป็น int
+var b int = a      // ใช้แทนกันได้โดยไม่ต้องแปลงชนิด
+```
+
+---
+
+### 2. type มีกี่แบบ?
+
+ใน Go การประกาศ `type` สามารถแบ่งตามรูปแบบได้ 2 กลุ่มใหญ่:
+
+| ประเภท | รูปแบบ | ความหมาย | ตัวอย่าง |
+|--------|--------|----------|----------|
+| **Type definition** | `type A B` | สร้างชนิดใหม่ `A` ที่มี underlying type เป็น `B` แต่ `A` และ `B` เป็นคนละชนิดกัน (distinct type) ต้องแปลงหากต้องการใช้แทนกัน | `type MyInt int` |
+| **Type alias** | `type A = B` | ประกาศให้ `A` เป็นอีกชื่อหนึ่งของ `B` (完全相同) | `type MyInt = int` |
+
+นอกจากนี้ยังสามารถใช้ `type` ประกาศชนิดอื่น ๆ ได้ เช่น:
+- **Struct type**: `type Person struct { ... }`
+- **Interface type**: `type Reader interface { ... }`
+- **Function type**: `type Handler func(int) int`
+- **Array, slice, map, channel type**: `type MySlice []string`
+
+แต่ทั้งหมดก็อยู่ภายใต้ 2 รูปแบบหลักคือ definition หรือ alias
+
+---
+
+### 3. type alias ใช้อย่างไร? ในกรณีไหน?
+
+#### 3.1 การ refactor โค้ดขนาดใหญ่
+เมื่อต้องการเปลี่ยนชื่อชนิดข้อมูล (rename) แต่ไม่ต้องการให้โค้ดเดิมเสียหาย สามารถใช้ alias เพื่อรักษาความเข้ากันได้
+
+```go
+// เวอร์ชันเก่าใช้ชื่อ OldType
+type OldType = NewType   // ประกาศ alias ไว้ให้โค้ดเดิมยังใช้งานได้
+```
+
+#### 3.2 การย้ายแพ็กเกจ
+เมื่อต้องการย้ายชนิดข้อมูลไปยังแพ็กเกจอื่น ให้ประกาศ alias ที่ตำแหน่งเดิมเพื่อคง API
+
+```go
+// package oldpkg
+import "newpkg"
+type OldType = newpkg.NewType
+```
+
+#### 3.3 ลดความซับซ้อนของชนิดที่ซับซ้อน
+ช่วยให้โค้ดอ่านง่ายขึ้น โดยเฉพาะกับฟังก์ชันหรือ generic type
+
+```go
+type HandlerFunc = func(context.Context, *Request) (*Response, error)
+type StringMap = map[string]string
+```
+
+#### 3.4 การใช้ generic type alias (Go 1.18+)
+สามารถสร้าง alias ให้กับ generic type ได้
+
+```go
+type List[T any] = []T
+type IntList = List[int]
+```
+
+#### 3.5 การทำ dependency injection หรือ mocking
+บางครั้งใช้ alias เพื่อเปลี่ยน implementation ใน test ได้ง่ายขึ้น
+
+---
+
+### 4. หลักการทำงาน
+
+- **Type identity**: Alias มี identity เดียวกับชนิดเดิม `T` และ `A` (alias) เป็นชนิดเดียวกันทุกประการ
+- **Method set**: ถ้าชนิดเดิมมี method set (เช่น struct ที่มี method) alias ก็มี method set นั้นด้วย
+- **Conversion**: ไม่จำเป็นต้องแปลงชนิด เพราะถือว่าเป็นชนิดเดียวกัน
+- **Underlying type**: Alias สืบทอด underlying type จากชนิดเดิม
+- **Scope**: Alias มี scope ตามตำแหน่งที่ประกาศ (package-level หรือ local)
+
+**ความแตกต่างจาก type definition**:  
+- `type A B` ทำให้ `A` เป็น distinct type ต้องใช้ conversion ระหว่าง `A` กับ `B`
+- `type A = B` ทำให้ `A` และ `B` ใช้แทนกันได้โดยตรง
+
+---
+
+### 5. Dataflow Diagram (Flowchart TB)
+
+แผนภาพด้านล่างแสดงการทำงานของ type alias เปรียบเทียบกับ type definition เมื่อมีการใช้งานในฟังก์ชันและการกำหนดค่า
+
+```mermaid
+graph TB
+    subgraph Declaration
+        A1["type MyInt = int (alias)"]
+        A2["type YourInt int (definition)"]
+    end
+
+    subgraph Usage
+        B1["var a MyInt = 10"]
+        B2["var b int = a"]
+        B3["var c YourInt = 20"]
+        B4["var d int = c"]
+    end
+
+    subgraph Compiler
+        C1{ชนิดตรงกัน?}
+        C2[อนุญาต]
+        C3[ต้องการ explicit conversion]
+    end
+
+    A1 --> B1 --> B2 --> C1
+    C1 -- Yes --> C2
+    A2 --> B3 --> B4 --> C1
+    C1 -- No --> C3
+```
+
+**คำอธิบาย**:  
+- Alias (`MyInt`) เหมือนกับ `int` ทุกประการ → กำหนดให้กันได้โดยตรง
+- Definition (`YourInt`) เป็นคนละชนิด → ต้องใช้ `int(c)` ถ้าต้องการนำไปใช้กับ `int`
+
+---
+
+### 6. ตัวอย่างการใช้งานจริง
+
+#### 6.1 Alias สำหรับ function type (ใช้ใน HTTP handler)
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+// Alias สำหรับฟังก์ชัน handler
+type HandlerFunc = func(http.ResponseWriter, *http.Request)
+
+func logMiddleware(next HandlerFunc) HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        fmt.Println("Request:", r.URL.Path)
+        next(w, r)
+    }
+}
+
+func hello(w http.ResponseWriter, r *Http.Request) {
+    fmt.Fprintln(w, "Hello")
+}
+
+func main() {
+    var h HandlerFunc = hello
+    http.HandleFunc("/", logMiddleware(h))
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+#### 6.2 Alias สำหรับ generic type (Go 1.18+)
+
+```go
+package main
+
+import "fmt"
+
+type Pair[T any] = struct {
+    First  T
+    Second T
+}
+
+type StringPair = Pair[string]
+
+func main() {
+    p := StringPair{First: "Go", Second: "Lang"}
+    fmt.Println(p) // {Go Lang}
+}
+```
+
+#### 6.3 การใช้ alias ในการ refactor
+
+สมมติว่าแพ็กเกจ `user` เปลี่ยนชื่อ struct `User` เป็น `Account`:
+
+```go
+// package user (เวอร์ชันใหม่)
+package user
+
+type Account struct {
+    Name string
+    Age  int
+}
+
+// ประกาศ alias เพื่อให้โค้ดเดิมที่ใช้ user.User ยังทำงานได้
+type User = Account
+```
+
+#### 6.4 Alias สำหรับ map ที่ซับซ้อน
+
+```go
+type Cache = map[string]map[string][]int
+
+func getFromCache(c Cache, key1, key2 string) []int {
+    return c[key1][key2]
+}
+```
+
+#### 6.5 Alias สำหรับ interface (ช่วยลดการพิมพ์)
+
+```go
+type Reader = io.Reader
+type Writer = io.Writer
+type ReadWriter = io.ReadWriter
+```
+
+---
+
+### 7. เทมเพลตและรูปแบบการใช้งาน
+
+#### 7.1 เทมเพลตสำหรับประกาศ type alias ในแพ็กเกจ
+
+```go
+// package mypkg
+
+// Alias สำหรับ type ที่อยู่ในแพ็กเกจอื่น
+import "github.com/example/otherpkg"
+type ExternalType = otherpkg.SomeType
+
+// Alias สำหรับ local type ที่ซับซ้อน
+type ComplexMap = map[string]map[int]struct{}
+
+// Alias สำหรับ function signature
+type Handler = func(context.Context, *Request) error
+
+// Alias สำหรับ generic type
+type List[T any] = []T
+type StringList = List[string]
+```
+
+#### 7.2 การใช้ type alias กับ method (เฉพาะชนิดที่มี method)
+
+```go
+type MyInt int
+
+func (m MyInt) Double() int {
+    return int(m) * 2
+}
+
+type MyIntAlias = MyInt
+
+func main() {
+    var a MyIntAlias = 5
+    fmt.Println(a.Double()) // 10 (method ถูกสืบทอด)
+}
+```
+
+---
+
+### 8. สรุปข้อควรระวัง
+
+- **Alias ไม่ใช่ชนิดใหม่** — หากต้องการสร้างชนิดใหม่ที่แตกต่าง ต้องใช้ type definition (`type A B`)
+- **Method set ของ alias** — ถ้าชนิดเดิมมี method set alias จะมี method set นั้นด้วย (ต่างจาก definition ที่ไม่มี method ของชนิดเดิม)
+- **Embedding** — alias สามารถใช้ในการฝัง struct ได้ เช่น `type MyReader = io.Reader` ฝังใน struct อื่นได้
+- **Scope** — alias มีขอบเขตตาม package หรือ block ที่ประกาศ
+- **การใช้กับ interface** — alias ของ interface ยังคงเป็น interface เดิม
+
+---
+
+### 9. แหล่งอ้างอิง
+
+- [The Go Programming Language Specification - Type declarations](https://go.dev/ref/spec#Type_declarations)
+- [Go Blog: Type Aliases](https://go.dev/blog/type-alias) (ประกาศเมื่อ Go 1.9)
+- [Go by Example: Type Aliases](https://gobyexample.com/type-aliases)
+- [Effective Go - Types](https://go.dev/doc/effective_go#types)
+
+---
+
+### 10. ภาพรวม Dataflow (เพิ่มเติม)
+
+แผนภาพด้านล่างแสดงขั้นตอนการทำงานของ compiler เมื่อเจอ type alias:
+
+```mermaid
+graph LR
+    subgraph Compilation
+        A[พบ type declaration] --> B{มี = ?}
+        B -- มี --> C[Type Alias]
+        B -- ไม่มี --> D[Type Definition]
+        C --> E[สร้างชื่อใหม่ที่ชี้ไปยังชนิดเดิม]
+        D --> F[สร้างชนิดใหม่ distinct type]
+        E --> G[ทั้งสองชื่อ interchangeable]
+        F --> H[ต้องแปลงเพื่อใช้ร่วมกัน]
+    end
+```
+
+---
+
+**หมายเหตุ**: การเลือกใช้ type alias หรือ type definition ขึ้นอยู่กับความต้องการ:
+- ถ้าต้องการตั้งชื่อสั้นให้ชนิดที่มีอยู่แล้ว → ใช้ **alias**
+- ถ้าต้องการสร้างชนิดใหม่เพื่อความปลอดภัยของ type (type safety) หรือต้องการเพิ่ม method ให้กับชนิดนั้น → ใช้ **type definition**
 
 ## บทที่ 14: เมธอด (Methods)
 
