@@ -399,7 +399,7 @@ Add a replace directive to your `go.mod` file to exclude the problematic module:
 
 ```powershell
 # Add replace directive to go.mod
-go mod edit -replace github.com/hiennguyen9874/go-dev=github.com/hiennguyen9874/go-dev@none
+go mod edit -replace github.com/bad/module=github.com/bad/module@v1.2.3
 ```
 
 Then run:
