@@ -58,6 +58,6 @@ smtpEmail:
   Host: smtp.gmail.com
   Port: 587
   User: icmon0955@gmail.com
-  Password: thahgrgexckwfmlz
+  Password: ok
   UseTls: true
   UseSsl: false
