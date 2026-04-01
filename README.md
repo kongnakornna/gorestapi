@@ -2005,6 +2005,66 @@ if errors.Is(err, sql.ErrNoRows) {
 
 # ภาคที่ 4: การพัฒนาแอปพลิเคชันเชิงปฏิบัติ
 
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart TB
+    subgraph Input["1. การรับข้อมูล (Input Layer)"]
+        direction TB
+        A1["HTTP Server (บทที่ 26)<br/>net/http, chi, gin<br/>routing, middleware, handlers"]
+        A2["JSON/XML Handling (บทที่ 25)<br/>encoding/json, xml<br/>Marshal/Unmarshal, tags"]
+        A3["Enum/Iota/Bitmask (บทที่ 27)<br/>iota, bit operations<br/>status flags, permissions"]
+        A4["Date & Time (บทที่ 28)<br/>time package, duration<br/>parsing, formatting, timezone"]
+        
+        A1 --> A2
+        A2 --> A3
+        A3 --> A4
+    end
+
+    subgraph Processing["2. การประมวลผล (Processing Layer)"]
+        direction TB
+        B1["Anonymous Functions & Closure (บทที่ 24)<br/>func literals, closures<br/>capturing variables, callbacks"]
+        B2["Concurrency (บทที่ 30)<br/>goroutines, channels, select<br/>sync, worker pools, patterns"]
+        B3["Error Handling (from บทที่ 23)<br/>error wrapping, custom errors<br/>panic recovery, retry"]
+        
+        B1 --> B2
+        B2 --> B3
+    end
+
+    subgraph Storage["3. การจัดเก็บ (Storage Layer)"]
+        direction TB
+        C1["Files & Database (บทที่ 29)<br/>os, io, bufio<br/>SQL, migrations, transactions"]
+        C2["Logging (บทที่ 31)<br/>slog, zap, logrus<br/>structured logging, levels"]
+        
+        C1 --> C2
+    end
+
+    subgraph Output["4. การส่งออก (Output Layer)"]
+        direction TB
+        D1["Templates (บทที่ 32)<br/>html/template, text/template<br/>layout, partials, functions"]
+        D2["Configuration (บทที่ 33)<br/>viper, env, flags<br/>multiple sources, defaults"]
+        
+        D1 --> D2
+    end
+
+    Input --> Processing
+    Processing --> Storage
+    Storage --> Output
+
+    subgraph Example["ตัวอย่างแอปพลิเคชัน"]
+        E1["REST API Server<br/>+ Authentication<br/>+ Database<br/>+ Logging"]
+        E2["Web Application<br/>+ Templates<br/>+ Session<br/>+ Configuration"]
+    end
+
+    Output --> E1
+    Output --> E2
+```
+
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 4 ครอบคลุมบทที่ 24–33 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งแสดงการไหลของข้อมูลจาก Input → Processing → Storage → Output
 ## บทที่ 24: ฟังก์ชันนิรนาม (Anonymous functions) และ Closure
 
 ### 24.1 ฟังก์ชันนิรนาม
