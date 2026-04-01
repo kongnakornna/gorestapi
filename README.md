@@ -372,6 +372,731 @@ Go มี **goroutine** (เธรดน้ำหนักเบา) และ *
 - **Mutex / Atomic** – ใช้การล็อกเพื่อป้องกัน race condition
 - **Worker Pool** – ใช้ goroutines จำนวนคงที่ทำงานจากคิวงาน
 - **Pipeline** – ข้อมูลไหลผ่านหลาย goroutines ที่เชื่อมต่อกันด้วย channel
+----------------
+# Goroutines, Channels, CSP, Mutex, Atomic, Pipeline ใน Go
+
+## 1. Goroutines
+
+### Goroutines คืออะไร?
+**Goroutine** คือเธรดน้ำหนักเบาที่จัดการโดย Go runtime มีขนาดสแต็กเริ่มต้นเพียง 2-8 KB และสามารถขยายได้ตามต้องการ ใช้สำหรับการทำงาน concurrent โดยไม่ต้องจัดการเธรดระบบด้วยตนเอง
+
+### Goroutines มีกี่แบบ?
+Goroutine ไม่ได้แบ่งเป็น “แบบ” อย่างเป็นทางการ แต่สามารถมองตามรูปแบบการสร้าง:
+- **Anonymous goroutine** – ใช้ `go func() { ... }()` ทันที
+- **Named function goroutine** – `go myFunction()`
+- **Closure goroutine** – จับตัวแปรจากภายนอก
+
+### ใช้อย่างไร ในกรณีไหน?
+- ทำงานที่ใช้เวลานาน (I/O, API call, ฐานข้อมูล) แบบไม่阻塞 main thread
+- เรียกใช้งานแบบ fire-and-forget
+- สร้าง worker pool
+- ใช้ร่วมกับ channel เพื่อสื่อสารระหว่าง goroutines
+
+### หลักการทำงาน
+1. Go runtime สร้าง goroutine บน OS thread จำนวนหนึ่ง (M:N scheduler)
+2. Goroutine ถูกสลับ (schedule) เมื่อ阻塞 (block) เช่น I/O, channel operation, syscall
+3. เมื่อ goroutine จบ, runtime จะคืนทรัพยากร
+
+### Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    A[main goroutine] --> B[go func1]
+    A --> C[go func2]
+    B --> D[goroutine1 ทำงาน]
+    C --> E[goroutine2 ทำงาน]
+    D --> F[scheduler สลับระหว่าง goroutines]
+    E --> F
+    F --> G[ทำงานบน OS threads]
+```
+
+### ตัวอย่างการใช้งานจริง: การดึงข้อมูลจาก API หลายตัว
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "sync"
+    "time"
+)
+
+func fetch(url string, wg *sync.WaitGroup, results chan<- string) {
+    defer wg.Done()
+    start := time.Now()
+    resp, err := http.Get(url)
+    if err != nil {
+        results <- fmt.Sprintf("%s -> error: %v", url, err)
+        return
+    }
+    defer resp.Body.Close()
+    elapsed := time.Since(start)
+    results <- fmt.Sprintf("%s -> %d ms", url, elapsed.Milliseconds())
+}
+
+func main() {
+    urls := []string{
+        "https://google.com",
+        "https://github.com",
+        "https://stackoverflow.com",
+    }
+
+    var wg sync.WaitGroup
+    results := make(chan string, len(urls))
+
+    for _, url := range urls {
+        wg.Add(1)
+        go fetch(url, &wg, results) // สร้าง goroutine สำหรับแต่ละ URL
+    }
+
+    wg.Wait()
+    close(results)
+
+    for res := range results {
+        fmt.Println(res)
+    }
+}
+```
+
+### เทมเพลต
+```go
+// สร้าง goroutine สำหรับงานที่ต้องทำพร้อมกัน
+go func() {
+    // do work
+}()
+
+// หรือใช้ WaitGroup เพื่อรอ goroutine ทั้งหมด
+var wg sync.WaitGroup
+for i := 0; i < 5; i++ {
+    wg.Add(1)
+    go func(id int) {
+        defer wg.Done()
+        // do work
+    }(i)
+}
+wg.Wait()
+```
+
+---
+
+## 2. Channels
+
+### Channels คืออะไร?
+**Channel** เป็นสื่อกลางในการส่งข้อมูลระหว่าง goroutines ทำงานแบบ type-safe และช่วยในการ synchronize (การประสานเวลา) โดยมีหลักการ “อย่าสื่อสารโดยการใช้ shared memory; จงแชร์ memory โดยการสื่อสารผ่าน channel”
+
+### Channels มีกี่แบบ?
+- **Unbuffered channel** – `make(chan T)` ต้องมีทั้ง sender และ receiver พร้อมกัน (synchronous)
+- **Buffered channel** – `make(chan T, capacity)` รับค่าได้ตาม capacity ก่อนจะ block
+- **Directional channel** – `chan<- T` (send-only), `<-chan T` (receive-only)
+- **Closed channel** – `close(ch)` ส่ง signal ว่าปิดแล้ว, receive จะได้ zero value และ ok=false
+
+### ใช้อย่างไร ในกรณีไหน?
+- ส่งงานระหว่าง goroutines (producer-consumer)
+- สัญญาณหยุดทำงาน (done channel)
+- Fan-in / Fan-out
+- จำกัด concurrency (semaphore pattern)
+
+### หลักการทำงาน
+1. การส่ง `ch <- v` จะ block จนกว่ามี receiver (unbuffered) หรือ buffer มีที่ว่าง (buffered)
+2. การรับ `v := <-ch` จะ block จนกว่ามี sender หรือ channel ปิด
+3. การปิด channel `close(ch)` บ่งบอกว่าไม่มีข้อมูลเพิ่ม
+4. `for v := range ch` วนรับค่าจนกว่า channel ปิด
+
+### Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    subgraph Producer
+        A[goroutine 1] --> B[ch <- data]
+    end
+    subgraph Channel
+        C[unbuffered/buffered channel]
+    end
+    subgraph Consumer
+        D[goroutine 2] --> E[data := <-ch]
+    end
+    B --> C
+    C --> E
+```
+
+### ตัวอย่างการใช้งานจริง: Worker Pool ผ่าน channel
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+    "time"
+)
+
+func worker(id int, jobs <-chan int, results chan<- int, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for job := range jobs {
+        fmt.Printf("Worker %d processing job %d\n", id, job)
+        time.Sleep(time.Second) // simulate work
+        results <- job * 2
+    }
+}
+
+func main() {
+    const numJobs = 10
+    const numWorkers = 3
+
+    jobs := make(chan int, numJobs)
+    results := make(chan int, numJobs)
+
+    var wg sync.WaitGroup
+    // start workers
+    for w := 1; w <= numWorkers; w++ {
+        wg.Add(1)
+        go worker(w, jobs, results, &wg)
+    }
+
+    // send jobs
+    for j := 1; j <= numJobs; j++ {
+        jobs <- j
+    }
+    close(jobs)
+
+    wg.Wait()
+    close(results)
+
+    // collect results
+    for res := range results {
+        fmt.Println("Result:", res)
+    }
+}
+```
+
+### เทมเพลต
+```go
+// สร้าง channel
+ch := make(chan int)      // unbuffered
+chBuf := make(chan int, 10) // buffered
+
+// ส่ง
+go func() { ch <- 42 }()
+
+// รับ
+val := <-ch
+
+// ปิด
+close(ch)
+
+// วนรับ
+for v := range ch {
+    // process v
+}
+```
+
+---
+
+## 3. CSP (Communicating Sequential Processes)
+
+### CSP คืออะไร?
+**CSP (Communicating Sequential Processes)** เป็นแบบจำลองทางคณิตศาสตร์สำหรับการเขียนโปรแกรม concurrent ที่เน้นการสื่อสารผ่านช่องทาง (channels) แทนการใช้ shared memory ภาษา Go ได้รับแรงบันดาลใจจาก CSP โดยมี goroutine และ channel เป็นองค์ประกอบหลัก
+
+### CSP มีกี่แบบ?
+ในทางปฏิบัติ CSP ใน Go ไม่ได้มี “แบบ” แต่มีรูปแบบการใช้งานทั่วไป:
+- **Producer-Consumer** – หลาย producer, หลาย consumer ผ่าน channel
+- **Pipeline** – ข้อมูลไหลผ่านลำดับของ stages
+- **Fan-out / Fan-in** – กระจายงานและรวบรวมผล
+- **Select pattern** – เลือก channel ที่พร้อมทำงาน
+
+### ใช้อย่างไร ในกรณีไหน?
+- ออกแบบระบบ concurrent ที่ซับซ้อน
+- ต้องการแยกการสื่อสารออกจากการล็อก
+- สร้างระบบที่ขยายขนาดได้ง่าย (scalable)
+- ใช้เมื่อต้องการความปลอดภัยจาก race condition
+
+### หลักการทำงาน
+1. ระบบประกอบด้วยกระบวนการอิสระ (goroutines) ที่สื่อสารกันผ่าน channel
+2. ไม่มีการใช้ shared memory โดยตรง (หรือใช้น้อยมาก)
+3. การทำงานถูก synchronize โดย channel operations
+4. ใช้ `select` เพื่อรอหลาย channel พร้อมกัน
+
+### Dataflow Diagram (Flowchart TB) - Producer-Consumer
+
+```mermaid
+graph TB
+    subgraph Producers
+        P1[Producer 1] --> C[Channel]
+        P2[Producer 2] --> C
+    end
+    subgraph Consumers
+        C --> C1[Consumer 1]
+        C --> C2[Consumer 2]
+        C --> C3[Consumer 3]
+    end
+```
+
+### ตัวอย่างการใช้งานจริง: Fan-out / Fan-in
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+func producer(nums ...int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for _, n := range nums {
+            out <- n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func square(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            out <- n * n
+        }
+        close(out)
+    }()
+    return out
+}
+
+func fanIn(channels ...<-chan int) <-chan int {
+    out := make(chan int)
+    var wg sync.WaitGroup
+    for _, c := range channels {
+        wg.Add(1)
+        go func(ch <-chan int) {
+            defer wg.Done()
+            for v := range ch {
+                out <- v
+            }
+        }(c)
+    }
+    go func() {
+        wg.Wait()
+        close(out)
+    }()
+    return out
+}
+
+func main() {
+    // Fan-out: สร้างหลาย pipelines
+    nums := producer(1, 2, 3, 4, 5)
+    square1 := square(nums)
+    square2 := square(nums)
+
+    // Fan-in: รวมผล
+    results := fanIn(square1, square2)
+
+    for res := range results {
+        fmt.Println(res)
+    }
+}
+```
+
+### เทมเพลต
+```go
+// Stage 1
+func stage1(input ...int) <-chan int {
+    out := make(chan int)
+    go func() {
+        defer close(out)
+        for _, v := range input {
+            out <- v
+        }
+    }()
+    return out
+}
+
+// Stage 2
+func stage2(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        defer close(out)
+        for v := range in {
+            out <- v * 2
+        }
+    }()
+    return out
+}
+
+func main() {
+    pipeline := stage2(stage1(1, 2, 3))
+    for v := range pipeline {
+        fmt.Println(v)
+    }
+}
+```
+
+---
+
+## 4. Mutex
+
+### Mutex คืออะไร?
+**Mutex** (mutual exclusion) เป็นกลไกในการล็อกเพื่อป้องกันการเข้าถึง shared memory พร้อมกันจากหลาย goroutines ใช้เมื่อจำเป็นต้องใช้ shared memory (ซึ่ง CSP พยายามหลีกเลี่ยง) Go มี `sync.Mutex` และ `sync.RWMutex`
+
+### Mutex มีกี่แบบ?
+- **sync.Mutex** – ล็อกแบบ exclusive (Lock/Unlock)
+- **sync.RWMutex** – แยกอ่าน-เขียน: หลาย goroutine อ่านพร้อมกันได้ (RLock/RUnlock) แต่เขียนได้ทีละตัว
+
+### ใช้อย่างไร ในกรณีไหน?
+- ป้องกัน race condition เมื่อต้องอัปเดตตัวแปรร่วม
+- ใช้กับ map ที่มีหลาย goroutine เข้าถึง (Go map ไม่ safe สำหรับ concurrent)
+- ใช้กับ struct ที่มีสถานะภายใน
+
+### หลักการทำงาน
+1. Goroutine เรียก `Lock()` ถ้าล็อกว่าง → ได้ล็อก
+2. ถ้ามี goroutine อื่นถือล็อกอยู่ → ต้องรอ (block)
+3. หลังทำงานเสร็จเรียก `Unlock()` เพื่อปล่อยล็อก
+
+### Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    subgraph SharedResource
+        C[Counter int]
+    end
+    A[Goroutine 1] --> D[Lock mutex]
+    B[Goroutine 2] --> D
+    D --> E[เข้าถึง/แก้ไข shared resource]
+    E --> F[Unlock]
+    F --> G[goroutine อื่นสามารถเข้าได้]
+```
+
+### ตัวอย่างการใช้งานจริง: ตัวนับที่ปลอดภัย
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+type SafeCounter struct {
+    mu    sync.Mutex
+    value int
+}
+
+func (c *SafeCounter) Inc() {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.value++
+}
+
+func (c *SafeCounter) Value() int {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    return c.value
+}
+
+func main() {
+    counter := SafeCounter{}
+    var wg sync.WaitGroup
+
+    for i := 0; i < 1000; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            counter.Inc()
+        }()
+    }
+
+    wg.Wait()
+    fmt.Println("Final counter:", counter.Value()) // 1000
+}
+```
+
+### เทมเพลต
+```go
+type MyStruct struct {
+    mu  sync.Mutex
+    data map[string]int
+}
+
+func (m *MyStruct) Set(key string, val int) {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    m.data[key] = val
+}
+
+func (m *MyStruct) Get(key string) (int, bool) {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    val, ok := m.data[key]
+    return val, ok
+}
+```
+
+---
+
+## 5. Atomic
+
+### Atomic คืออะไร?
+**Atomic** (การดำเนินการแบบอะตอม) คือการดำเนินการที่ทำโดยไม่ถูกขัดจังหวะ ใช้สำหรับการอัปเดตตัวแปรพื้นฐาน (int, uint32, etc.) โดยไม่ต้องใช้ mutex มีประสิทธิภาพสูงกว่า เหมาะกับ counter, flag, reference counting
+
+### Atomic มีกี่แบบ?
+แพ็กเกจ `sync/atomic` มีฟังก์ชันสำหรับ:
+- **Add** – เพิ่ม/ลด (AddInt64, AddUint32)
+- **Load/Store** – อ่าน/เขียนแบบอะตอม (LoadInt64, StoreInt64)
+- **Swap** – เปลี่ยนค่าและคืนค่าเก่า
+- **CompareAndSwap (CAS)** – เปลี่ยนค่าเฉพาะเมื่อค่าเดิมตรงกับที่กำหนด
+
+### ใช้อย่างไร ในกรณีไหน?
+- ตัวนับที่ถูกอัปเดตบ่อย ๆ (metrics, stats)
+- ตัวแปรสถานะ (flag, done)
+- lock-free data structures
+- performance-critical sections ที่ mutex อาจช้า
+
+### หลักการทำงาน
+1. ใช้คำสั่ง CPU ที่รับประกันความเป็น atomic (เช่น LOCK prefix บน x86)
+2. ไม่มีการล็อก (lock-free) แต่ใช้ CAS (compare-and-swap) loop หากจำเป็น
+3. เหมาะกับ primitive types เท่านั้น
+
+### Dataflow Diagram (Flowchart TB) - CAS Loop
+
+```mermaid
+graph TB
+    A[อ่านค่า old] --> B[คำนวณ new]
+    B --> C{CAS(old, new)}
+    C -- true --> D[สำเร็จ]
+    C -- false --> A
+```
+
+### ตัวอย่างการใช้งานจริง: ตัวนับแบบ atomic
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+    "sync/atomic"
+)
+
+func main() {
+    var counter int64
+    var wg sync.WaitGroup
+
+    for i := 0; i < 1000; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            atomic.AddInt64(&counter, 1)
+        }()
+    }
+
+    wg.Wait()
+    fmt.Println("Counter:", atomic.LoadInt64(&counter)) // 1000
+}
+```
+
+### ตัวอย่าง: CompareAndSwap สำหรับ state flag
+```go
+var state int32 // 0 = idle, 1 = busy
+
+func tryAcquire() bool {
+    return atomic.CompareAndSwapInt32(&state, 0, 1)
+}
+
+func release() {
+    atomic.StoreInt32(&state, 0)
+}
+```
+
+### เทมเพลต
+```go
+import "sync/atomic"
+
+var count int64
+
+// increment
+atomic.AddInt64(&count, 1)
+
+// load
+val := atomic.LoadInt64(&count)
+
+// store
+atomic.StoreInt64(&count, 100)
+
+// compare and swap
+swapped := atomic.CompareAndSwapInt64(&count, expected, new)
+```
+
+---
+
+## 6. Pipeline
+
+### Pipeline คืออะไร?
+**Pipeline** คือรูปแบบการออกแบบที่ข้อมูลไหลผ่านหลายขั้นตอน (stages) โดยแต่ละขั้นตอนเป็น goroutine ที่รับข้อมูลจาก channel ก่อนหน้าและส่งผลไปยัง channel ถัดไป ช่วยให้ระบบ concurrent มีโครงสร้างชัดเจน
+
+### Pipeline มีกี่แบบ?
+- **Linear pipeline** – ข้อมูลผ่านทีละขั้นตอน
+- **Fan-out / Fan-in** – ขั้นตอนหนึ่งกระจายงานไปหลาย goroutines แล้วรวมผล
+- **Bounded pipeline** – มี buffer จำกัดเพื่อควบคุม backpressure
+- **Cancellation pipeline** – ใช้ context เพื่อหยุด pipeline ทั้งหมด
+
+### ใช้อย่างไร ในกรณีไหน?
+- ประมวลผลข้อมูลเป็นชุด (ETL)
+- อ่านไฟล์, ประมวลผล, บันทึก
+- ระบบ real-time processing
+- จำกัด concurrency ในแต่ละขั้นตอน
+
+### หลักการทำงาน
+1. กำหนดฟังก์ชัน stage: รับ channel อ่านอย่างเดียว คืน channel เขียนอย่างเดียว
+2. แต่ละ stage สร้าง goroutine ที่วนอ่าน input และเขียน output
+3. ปิด channel เมื่อ stage เสร็จ (ใช้ defer close)
+4. เชื่อมต่อ stages ด้วยการส่ง channel ต่อกัน
+5. ใช้ `context` เพื่อส่งสัญญาณยกเลิก
+
+### Dataflow Diagram (Flowchart TB) - Pipeline with Fan-out
+
+```mermaid
+graph LR
+    A[Input] --> B[Stage 1: Read]
+    B --> C[Stage 2: Process]
+    C --> D[Stage 3: Write]
+    
+    subgraph Fan-out
+        C --> E[Worker 1]
+        C --> F[Worker 2]
+        E --> G[Fan-in]
+        F --> G
+        G --> D
+    end
+```
+
+### ตัวอย่างการใช้งานจริง: Pipeline สำหรับประมวลผลตัวเลข
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "sync"
+)
+
+// Stage 1: สร้างตัวเลขจาก slice
+func gen(nums ...int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for _, n := range nums {
+            out <- n
+        }
+        close(out)
+    }()
+    return out
+}
+
+// Stage 2: คูณด้วย 2
+func sq(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            out <- n * 2
+        }
+        close(out)
+    }()
+    return out
+}
+
+// Stage 3: บวก 1
+func addOne(in <-chan int) <-chan int {
+    out := make(chan int)
+    go func() {
+        for n := range in {
+            out <- n + 1
+        }
+        close(out)
+    }()
+    return out
+}
+
+// Stage with fan-out
+func fanOut(in <-chan int, workers int) <-chan int {
+    out := make(chan int)
+    var wg sync.WaitGroup
+    wg.Add(workers)
+
+    for i := 0; i < workers; i++ {
+        go func() {
+            defer wg.Done()
+            for n := range in {
+                out <- n * n // do some heavy work
+            }
+        }()
+    }
+
+    go func() {
+        wg.Wait()
+        close(out)
+    }()
+    return out
+}
+
+func main() {
+    // pipeline
+    numbers := gen(1, 2, 3, 4, 5)
+    squared := sq(numbers)
+    result := addOne(squared)
+
+    for v := range result {
+        fmt.Println(v) // 3, 5, 7, 9, 11
+    }
+
+    // with fan-out
+    nums := gen(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    processed := fanOut(nums, 3)
+    for v := range processed {
+        fmt.Println(v)
+    }
+}
+```
+
+### เทมเพลต Pipeline
+```go
+// Stage function pattern
+type Stage func(<-chan int) <-chan int
+
+// Compose stages
+func compose(stages ...Stage) Stage {
+    return func(input <-chan int) <-chan int {
+        out := input
+        for _, stage := range stages {
+            out = stage(out)
+        }
+        return out
+    }
+}
+
+// Usage
+pipeline := compose(gen, sq, addOne)
+for v := range pipeline(1, 2, 3) {
+    fmt.Println(v)
+}
+```
+
+---
+
+## สรุปตารางเปรียบเทียบ
+
+| Concept | จุดประสงค์ | การทำงาน | เมื่อใช้ |
+|---------|-----------|----------|---------|
+| **Goroutine** | concurrent unit | เธรดน้ำหนักเบา | ทำงานพร้อมกัน, I/O bound |
+| **Channel** | สื่อสาร + sync | ส่งข้อมูลระหว่าง goroutines | producer-consumer, pipeline |
+| **CSP** | หลักการออกแบบ | communicate via channels | ระบบ concurrent ที่ซับซ้อน |
+| **Mutex** | ป้องกัน race | ล็อก shared memory | ต้องใช้ shared state |
+| **Atomic** | lock-free primitive | CPU atomic ops | ตัวนับ, flags, performance |
+| **Pipeline** | รูปแบบ processing | ข้อมูลไหลผ่าน stages | ETL, stream processing |
+
+---
+
+## แหล่งอ้างอิง
+- [Go Blog: Share Memory By Communicating](https://go.dev/blog/codelab-share)
+- [Go Blog: Pipelines and Cancellation](https://go.dev/blog/pipelines)
+- [The Go Memory Model](https://go.dev/ref/mem)
+- [sync/atomic package](https://pkg.go.dev/sync/atomic)
+- [Effective Go: Concurrency](https://go.dev/doc/effective_go#concurrency)
+----------------
 
 ## ใช้อย่างไร ในกรณีไหน?
 - งานที่ต้องการทำหลายอย่างพร้อมกัน (web server, API calls)
