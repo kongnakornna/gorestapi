@@ -582,6 +582,74 @@ go fmt ./...
 
 # ภาคที่ 2: พื้นฐานภาษาและโครงสร้างข้อมูล
 
+## แผนภาพแสดงความสัมพันธ์ของเนื้อหา
+
+```mermaid
+flowchart TD
+    subgraph DataRepresentation["1. การแทนข้อมูล (บทที่ 6-7)"]
+        direction TB
+        A1["เลขฐานสอง (Binary)<br/>0 และ 1<br/>หน่วยเก็บข้อมูลพื้นฐาน"]
+        A2["เลขฐานสิบ (Decimal)<br/>ที่มนุษย์ใช้"]
+        A3["เลขฐานสิบหก (Hex)<br/>0x0-0xF<br/>แสดงข้อมูลขนาดใหญ่"]
+        A4["เลขฐานแปด (Octal)<br/>0o0-0o7<br/>สิทธิ์ไฟล์ Unix"]
+        A5["ASCII / UTF-8 / Unicode<br/>การแทนข้อความ<br/>Rune: ตัวอักษรเดี่ยว"]
+        
+        A1 --> A3
+        A2 --> A3
+        A3 --> A5
+        A4 --> A5
+    end
+
+    subgraph DataStorage["2. การจัดเก็บข้อมูล (บทที่ 8-9)"]
+        direction TB
+        B1["ตัวแปร (Variables)<br/>var, :=<br/>เก็บค่าที่เปลี่ยนได้"]
+        B2["ค่าคงที่ (Constants)<br/>const, iota<br/>ค่าที่ไม่เปลี่ยนแปลง"]
+        B3["ชนิดข้อมูลพื้นฐาน<br/>int, float, string, bool<br/>byte, rune"]
+        B4["โครงสร้างควบคุม<br/>if-else, for, switch<br/>ควบคุมการทำงาน"]
+        
+        B1 --> B4
+        B2 --> B4
+        B3 --> B4
+    end
+
+    subgraph CodeOrganization["3. การจัดระเบียบโค้ด (บทที่ 10-12)"]
+        direction TB
+        C1["ฟังก์ชัน (Functions)<br/>func, return<br/>multiple returns<br/>defer, panic/recover"]
+        C2["แพคเกจ (Packages)<br/>package, import<br/>exported/unexported"]
+        C3["การเริ่มต้นแพคเกจ<br/>init()<br/>ลำดับการทำงาน"]
+        
+        C1 --> C2
+        C2 --> C3
+    end
+
+    subgraph AdvancedTypes["4. ชนิดข้อมูลขั้นสูง (บทที่ 13-16)"]
+        direction TB
+        D1["การสร้างชนิดใหม่<br/>type, struct<br/>type alias"]
+        D2["เมธอด (Methods)<br/>func (t T) method()<br/>value receiver<br/>pointer receiver"]
+        D3["พอยน์เตอร์ (Pointers)<br/>*, &<br/>การอ้างอิงที่อยู่<br/>ไม่มี pointer arithmetic"]
+        D4["อินเทอร์เฟซ (Interfaces)<br/>interface{}<br/>implicit implementation<br/>polymorphism"]
+        
+        D1 --> D2
+        D2 --> D3
+        D3 --> D4
+    end
+
+    subgraph Flow["ลำดับการเรียนรู้"]
+        direction LR
+        F1[เข้าใจการแทนข้อมูล] --> F2[รู้จักการจัดเก็บ] --> F3[จัดระเบียบโค้ด] --> F4[สร้างโครงสร้างขั้นสูง]
+    end
+
+    DataRepresentation --> DataStorage
+    DataStorage --> CodeOrganization
+    CodeOrganization --> AdvancedTypes
+    Flow -.-> DataRepresentation
+```
+
+---
+
+## คำอธิบายภาษาไทย (แบบละเอียด)
+
+ภาคที่ 2 ครอบคลุมบทที่ 6–16 โดยมีเนื้อหาแบ่งเป็น 4 ช่วงหลัก ตามแผนภาพด้านบน ซึ่งแสดงลำดับการเรียนรู้ที่ต่อเนื่องกัน
 ## บทที่ 6: ระบบเลขฐานสองและฐานสิบ
 
 ### 6.1 ความสำคัญของระบบเลข
