@@ -1,4 +1,4 @@
-![Rest](https://github.com/user-attachments/assets/af279fbe-7ac4-46e7-a676-f611a1ca0a51)# Go Restful API 
+ Go Restful API 
 
 An API dev written in Golang with chi-route and Gorm. Write restful API with fast development and developer friendly.
 
