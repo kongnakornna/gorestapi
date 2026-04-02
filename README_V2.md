@@ -336,6 +336,655 @@ type Dog struct {
 Dog จะสามารถเข้าถึงฟิลด์ Name และ method (ถ้ามี) ของ Animal ได้โดยตรง
 
 ---
+# 1. Procedural Programming
+
+## Procedural คืออะไร?
+**Procedural programming** (การเขียนโปรแกรมแบบกระบวนการ) เป็นกระบวนทัศน์ที่เน้นการเขียนโค้ดเป็นชุดของคำสั่งหรือฟังก์ชัน (procedures / routines) ที่ทำงานตามลำดับขั้นตอน (step-by-step) โดยใช้ตัวแปร โครงสร้างควบคุม (if, for, switch) และฟังก์ชันที่เรียกซ้ำกันได้
+
+## Procedural มีกี่แบบ?
+ในทางปฏิบัติ Procedural programming ไม่ได้แบ่งเป็น “แบบ” อย่างเป็นทางการ แต่สามารถมองได้ตาม **โครงสร้างของโค้ด**:
+- **Linear / Sequential** – คำสั่งทำงานเรียงตามลำดับ
+- **Modular** – แบ่งโค้ดออกเป็นฟังก์ชัน/โมดูล
+- **Structured** – ใช้โครงสร้างควบคุม (sequence, selection, iteration) หลีกเลี่ยง goto
+
+ภาษา Go มีพื้นฐานเป็น procedural โดยมีการจัดระเบียบผ่านฟังก์ชันและแพ็กเกจ
+
+## ใช้อย่างไร ในกรณีไหน?
+- เขียนโปรแกรมที่มีขั้นตอนชัดเจน (linear flow)
+- งานที่ต้องการประสิทธิภาพสูง ควบคุมทรัพยากรใกล้เคียงฮาร์ดแวร์
+- โค้ดขนาดเล็กถึงกลาง ไม่ต้องการความซับซ้อนของ OOP
+- Go มักใช้ procedural ร่วมกับ concurrent และ OOP (ผ่าน struct & interface)
+
+## หลักการทำงาน
+1. โปรแกรมเริ่มทำงานจากฟังก์ชัน `main()`
+2. เรียกฟังก์ชันตามลำดับ อาจมีการส่งค่าและรับค่ากลับ
+3. ตัวแปรมีขอบเขตตาม block หรือ package
+4. การทำงานเป็นแบบ imperative: เปลี่ยนแปลงสถานะของตัวแปรโดยตรง
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม main]) --> FuncA[เรียก Function A]
+    FuncA --> FuncB[เรียก Function B]
+    FuncB --> Cond{เงื่อนไข?}
+    Cond -- true --> Action1[ทำ Action 1]
+    Cond -- false --> Action2[ทำ Action 2]
+    Action1 --> End([จบ])
+    Action2 --> End
+```
+
+## ตัวอย่างการใช้งานจริง: โปรแกรมคำนวณราคาสินค้า
+```go
+package main
+
+import "fmt"
+
+// ฟังก์ชันคำนวณราคารวม
+func calculateTotal(price float64, quantity int) float64 {
+    return price * float64(quantity)
+}
+
+// ฟังก์ชันคำนวณส่วนลด
+func applyDiscount(total float64, discountPercent float64) float64 {
+    return total * (1 - discountPercent/100)
+}
+
+// ฟังก์ชันหลัก
+func main() {
+    price := 250.0
+    qty := 3
+    discount := 10.0
+
+    total := calculateTotal(price, qty)
+    fmt.Printf("Total: %.2f\n", total)
+
+    finalPrice := applyDiscount(total, discount)
+    fmt.Printf("After discount: %.2f\n", finalPrice)
+}
+```
+
+## เทมเพลตโครงสร้างโปรเจกต์แบบ Procedural ใน Go
+```
+project/
+├── main.go
+├── handlers/         # ฟังก์ชันจัดการ request
+├── services/         # ฟังก์ชัน business logic
+├── repositories/     # ฟังก์ชันติดต่อฐานข้อมูล
+└── utils/            # ฟังก์ชันช่วยเหลือ
+```
+โค้ดในแต่ละ package จะเป็นชุดฟังก์ชันที่ทำงานตามลำดับที่เรียกใช้
+
+---
+
+# 2. Concurrent Programming
+
+## Concurrent คืออะไร?
+**Concurrent programming** คือการเขียนโปรแกรมให้สามารถทำงานหลายอย่าง **พร้อมกัน** (overlap in time) โดยไม่จำเป็นต้องทำพร้อมกันจริง (parallel) แต่เป็นการจัดการหลาย tasks สลับกันเพื่อเพิ่มประสิทธิภาพและความสามารถในการตอบสนอง
+
+Go มี **goroutine** (เธรดน้ำหนักเบา) และ **channel** สำหรับการสื่อสารระหว่าง goroutines ทำให้การเขียน concurrent โปรแกรมง่ายและปลอดภัย
+
+## Concurrent มีกี่แบบ?
+รูปแบบหลักในการเขียน concurrent code:
+- **Goroutines + Channels** – CSP (Communicating Sequential Processes) แบบ Go
+- **Mutex / Atomic** – ใช้การล็อกเพื่อป้องกัน race condition
+- **Worker Pool** – ใช้ goroutines จำนวนคงที่ทำงานจากคิวงาน
+- **Pipeline** – ข้อมูลไหลผ่านหลาย goroutines ที่เชื่อมต่อกันด้วย channel
+
+## ใช้อย่างไร ในกรณีไหน?
+- งานที่ต้องการทำหลายอย่างพร้อมกัน (web server, API calls)
+- งาน I/O-bound (อ่านไฟล์, เรียกฐานข้อมูล, HTTP request)
+- ปรับปรุงประสิทธิภาพการทำงานของระบบ
+- Queue processor, background jobs
+
+## หลักการทำงาน
+1. สร้าง goroutine ด้วย `go function()`
+2. Goroutine ทำงาน concurrent กับ main goroutine
+3. ใช้ `channel` สำหรับส่งข้อมูลระหว่าง goroutines (synchronization)
+4. ใช้ `sync.WaitGroup` หรือ `context` เพื่อควบคุม lifecycle
+
+## Dataflow Diagram (Flowchart TB) - Worker Pool
+
+```mermaid
+graph TB
+    subgraph Main
+        A[main] --> B[สร้าง Jobs Channel]
+        B --> C[สร้าง Workers n ตัว]
+        C --> D[ส่งงานเข้า Jobs Channel]
+    end
+
+    subgraph Worker1
+        E[for job := range jobs] --> F[ประมวลผล job]
+    end
+    subgraph Worker2
+        G[for job := range jobs] --> H[ประมวลผล job]
+    end
+
+    D --> E
+    D --> G
+    F --> I[ส่งผลลัพธ์]
+    H --> I
+    I --> J[main รวบรวมผล]
+```
+
+## ตัวอย่างการใช้งานจริง: Download เว็บหลาย ๆ ที่พร้อมกัน
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "sync"
+    "time"
+)
+
+func fetch(url string, wg *sync.WaitGroup, results chan<- string) {
+    defer wg.Done()
+    start := time.Now()
+    resp, err := http.Get(url)
+    if err != nil {
+        results <- fmt.Sprintf("%s -> error: %v", url, err)
+        return
+    }
+    defer resp.Body.Close()
+    elapsed := time.Since(start)
+    results <- fmt.Sprintf("%s -> %d ms", url, elapsed.Milliseconds())
+}
+
+func main() {
+    urls := []string{
+        "https://google.com",
+        "https://github.com",
+        "https://stackoverflow.com",
+    }
+
+    var wg sync.WaitGroup
+    results := make(chan string, len(urls))
+
+    for _, url := range urls {
+        wg.Add(1)
+        go fetch(url, &wg, results)
+    }
+
+    wg.Wait()
+    close(results)
+
+    for res := range results {
+        fmt.Println(res)
+    }
+}
+```
+
+## เทมเพลต Worker Pool
+```go
+type Job struct { ID int; Data interface{} }
+type Result struct { JobID int; Output interface{}; Err error }
+
+func worker(jobs <-chan Job, results chan<- Result, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for job := range jobs {
+        // process job
+        results <- Result{JobID: job.ID, Output: processedData}
+    }
+}
+
+func main() {
+    jobs := make(chan Job, 100)
+    results := make(chan Result, 100)
+
+    // start workers
+    var wg sync.WaitGroup
+    for w := 0; w < 5; w++ {
+        wg.Add(1)
+        go worker(jobs, results, &wg)
+    }
+
+    // send jobs
+    for i := 0; i < 100; i++ {
+        jobs <- Job{ID: i, Data: ...}
+    }
+    close(jobs)
+    wg.Wait()
+    close(results)
+
+    // collect results
+    for res := range results { ... }
+}
+```
+
+---
+
+# 3. Functional Programming
+
+## Functional คืออะไร?
+**Functional programming** (การเขียนโปรแกรมเชิงฟังก์ชัน) เป็นกระบวนทัศน์ที่มองการคำนวณเป็นการประเมินค่าของฟังก์ชัน โดยเน้น:
+- **Pure functions** – ผลลัพธ์ขึ้นอยู่กับอินพุตเท่านั้น ไม่มี side effect
+- **Immutability** – ข้อมูลไม่เปลี่ยนแปลงหลังสร้าง
+- **First-class functions** – ฟังก์ชันเป็นค่าที่สามารถส่งต่อได้
+- **Higher-order functions** – ฟังก์ชันรับฟังก์ชันเป็นพารามิเตอร์หรือคืนฟังก์ชัน
+
+Go รองรับฟังก์ชัน first-class, closures, และ higher-order functions แต่ไม่มี immutability บังคับ (ใช้แนวทาง pragmatic functional)
+
+## Functional มีกี่แบบ?
+- **Pure FP** – ใช้เฉพาะ pure functions, immutable data (Haskell, Elm)
+- **Impure FP** – อนุญาต side effect บางส่วน (Go, JavaScript, Scala)
+- **Higher-order functions** – map, filter, reduce
+- **Function composition** – นำฟังก์ชันเล็ก ๆ มาต่อกัน
+
+## ใช้อย่างไร ในกรณีไหน?
+- การแปลงข้อมูล (transform) ด้วย pipeline
+- เขียนโค้ดที่คาดเดาได้ง่าย ทดสอบง่าย
+- ลดความซับซ้อนในการจัดการสถานะ
+- ใช้ร่วมกับ concurrent (pure functions ปลอดภัยต่อ race condition)
+
+## หลักการทำงาน
+1. กำหนดฟังก์ชันเล็ก ๆ ที่ทำหน้าที่เฉพาะ
+2. ใช้ higher-order functions (map, filter, reduce) กับ slice
+3. หลีกเลี่ยงการเปลี่ยนแปลงตัวแปรภายนอก (immutability เท่าที่ทำได้)
+4. สร้าง pipeline โดยการต่อฟังก์ชันเข้าด้วยกัน
+
+## Dataflow Diagram (Flowchart TB) - Pipeline
+
+```mermaid
+graph LR
+    A[Input Data] --> B[Filter]
+    B --> C[Map]
+    C --> D[Reduce]
+    D --> E[Output Result]
+```
+
+## ตัวอย่างการใช้งานจริง: ประมวลผลข้อมูลผู้ใช้
+```go
+package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+// Pure function
+func toUpper(s string) string { return strings.ToUpper(s) }
+
+// Higher-order filter
+func filter(users []string, predicate func(string) bool) []string {
+    var result []string
+    for _, u := range users {
+        if predicate(u) {
+            result = append(result, u)
+        }
+    }
+    return result
+}
+
+// Higher-order map
+func mapFunc(users []string, fn func(string) string) []string {
+    result := make([]string, len(users))
+    for i, u := range users {
+        result[i] = fn(u)
+    }
+    return result
+}
+
+func main() {
+    users := []string{"alice", "bob", "charlie", "admin"}
+
+    // Pipeline: filter user with length > 3, then convert to upper
+    filtered := filter(users, func(u string) bool { return len(u) > 3 })
+    upper := mapFunc(filtered, toUpper)
+
+    fmt.Println(upper) // [CHARLIE ADMIN]
+}
+```
+
+## เทมเพลต: generic map/filter/reduce (Go 1.18+)
+```go
+type Slice[T any] []T
+
+func (s Slice[T]) Map(fn func(T) T) Slice[T] {
+    result := make(Slice[T], len(s))
+    for i, v := range s {
+        result[i] = fn(v)
+    }
+    return result
+}
+
+func (s Slice[T]) Filter(pred func(T) bool) Slice[T] {
+    result := Slice[T]{}
+    for _, v := range s {
+        if pred(v) {
+            result = append(result, v)
+        }
+    }
+    return result
+}
+```
+
+---
+
+# 4. Object-Oriented Programming (OOP)
+
+## OOP คืออะไร?
+**Object-Oriented Programming** (การเขียนโปรแกรมเชิงวัตถุ) เป็นกระบวนทัศน์ที่จัดระเบียบโค้ดเป็น “วัตถุ” (objects) ซึ่งรวมข้อมูล (fields) และพฤติกรรม (methods) เข้าด้วยกัน เน้นหลักการ:
+- **Encapsulation** – ซ่อนรายละเอียดภายใน
+- **Inheritance** – สืบทอดคุณสมบัติจากคลาสแม่ (Go ใช้ composition แทน)
+- **Polymorphism** – หลายรูปแบบผ่าน interface
+
+ภาษา Go ไม่มีคลาสแบบดั้งเดิม แต่ใช้ **struct** แทนข้อมูล และ **interface** แทนพฤติกรรมร่วมกัน ทำให้ได้แนวคิด OOP แบบ lightweight
+
+## OOP มีกี่แบบ?
+ตามกระบวนทัศน์ OOP แบ่งเป็น:
+- **Class-based** (Java, C++, Python) – มีคลาสเป็นต้นแบบ
+- **Prototype-based** (JavaScript) – วัตถุสืบทอดจากวัตถุอื่น
+- Go ใช้ **struct + interface** เข้าถึง OOP ในรูปแบบ composition over inheritance
+
+## ใช้อย่างไร ในกรณีไหน?
+- โปรแกรมที่ต้องการจำลองสิ่งของในโลกจริง (entity modeling)
+- ต้องการความสามารถในการขยาย (extension) ผ่าน interface
+- ต้องการ polymorphism โดยไม่ต้องใช้ inheritance ซับซ้อน
+- โค้ดขนาดใหญ่ที่ต้องการ modularity
+
+## หลักการทำงาน
+1. กำหนด **struct** สำหรับเก็บข้อมูล
+2. เพิ่ม **method** ให้ struct ด้วย `func (r Receiver) MethodName()`
+3. กำหนด **interface** เพื่อประกาศชุดของ method ที่ต้องมี
+4. ใช้งาน polymorphism ผ่าน interface (dependency injection, mock)
+
+## Dataflow Diagram (Flowchart TB) - Polymorphism
+
+```mermaid
+graph TB
+    A[Interface Speaker] --> B1[Dog.Speak]
+    A --> B2[Cat.Speak]
+    A --> B3[Robot.Speak]
+    C[Function makeSound] --> A
+    C --> D[เรียก s.Speak]
+```
+
+## ตัวอย่างการใช้งานจริง: สัตว์เลี้ยงและหุ่นยนต์
+```go
+package main
+
+import "fmt"
+
+// Interface
+type Speaker interface {
+    Speak() string
+}
+
+// Struct Dog
+type Dog struct{ Name string }
+
+func (d Dog) Speak() string {
+    return fmt.Sprintf("%s says Woof!", d.Name)
+}
+
+// Struct Cat
+type Cat struct{ Name string }
+
+func (c Cat) Speak() string {
+    return fmt.Sprintf("%s says Meow!", c.Name)
+}
+
+// Function ที่ใช้ polymorphism
+func makeSound(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+func main() {
+    dog := Dog{Name: "Rex"}
+    cat := Cat{Name: "Luna"}
+
+    makeSound(dog) // Rex says Woof!
+    makeSound(cat) // Luna says Meow!
+}
+```
+
+## เทมเพลต: โครงสร้าง OOP ใน Go
+```go
+// entity.go
+type Entity struct {
+    ID   int
+    Name string
+}
+
+func (e Entity) GetID() int { return e.ID }
+
+// repository.go
+type Repository interface {
+    Save(entity Entity) error
+    Find(id int) (Entity, error)
+}
+
+type MySQLRepository struct {
+    db *sql.DB
+}
+
+func (r MySQLRepository) Save(entity Entity) error { ... }
+func (r MySQLRepository) Find(id int) (Entity, error) { ... }
+```
+
+---
+
+# 5. Struct
+
+## Struct คืออะไร?
+**Struct** (structure) เป็นชนิดข้อมูล (type) ที่用户可以กำหนดขึ้นเอง โดยรวมฟิลด์ (fields) หลายชนิดเข้าเป็นหน่วยเดียวกัน ใช้แทน “record” หรือ “object” ในภาษา Go
+
+## Struct มีกี่แบบ?
+- **Named struct** – ประกาศด้วย `type Name struct { fields }`
+- **Anonymous struct** – ประกาศตรงจุดโดยไม่ตั้งชื่อ
+- **Embedded struct** – ฝัง struct อื่นโดยไม่ระบุชื่อฟิลด์ (ใช้แทน inheritance)
+- **Empty struct** – `struct{}` ไม่มีฟิลด์ ใช้เป็นเซ็ตหรือ signalling
+
+## ใช้อย่างไร ในกรณีไหน?
+- จำลองข้อมูลที่มีโครงสร้าง (User, Product, Order)
+- จัดกลุ่มข้อมูลที่เกี่ยวข้องกัน
+- ฝัง struct เพื่อ reuse โค้ด (composition)
+- สร้าง method ให้ struct (รับ receiver)
+
+## หลักการทำงาน
+1. ประกาศ struct type พร้อมฟิลด์พร้อมชนิด
+2. สร้าง instance ด้วย `var`, `new`, `&StructName{...}`
+3. เข้าถึงฟิลด์ด้วย dot (`.`)
+4. สามารถเพิ่ม method ให้ struct ด้วย receiver (value หรือ pointer)
+
+## Dataflow Diagram (Flowchart TB) - Struct with Methods
+
+```mermaid
+graph TB
+    A[ประกาศ type User struct] --> B[สร้าง instance u]
+    B --> C[เรียก u.GetFullName]
+    C --> D[รับค่า firstName + lastName]
+```
+
+## ตัวอย่างการใช้งานจริง: ระบบจัดการผู้ใช้
+```go
+package main
+
+import "fmt"
+
+type User struct {
+    ID        int
+    FirstName string
+    LastName  string
+    Email     string
+}
+
+// Method with value receiver
+func (u User) FullName() string {
+    return u.FirstName + " " + u.LastName
+}
+
+// Method with pointer receiver (modify)
+func (u *User) UpdateEmail(newEmail string) {
+    u.Email = newEmail
+}
+
+func main() {
+    // create struct
+    user := User{
+        ID:        1,
+        FirstName: "John",
+        LastName:  "Doe",
+        Email:     "john@example.com",
+    }
+
+    fmt.Println(user.FullName()) // John Doe
+
+    user.UpdateEmail("john.doe@example.com")
+    fmt.Println(user.Email) // john.doe@example.com
+}
+```
+
+## เทมเพลต: Embedded struct (Composition)
+```go
+type Base struct {
+    CreatedAt time.Time
+    UpdatedAt time.Time
+}
+
+type Product struct {
+    Base        // embedded
+    ID    int
+    Name  string
+    Price float64
+}
+```
+
+---
+
+# 6. Inheritance
+
+## Inheritance คืออะไร?
+**Inheritance** (การสืบทอด) เป็นกลไกใน OOP ที่คลาสลูกสามารถสืบทอดฟิลด์และเมธอดจากคลาสแม่ ทำให้สามารถ reuse โค้ดและสร้างความสัมพันธ์แบบ **is-a** Go **ไม่มี** inheritance แบบคลาส แต่ใช้ **embedding** (struct ฝัง struct) และ **interface** เพื่อให้ได้ผลคล้ายกันโดยเน้น **composition** (has-a) มากกว่า
+
+## Inheritance มีกี่แบบ?
+ในภาษา OOP ทั่วไป:
+- **Single inheritance** – สืบทอดจากคลาสแม่เดียว (Java, C#)
+- **Multiple inheritance** – สืบทอดจากหลายคลาส (C++) – เกิดปัญหา diamond problem
+- **Multilevel inheritance** – A -> B -> C
+
+Go ใช้ **embedding** ซึ่งไม่ใช่ inheritance แท้ แต่ให้ความสามารถในการ reuse โค้ดและ method promotion
+
+## ใช้อย่างไร ในกรณีไหน?
+- ต้องการ reuse โค้ดโดยไม่ต้องเขียนซ้ำ (ใช้ embedding)
+- ต้องการสร้าง “type hierarchy” แบบง่ายผ่าน interface
+- หลีกเลี่ยงปัญหาความซับซ้อนของ deep inheritance
+- ใช้ในไลบรารีเช่น GORM (ฝัง `gorm.Model`)
+
+## หลักการทำงาน (ใน Go ด้วย embedding)
+1. ประกาศ struct `Parent` ที่มีฟิลด์และเมธอด
+2. ประกาศ struct `Child` ที่ฝัง `Parent` (anonymous field)
+3. Child สามารถเข้าถึงฟิลด์และเมธอดของ Parent โดยตรง (promotion)
+4. Child สามารถ override เมธอดได้โดยการประกาศเมธอดชื่อเดียวกัน
+5. ไม่สามารถแปลงจาก Child เป็น Parent ได้โดยอัตโนมัติ (ต้องใช้ interface)
+
+## Dataflow Diagram (Flowchart TB) - Embedding
+
+```mermaid
+graph TB
+    A[type Animal struct] --> B[type Dog struct<br/>Animal]
+    B --> C[dog := Dog{...}]
+    C --> D[เรียก dog.Speak()<br/>พบเมธอดใน Dog?]
+    D -- มี --> E[เรียก Dog.Speak]
+    D -- ไม่มี --> F[เรียก Animal.Speak]
+```
+
+## ตัวอย่างการใช้งานจริง: ระบบพาหนะ
+```go
+package main
+
+import "fmt"
+
+// Base struct
+type Vehicle struct {
+    Brand string
+    Year  int
+}
+
+func (v Vehicle) Info() string {
+    return fmt.Sprintf("%s (%d)", v.Brand, v.Year)
+}
+
+func (v Vehicle) Start() string {
+    return "Engine started"
+}
+
+// Car embeds Vehicle
+type Car struct {
+    Vehicle
+    Doors int
+}
+
+// Override Start method
+func (c Car) Start() string {
+    return "Car engine started with key"
+}
+
+// Motorcycle embeds Vehicle
+type Motorcycle struct {
+    Vehicle
+    HasSidecar bool
+}
+
+func main() {
+    car := Car{
+        Vehicle: Vehicle{Brand: "Toyota", Year: 2020},
+        Doors:   4,
+    }
+
+    bike := Motorcycle{
+        Vehicle: Vehicle{Brand: "Harley", Year: 2019},
+        HasSidecar: false,
+    }
+
+    fmt.Println(car.Info())      // Toyota (2020)  (promoted)
+    fmt.Println(car.Start())     // Car engine started with key (overridden)
+    fmt.Println(bike.Start())    // Engine started (inherited)
+}
+```
+
+## เทมเพลต: Embedding แบบ GORM
+```go
+import "gorm.io/gorm"
+
+type BaseModel struct {
+    ID        uint           `gorm:"primarykey"`
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+type User struct {
+    BaseModel  // embedding
+    Name       string
+    Email      string
+}
+// User จะมีฟิลด์ ID, CreatedAt, UpdatedAt, DeletedAt โดยอัตโนมัติ
+```
+
+---
+
+## สรุปเปรียบเทียบ
+
+| กระบวนทัศน์ | จุดเน้น | Go รองรับอย่างไร |
+|------------|--------|-----------------|
+| **Procedural** | ลำดับขั้นตอน, ฟังก์ชัน | พื้นฐานของ Go (main, functions, packages) |
+| **Concurrent** | การทำงานหลายอย่างพร้อมกัน | goroutine, channel, sync |
+| **Functional** | Pure functions, immutability, higher-order | first-class functions, closures, generics |
+| **OOP** | วัตถุ, encapsulation, polymorphism | struct (data) + interface (behavior), composition |
+| **Struct** | การรวมข้อมูล | type struct, methods, embedding |
+| **Inheritance** | สืบทอดคุณสมบัติ (is-a) | ไม่มี direct inheritance แต่ใช้ embedding และ interface |
+
+แต่ละกระบวนทัศน์มีข้อดีและเหมาะกับงานต่างกัน Go ออกแบบให้เรียบง่ายและสามารถผสมผสานหลายกระบวนทัศน์ได้อย่างลงตัว โดยยึดหลัก “less is more” และ “composition over inheritance”
+
+---
+
+## แหล่งอ้างอิง
+- [The Go Programming Language Specification](https://go.dev/ref/spec)
+- [Effective Go](https://go.dev/doc/effective_go)
+- [Go by Example](https://gobyexample.com/)
+- [GORM Documentation](https://gorm.io/docs/)
 
 ### 1.14 ขั้นตอนการพัฒนาโปรแกรม
 1. เขียนซอร์สโค้ด (.go)
@@ -346,6 +995,145 @@ Dog จะสามารถเข้าถึงฟิลด์ Name และ 
 6. ทดสอบหน่วย (go test)
 
 ---
+## Heap, Worker, Pool คืออะไร?
+
+### 1. Heap (ฮีป)
+
+**Heap** มี 2 ความหมายในบริบทการเขียนโปรแกรม:
+
+1. **โครงสร้างข้อมูล Heap** (Priority Queue)  
+   - เป็นต้นไม้ไบนารีที่สมบูรณ์ (complete binary tree) ซึ่งมีคุณสมบัติ **heap property**  
+     - **Max-heap**: โหนดพ่อมีค่ามากกว่าหรือเท่ากับลูก  
+     - **Min-heap**: โหนดพ่อมีค่าน้อยกว่าหรือเท่ากับลูก  
+   - ใช้สำหรับสร้าง **priority queue** (คิวลำดับความสำคัญ)  
+   - การดำเนินการหลัก: `Push` (แทรก) และ `Pop` (ดึงค่าสูงสุด/ต่ำสุด) ด้วยเวลา O(log n)
+
+2. **Heap Memory** (หน่วยความจำฮีป)  
+   - พื้นที่หน่วยความจำที่ใช้สำหรับ allocate วัตถุที่มีอายุการใช้งานยาวนาน (เช่น ตัวแปรที่สร้างด้วย `new`, `make` ใน Go)  
+   - ต่างจาก stack memory ซึ่งเป็นหน่วยความจำเฉพาะฟังก์ชัน
+
+ในบริบทของ Queue Processor ที่พูดถึงก่อนหน้า **heap** หมายถึง priority queue ที่ใช้จัดลำดับงานตามความสำคัญ
+
+---
+
+### 2. Worker (เวิร์กเกอร์)
+
+**Worker** คือหน่วยงาน (goroutine, thread, หรือ process) ที่ทำหน้าที่ **ดึงงานจากคิวและประมวลผล**  
+- โดยทั่วไป Worker จะทำงานแบบไม่มีที่สิ้นสุด (loop) รอรับงาน  
+- ช่วยให้ระบบสามารถทำงานหลายอย่างพร้อมกัน (concurrency)  
+- การมีหลาย Workers เรียกว่า **Worker Pool**
+
+---
+
+### 3. Pool (พูล)
+
+**Pool** คือกลุ่มของทรัพยากรที่เตรียมไว้ล่วงหน้าเพื่อนำมาใช้ซ้ำ ลดค่าใช้จ่ายในการสร้างและทำลายทรัพยากรบ่อย ๆ  
+- **Worker Pool**: กลุ่มของ Workers ที่พร้อมรับงาน  
+- **Connection Pool**: กลุ่มของ connection ฐานข้อมูล  
+- **Memory Pool**: จัดสรรบล็อกหน่วยความจำล่วงหน้า
+
+---
+
+### แผนภาพประกอบ (Flowchart + Worker Pool + Priority Queue)
+
+```mermaid
+graph TB
+    subgraph Producer
+        A[Client / API] --> B[Create Job with Priority]
+    end
+
+    subgraph PriorityQueue[Heap-based Priority Queue]
+        C[(Min-Heap / Max-Heap)]
+        B --> C
+    end
+
+    subgraph WorkerPool[Worker Pool]
+        D[Worker 1] --> E[Process Job]
+        F[Worker 2] --> E
+        G[Worker 3] --> E
+        H[...]
+    end
+
+    C -- Job with highest priority --> D
+    C -- Job with highest priority --> F
+    C -- Job with highest priority --> G
+
+    E --> I[Database / External Service]
+    I --> J[Result / Acknowledge]
+```
+
+**คำอธิบาย**:  
+- **Producer** สร้างงานและกำหนด priority  
+- งานจะถูกแทรกเข้าไปใน **Priority Queue** (implemented ด้วย heap) ซึ่งจะจัดเรียงตาม priority  
+- **Worker Pool** มี Workers หลายตัว พร้อมดึงงานจากคิว (pop ค่าที่ priority สูงสุด)  
+- แต่ละ Worker ประมวลผลงานและส่งผลลัพธ์กลับ
+
+---
+
+### ตัวอย่างการทำงานของ Heap ใน Priority Queue (Min-Heap)
+
+```
+           (priority 1)
+          /          \
+    (3)               (5)
+    /   \            /   \
+ (8)    (10)      (6)    (7)
+```
+- เมื่อ `Push` งาน priority 2 → แทรกที่ตำแหน่งท้าย แล้วปรับโครงสร้าง (heapify up)
+- เมื่อ `Pop` งาน priority ต่ำสุด → ดึงราก (priority 1) แล้วนำโหนดสุดท้ายมาเป็นรากใหม่ แล้วปรับโครงสร้าง (heapify down)
+
+---
+
+### ตัวอย่าง Worker Pool ใน Go
+
+```go
+type Job struct {
+    ID       int
+    Priority int
+    Payload  interface{}
+}
+
+func worker(jobs <-chan Job, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for job := range jobs {
+        fmt.Printf("Worker processing job %d (priority %d)\n", job.ID, job.Priority)
+        // simulate work
+        time.Sleep(100 * time.Millisecond)
+    }
+}
+
+func main() {
+    const numWorkers = 3
+    jobs := make(chan Job, 100)
+
+    var wg sync.WaitGroup
+    for i := 0; i < numWorkers; i++ {
+        wg.Add(1)
+        go worker(jobs, &wg)
+    }
+
+    // ส่งงานเข้า queue (ในตัวอย่างใช้ channel ธรรมดา แต่ priority queue ต้อง implement เอง)
+    for i := 0; i < 10; i++ {
+        jobs <- Job{ID: i, Priority: i % 3}
+    }
+    close(jobs)
+    wg.Wait()
+}
+```
+
+---
+
+### สรุป
+
+| คำศัพท์ | ความหมาย | การประยุกต์ใน Queue Processor |
+|--------|----------|-------------------------------|
+| **Heap** | โครงสร้างข้อมูลแบบ priority queue | ใช้จัดเรียงงานตามลำดับความสำคัญก่อนดึงไปประมวลผล |
+| **Worker** | หน่วยประมวลผล (goroutine/thread) | ดึงงานจากคิวและทำงานจริง |
+| **Pool** | กลุ่มทรัพยากรที่เตรียมไว้ล่วงหน้า | Worker Pool ช่วยควบคุม concurrency, reuse goroutines |
+
+การรวมกันของ **Heap + Worker Pool** ช่วยให้ระบบสามารถจัดการงานที่มี priority ต่างกันได้อย่างมีประสิทธิภาพ โดยไม่ต้องสร้าง goroutine ใหม่ทุกครั้ง และประมวลผลงานสำคัญก่อนเสมอ
+
+
 
 ## บทที่ 2: รู้จักกับภาษา Go
 
@@ -378,7 +1166,232 @@ func main() {
     fmt.Println("Hello, World!")
 }
 ```
+Below are detailed **dataflow diagrams** (using Mermaid syntax for draw.io) and explanations for each topic, following the **Flowchart TB (Top to Bottom)** style.  
+You can copy the Mermaid code into draw.io (or any Mermaid-compatible tool) to generate the actual diagrams.
 
+---
+
+## 1. โครงสร้างภาษา Go (Go Language Structure)
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    subgraph A [Go Program Structure]
+        direction TB
+        P[Package Declaration] --> I[Import Dependencies]
+        I --> F[Function Definitions]
+        F --> M[main() Function]
+        M --> S[Start HTTP Server]
+    end
+
+    subgraph B [HTTP Request Flow]
+        direction TB
+        C[Client Request] --> R[Router / ServeMux]
+        R --> H[Handler]
+        H --> L[Business Logic]
+        L --> D[Data Access / DB]
+        D --> RSP[Response Writer]
+        RSP --> C2[Client Response]
+    end
+
+    A --> B
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **Package Declaration**: ทุกโปรแกรม Go เริ่มต้นด้วยการประกาศ package (เช่น `package main` สำหรับโปรแกรมที่รันได้)
+- **Import Dependencies**: นำเข้าแพ็คเกจที่จำเป็น เช่น `net/http` สำหรับสร้างเว็บเซิร์ฟเวอร์
+- **Function Definitions**: กำหนดฟังก์ชันต่าง ๆ รวมถึง handler functions ที่จะจัดการ request
+- **main() Function**: จุดเริ่มต้นของโปรแกรม ภายในจะมีการสร้าง HTTP server และกำหนด routing
+- **Start HTTP Server**: เรียก `http.ListenAndServe` เพื่อให้เซิร์ฟเวอร์รอรับ request
+- **Client Request**: คำขอจาก client (เช่น browser) เข้ามายังเซิร์ฟเวอร์
+- **Router / ServeMux**: ตัวจับคู่เส้นทาง (path) กับ handler ที่เหมาะสม
+- **Handler**: ฟังก์ชันที่ประมวลผล request (เช่น `func(w http.ResponseWriter, r *http.Request)`)
+- **Business Logic**: ดำเนินการตามที่ต้องการ เช่น อ่านข้อมูล, คำนวณ, เรียกใช้ service
+- **Data Access / DB**: หากจำเป็นต้องติดต่อฐานข้อมูลหรือภายนอก
+- **Response Writer**: เขียน response กลับไปยัง client
+- **Client Response**: client ได้รับผลลัพธ์
+
+---
+
+## 2. Chi Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> R[chi.Router]
+    R --> M1[Middleware Chain]
+    M1 --> G[Group Routes]
+    G --> H[Handler Function]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[Response Writer]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **chi.Router**: เป็น router ที่มีประสิทธิภาพสูง รองรับการจัดกลุ่ม route และ middleware
+- **Middleware Chain**: chi ใช้ middleware แบบ chain ซึ่งจะถูกเรียกก่อนถึง handler (เช่น logging, auth, recovery)
+- **Group Routes**: สามารถจัดกลุ่ม route ที่ใช้ middleware ร่วมกันได้
+- **Handler Function**: handler ที่เขียนเอง (implement `http.Handler` interface)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูลหากจำเป็น
+- **Response Writer**: ส่ง response กลับไปยัง client
+
+> Chi เป็น lightweight router ที่เข้ากันได้กับ `net/http` มาตรฐาน เหมาะสำหรับ API ที่ต้องการความยืดหยุ่นและประสิทธิภาพ
+
+---
+
+## 3. Gin Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> G[gin.Engine]
+    G --> M[Middleware]
+    M --> R[Router Group / Routes]
+    R --> H[Handler with *gin.Context]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[gin.Context.JSON / XML / etc]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **gin.Engine**: instance หลักของ Gin ที่ใช้จัดการ request
+- **Middleware**: Gin มี middleware หลายตัว (logger, recovery, CORS) ซึ่งสามารถใส่เป็น global หรือเฉพาะ route
+- **Router Group / Routes**: กำหนด route ด้วย `GET`, `POST` ฯลฯ รองรับการจัดกลุ่ม URL
+- **Handler with *gin.Context**: handler รับ `*gin.Context` ซึ่งมีฟังก์ชันอำนวยความสะดวกมากมาย (binding, validation, response)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูล
+- **gin.Context.JSON / XML / etc**: ส่ง response ในรูปแบบต่างๆ ได้สะดวก
+
+> Gin เป็น framework ที่มีความเร็วสูง เนื่องจากใช้ httprouter และมีฟีเจอร์ครบครันสำหรับ REST API
+
+---
+
+## 4. Fiber Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> F[fiber.App]
+    F --> M[Middleware Chain]
+    M --> R[Route Handlers]
+    R --> H[Handler with *fiber.Ctx]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[Response via *fiber.Ctx]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **fiber.App**: instance หลักของ Fiber ที่ใช้จัดการ request
+- **Middleware Chain**: Fiber มี middleware แบบ chain คล้าย Express.js
+- **Route Handlers**: กำหนด route ด้วย `app.Get`, `app.Post` ฯลฯ
+- **Handler with *fiber.Ctx**: handler รับ `*fiber.Ctx` ซึ่งมี API ที่ใช้งานง่าย (body parser, validation, response)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูล
+- **Response via *fiber.Ctx**: ส่ง response ผ่าน `ctx.Send`, `ctx.JSON`, `ctx.Status` ฯลฯ
+
+> Fiber ได้รับแรงบันดาลใจจาก Express.js แต่ใช้ Fasthttp เป็นพื้นฐาน ทำให้มีประสิทธิภาพสูงมาก เหมาะกับงานที่ต้องการความเร็วสูง
+
+---
+
+## 5. Beego Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> B[beego.Run]
+    B --> R[Router / Namespace]
+    R --> F[Filter / Middleware]
+    F --> CT[Controller]
+    CT --> M[Model / ORM]
+    M --> D[Database]
+    D --> V[View / Template]
+    V --> RSP[Response]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **beego.Run**: เริ่มต้นเซิร์ฟเวอร์ Beego
+- **Router / Namespace**: กำหนด route โดยใช้ `beego.Router` หรือ namespace สำหรับจัดกลุ่ม
+- **Filter / Middleware**: ตัวกรองที่ทำงานก่อน/หลัง controller (คล้าย middleware)
+- **Controller**: รับ request และประมวลผล โดยสืบทอดจาก `beego.Controller`
+- **Model / ORM**: Beego มี ORM ในตัว ใช้สำหรับติดต่อฐานข้อมูล
+- **View / Template**: สร้าง HTML response ด้วย template engine
+- **Response**: ส่งผลลัพธ์กลับไปยัง client
+
+> Beego เป็น full-stack framework ที่มีส่วนประกอบครบ (MVC, ORM, caching, logs) เหมาะกับแอปพลิเคชันขนาดใหญ่
+
+---
+
+## 6. Buffalo Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> B[Buffalo App]
+    B --> M[Middleware Stack]
+    M --> R[Router]
+    R --> A[Action]
+    A --> S[Service / Model]
+    S --> D[Database]
+    D --> T[Template / JSON]
+    T --> RSP[Response]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **Buffalo App**: instance ของแอปพลิเคชัน Buffalo ที่สร้างจาก `buffalo.New`
+- **Middleware Stack**: ใช้ middleware ในการจัดการ request (logger, CSRF, sessions)
+- **Router**: กำหนด route ผ่าน `app.GET`, `app.POST` ฯลฯ
+- **Action**: handler ที่รับ `buffalo.Context` ซึ่งมีฟังก์ชันครบ (render, param binding, session)
+- **Service / Model**: ดำเนิน business logic และติดต่อฐานข้อมูล (ผ่าน Pop ORM)
+- **Template / JSON**: ส่ง response ในรูปแบบ HTML template หรือ JSON
+- **Response**: ส่งกลับ client
+
+> Buffalo เป็น framework ที่เน้น productivity และคล้ายกับ Rails มีเครื่องมือ CLI ที่ช่วยสร้างโครงสร้างโปรเจกต์
+
+---
+
+## 7. Gorilla Mux (Web Toolkit)
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> M[gorilla/mux.Router]
+    M --> MW[Middleware / Subrouters]
+    MW --> H[Handler]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[Response Writer]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **gorilla/mux.Router**: router ที่มีความสามารถมากกว่า `net/http` มาตรฐาน (path variables, regex, methods)
+- **Middleware / Subrouters**: สามารถใช้ middleware และ subrouters เพื่อจัดกลุ่ม route
+- **Handler**: handler มาตรฐานของ Go (`func(w http.ResponseWriter, r *http.Request)`)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูล
+- **Response Writer**: ส่ง response กลับ client
+
+> Gorilla Mux ไม่ใช่ full-stack framework แต่เป็น router toolkit ที่เข้ากันได้ดีกับ `net/http` และมักถูกนำไปใช้ร่วมกับ middleware อื่น ๆ
+
+--- 
+
+ต้องการให้อธิบายส่วนใดเพิ่มเติม หรือปรับเปลี่ยนรูปแบบ flowchart ให้เหมาะกับงานของคุณไหมครับ?
 ### 2.5 ใครใช้ Go บ้าง?
 - **Google** : ระบบ backend, Kubernetes, Docker
 - **Uber** : ระบบการจับคู่การเดินทาง
@@ -1677,6 +2690,677 @@ outer:
 
 ---
 
+# Queue Processor
+
+## Queue Processor คืออะไร?
+**Queue Processor** คือระบบหรือคอมโพเนนต์ที่ทำหน้าที่ประมวลผลงาน (jobs/tasks) ที่ถูกส่งเข้ามาในคิว (queue) ตามลำดับ FIFO (First-In-First-Out) หรือตามลำดับความสำคัญ โดยจะดึงงานจากคิวมาประมวลผลแบบ asynchronous ช่วยลดภาระของ main thread, ป้องกันการ overload, และทำให้ระบบสามารถขยายขนาดได้ง่าย
+
+## Queue Processor มีกี่แบบ?
+แบ่งตามสถาปัตยกรรมและการจัดการได้หลายรูปแบบ:
+
+1. **Simple In-Memory Queue** – ใช้ slice + channel ใน Go เหมาะกับงานภายในแอปพลิเคชันเดียว
+2. **Worker Pool** – มี worker หลายตัวดึงงานจาก queue เดียวกัน ใช้ concurrency
+3. **Priority Queue** – จัดเรียงตาม priority (heap)
+4. **Message Broker** – Redis (List, Stream, Pub/Sub), RabbitMQ, Kafka, AWS SQS เป็นระบบคิวภายนอก
+5. **Delayed / Scheduled Queue** – รองรับการประมวลผลตามเวลาที่กำหนด
+6. **Transactional Queue** – รองรับการ commit/rollback เช่น Redis Streams + consumer group
+
+## ใช้อย่างไร ในกรณีไหน?
+- **ลดภาระ synchronous API** – รับ request แล้วส่งเข้า queue ตอบกลับทันที
+- **งานที่ใช้เวลานาน** – ส่งอีเมล, ประมวลผลรูปภาพ, อัปเดตข้อมูลจำนวนมาก
+- **Retry & Backoff** – ทำงานที่อาจล้มเหลวแล้วลองใหม่
+- **กระจายโหลด** – มี worker หลายตัวบนหลายเครื่อง
+- **ร่วมกับ GORM + Redis Transaction** – เช่น รับ order เข้า queue, เมื่อประมวลผลสำเร็จจะอัปเดตฐานข้อมูล (INSERT/UPDATE/DELETE) ภายใต้ transaction และ commit หากสำเร็จ หรือ rollback หาก error
+
+## หลักการทำงาน
+1. **Producer** สร้าง job และส่งเข้า queue (push)
+2. **Queue** จัดเก็บ job (อาจเป็น Redis List, SQS, etc.)
+3. **Processor (Consumer)** ดึง job จาก queue (pop) ตามกลไก (polling, push, pub/sub)
+4. **Processor** ประมวลผล job (เรียก business logic, เรียก API, ทำงาน DB)
+5. **Acknowledge / Remove** เมื่อประมวลผลสำเร็จ, ถ้าล้มเหลวอาจ retry หรือส่งไป dead letter queue
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    subgraph Producer
+        A[API / Service] --> B[Create Job]
+        B --> C[Push to Queue]
+    end
+
+    subgraph Queue Storage
+        D[(Redis List / SQS / Kafka)]
+    end
+
+    subgraph Consumer
+        E[Queue Processor] --> F[Pop Job]
+        F --> G[Process Job]
+        G --> H{Success?}
+        H -- Yes --> I[Acknowledge / Remove]
+        H -- No --> J{Retry?}
+        J -- Yes --> K[Requeue or Delay]
+        J -- No --> L[Dead Letter Queue]
+    end
+
+    C --> D
+    D --> E
+```
+
+## ตัวอย่างการใช้งานจริง (Go + Redis + GORM)
+
+### โครงสร้าง Job
+```go
+type Job struct {
+    ID         string    `json:"id"`
+    Type       string    `json:"type"`       // "email", "order_processing"
+    Payload    []byte    `json:"payload"`
+    RetryCount int       `json:"retry_count"`
+    CreatedAt  time.Time `json:"created_at"`
+}
+```
+
+### Producer: สร้าง job และ push ไป Redis (LPUSH หรือ RPUSH)
+```go
+func EnqueueJob(ctx context.Context, rdb *redis.Client, queueName string, job Job) error {
+    data, _ := json.Marshal(job)
+    return rdb.LPush(ctx, queueName, data).Err()
+}
+```
+
+### Consumer: วน loop ดึง job และประมวลผล
+```go
+func ProcessQueue(ctx context.Context, rdb *redis.Client, db *gorm.DB, queueName string) {
+    for {
+        // ใช้ BRPOP เพื่อรอ job (blocking)
+        result, err := rdb.BRPop(ctx, 0, queueName).Result()
+        if err != nil {
+            log.Printf("BRPop error: %v", err)
+            continue
+        }
+        // result[0] = queue name, result[1] = job data
+        var job Job
+        if err := json.Unmarshal([]byte(result[1]), &job); err != nil {
+            log.Printf("Unmarshal error: %v", err)
+            continue
+        }
+
+        // ประมวลผล job โดยใช้ transaction
+        if err := processJob(ctx, db, job); err != nil {
+            log.Printf("Job %s failed: %v", job.ID, err)
+            // handle retry logic
+        }
+    }
+}
+```
+
+### processJob พร้อม transaction (GORM) และ Redis
+```go
+func processJob(ctx context.Context, db *gorm.DB, job Job) error {
+    // เริ่ม transaction
+    tx := db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    switch job.Type {
+    case "order_processing":
+        var order Order
+        if err := json.Unmarshal(job.Payload, &order); err != nil {
+            tx.Rollback()
+            return err
+        }
+
+        // INSERT order
+        if err := tx.Create(&order).Error; err != nil {
+            tx.Rollback()
+            return err
+        }
+
+        // UPDATE inventory
+        for _, item := range order.Items {
+            if err := tx.Model(&Product{}).Where("id = ?", item.ProductID).
+                Update("stock", gorm.Expr("stock - ?", item.Quantity)).Error; err != nil {
+                tx.Rollback()
+                return err
+            }
+        }
+
+        // DELETE temporary data
+        if err := tx.Where("order_id = ?", order.ID).Delete(&TempOrder{}).Error; err != nil {
+            tx.Rollback()
+            return err
+        }
+
+        // ใช้ Redis เพื่อบันทึก log
+        rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+        if err := rdb.Set(ctx, fmt.Sprintf("order:%d:processed", order.ID), time.Now().Unix(), 0).Err(); err != nil {
+            tx.Rollback()
+            return err
+        }
+
+        // commit transaction
+        if err := tx.Commit().Error; err != nil {
+            return err
+        }
+
+    default:
+        return fmt.Errorf("unknown job type: %s", job.Type)
+    }
+    return nil
+}
+```
+
+---
+
+# 9.1 if-else
+
+## if-else คืออะไร?
+if-else เป็นคำสั่งควบคุมเงื่อนไขที่ใช้ตัดสินใจเลือกบล็อกโค้ดที่จะทำงานตามค่าความจริง (boolean) ของเงื่อนไข
+
+## if-else มีกี่แบบ?
+- if (แบบเดี่ยว)
+- if-else (สองทางเลือก)
+- if-else if-else (หลายทางเลือก)
+- if พร้อม short statement (ประกาศตัวแปรภายในเงื่อนไข)
+
+## ใช้อย่างไร ในกรณีไหน?
+- ตรวจสอบ error หลังเรียกฟังก์ชัน
+- ตรวจสอบค่าก่อนทำ SQL (INSERT/UPDATE/DELETE)
+- ตรวจสอบผลลัพธ์จาก Redis ก่อน commit/rollback
+- ควบคุม logic ใน Queue Processor (เช่น retry, fallback)
+
+## หลักการทำงาน
+1. ประเมิน boolean expression
+2. ถ้า true → ทำบล็อก if
+3. ถ้า false → ทำบล็อก else (ถ้ามี)
+4. ตัวแปรใน short statement มีขอบเขตภายในบล็อก
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Cond{เงื่อนไข true?}
+    Cond -- true --> IfBlock[ทำ if block]
+    Cond -- false --> ElseBlock[ทำ else block]
+    IfBlock --> End([จบ])
+    ElseBlock --> End
+```
+
+## ตัวอย่างกับ GORM / Redis / Queue Processor
+
+### ตรวจสอบ error ก่อน commit
+```go
+func UpdateOrderStatus(db *gorm.DB, orderID uint, status string) error {
+    tx := db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    if err := tx.Model(&Order{}).Where("id = ?", orderID).Update("status", status).Error; err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    // ถ้า update สำเร็จ commit
+    if err := tx.Commit().Error; err != nil {
+        return err
+    }
+    return nil
+}
+```
+
+### ใช้ใน Queue Processor: ตรวจสอบ retry count
+```go
+func processJobWithRetry(job Job) error {
+    err := processJob(job)
+    if err != nil {
+        if job.RetryCount < 3 {
+            job.RetryCount++
+            // re-queue with delay
+            requeueWithDelay(job, time.Second * time.Duration(job.RetryCount))
+            return nil // not considered error now
+        } else {
+            // move to dead letter queue
+            sendToDLQ(job)
+            return fmt.Errorf("max retries exceeded: %v", err)
+        }
+    }
+    return nil
+}
+```
+
+---
+
+# 9.2 switch
+
+## switch คืออะไร?
+switch คือคำสั่งเลือกทำงานตามค่าของ expression หรือประเภทของ interface (type switch) เหมาะกับหลายทางเลือก
+
+## switch มีกี่แบบ?
+- Expression switch
+- Type switch
+- Switch without expression (ใช้แทน if-else chain)
+- สามารถใช้ fallthrough, multiple case
+
+## ใช้อย่างไร ในกรณีไหน?
+- เปลี่ยนการทำงานตาม status, type ของงาน (Queue Processor)
+- Type switch สำหรับ interface{} ที่รับ payload ต่างกัน
+- ควบคุมการทำ SQL หลายประเภท (INSERT/UPDATE/DELETE)
+
+## หลักการทำงาน
+1. ประเมิน expression (หรือใช้ true)
+2. ตรวจสอบ case ตามลำดับ
+3. ถ้า case ตรง → ทำบล็อก ถ้าไม่มี fallthrough จะออกทันที
+4. Type switch จะทำ type assertion
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Eval{Expression / Type}
+    Eval --> Case1{case 1?} -- true --> Block1[block 1]
+    Case1 -- false --> Case2{case 2?} -- true --> Block2
+    Case2 -- false --> Default[default block]
+    Block1 --> End([จบ])
+    Block2 --> End
+    Default --> End
+```
+
+## ตัวอย่างกับ GORM / Redis / Queue Processor
+
+### Expression switch สำหรับประมวลผล job หลายประเภท
+```go
+func handleJob(job Job) error {
+    switch job.Type {
+    case "email":
+        return sendEmail(job.Payload)
+    case "order_processing":
+        return processOrder(job.Payload)
+    case "report_generation":
+        return generateReport(job.Payload)
+    default:
+        return fmt.Errorf("unknown job type: %s", job.Type)
+    }
+}
+```
+
+### Type switch สำหรับ payload ที่หลากหลาย
+```go
+func processPayload(payload interface{}) error {
+    switch v := payload.(type) {
+    case Order:
+        // insert order
+        return db.Create(&v).Error
+    case EmailData:
+        // send email
+        return emailService.Send(v)
+    case string:
+        // treat as log message
+        log.Println(v)
+        return nil
+    default:
+        return fmt.Errorf("unsupported payload type: %T", v)
+    }
+}
+```
+
+### ใช้กับ Redis transaction: commit/rollback ตามผลลัพธ์
+```go
+func executeRedisPipeline(rdb *redis.Client, cmds []redis.Cmder) error {
+    pipe := rdb.Pipeline()
+    for _, cmd := range cmds {
+        switch cmd.Name() {
+        case "set":
+            args := cmd.Args()
+            pipe.Set(ctx, args[1].(string), args[2], 0)
+        case "incr":
+            pipe.Incr(ctx, cmd.Args()[1].(string))
+        default:
+            return fmt.Errorf("unsupported command")
+        }
+    }
+    _, err := pipe.Exec(ctx)
+    return err
+}
+```
+
+---
+
+# 9.3 for loop
+
+## for loop คืออะไร?
+คำสั่งวนซ้ำเพียงหนึ่งเดียวใน Go ใช้สำหรับทำซ้ำบล็อกโค้ดตามเงื่อนไข
+
+## for loop มีกี่แบบ?
+- Classic: `for init; condition; post { }`
+- While-style: `for condition { }`
+- Infinite: `for { }`
+- Range loop (แยกใน 9.4)
+
+## ใช้อย่างไร ในกรณีไหน?
+- Batch processing ข้อมูลในฐานข้อมูล
+- Retry loop สำหรับ Redis transaction ที่ล้มเหลว (WATCH)
+- Poll queue (Queue Processor) อย่างต่อเนื่อง
+- วน slice เพื่อทำ INSERT/UPDATE/DELETE หลายรายการ
+
+## หลักการทำงาน
+1. init ทำงานครั้งแรก
+2. ตรวจสอบ condition; ถ้า true → เข้า body
+3. หลัง body ทำงาน post แล้วกลับไปตรวจสอบ condition อีกครั้ง
+
+## Dataflow Diagram (Flowchart TB) - Classic
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Init[init]
+    Init --> Cond{condition true?}
+    Cond -- true --> Body[body]
+    Body --> Post[post]
+    Post --> Cond
+    Cond -- false --> End([จบ])
+```
+
+## ตัวอย่างกับ GORM / Redis / Queue Processor
+
+### Batch INSERT หลายรายการ
+```go
+func BatchInsertOrders(db *gorm.DB, orders []Order, batchSize int) error {
+    for i := 0; i < len(orders); i += batchSize {
+        end := i + batchSize
+        if end > len(orders) {
+            end = len(orders)
+        }
+        batch := orders[i:end]
+        if err := db.Create(&batch).Error; err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+### Retry loop สำหรับ Redis transaction
+```go
+func IncrementWithRetry(ctx context.Context, rdb *redis.Client, key string) error {
+    for retries := 0; retries < 10; retries++ {
+        err := rdb.Watch(ctx, func(tx *redis.Tx) error {
+            val, err := tx.Get(ctx, key).Int64()
+            if err != nil && err != redis.Nil {
+                return err
+            }
+            _, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+                pipe.Set(ctx, key, val+1, 0)
+                return nil
+            })
+            return err
+        }, key)
+        if err == nil {
+            return nil
+        }
+        if err == redis.TxFailedErr {
+            continue // retry
+        }
+        return err
+    }
+    return fmt.Errorf("max retries exceeded")
+}
+```
+
+### Queue Processor worker loop
+```go
+func worker(rdb *redis.Client, queueName string) {
+    for {
+        // blocking pop
+        result, err := rdb.BRPop(ctx, 0, queueName).Result()
+        if err != nil {
+            log.Println("BRPop error:", err)
+            time.Sleep(time.Second)
+            continue
+        }
+        jobData := result[1]
+        // process job...
+    }
+}
+```
+
+---
+
+# 9.4 range
+
+## range คืออะไร?
+range ใช้ร่วมกับ for เพื่อวนซ้ำผ่าน elements ของ array, slice, map, string, channel
+
+## range มีกี่แบบ?
+- Slice/array: `for i, v := range slice`
+- Map: `for k, v := range m`
+- String: `for i, r := range str` (วนทีละ rune)
+- Channel: `for v := range ch`
+- สามารถใช้ `_` ละทิ้งค่าใดค่าหนึ่ง
+
+## ใช้อย่างไร ในกรณีไหน?
+- วนผ่านผลลัพธ์จาก GORM (slice of models)
+- อ่านข้อมูลจาก Redis hash / map
+- ดึงข้อมูลจาก channel ใน queue processor
+- แปลง struct slice เป็น map
+
+## หลักการทำงาน
+1. range จะคืนค่า sequence ของ elements
+2. แต่ละรอบกำหนดค่าลงตัวแปร
+3. กับ map ไม่รับประกันลำดับ
+4. กับ string วนทีละ rune (ไม่ใช่ byte)
+5. กับ channel วนจนกว่า channel ปิด
+
+## Dataflow Diagram (Flowchart TB) - range with slice
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> Init[for index, value := range collection]
+    Init --> Next{มี element ถัดไป?}
+    Next -- true --> Assign[กำหนด index, value]
+    Assign --> Body[ทำ body]
+    Body --> Next
+    Next -- false --> End([จบ])
+```
+
+## ตัวอย่างกับ GORM / Redis / Queue Processor
+
+### วน slice ของ model เพื่อ UPDATE
+```go
+func UpdateProducts(db *gorm.DB, products []Product) error {
+    for _, p := range products {
+        if err := db.Model(&Product{}).Where("id = ?", p.ID).Updates(p).Error; err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+### วน map เพื่อ INSERT ลง Redis hash
+```go
+func StoreUserAttrs(ctx context.Context, rdb *redis.Client, userID string, attrs map[string]interface{}) error {
+    key := fmt.Sprintf("user:%s:attrs", userID)
+    for field, value := range attrs {
+        if err := rdb.HSet(ctx, key, field, value).Err(); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+### วน channel ใน Queue Processor (รับจาก Redis Pub/Sub)
+```go
+func SubscribeQueue(ctx context.Context, pubsub *redis.PubSub) {
+    ch := pubsub.Channel()
+    for msg := range ch {
+        // msg.Payload contains job data
+        var job Job
+        json.Unmarshal([]byte(msg.Payload), &job)
+        processJob(job)
+    }
+}
+```
+
+---
+
+# 9.6 label และการ break ออกจาก outer loop
+
+## label และการ break ออกจาก outer loop คืออะไร?
+label คือการกำหนดชื่อให้กับ statement (เช่น for, switch, select) เพื่อใช้ `break label` หรือ `continue label` ออกจากลูปหลายชั้นหรือข้าม iteration ของ outer loop
+
+## มีกี่แบบ?
+- `break label` – ออกจากลูปที่ label ระบุ
+- `continue label` – ข้ามไป iteration ถัดไปของลูปที่ label ระบุ
+- `goto label` – (ไม่แนะนำ) กระโดดไปตำแหน่ง label
+
+## ใช้อย่างไร ในกรณีไหน?
+- ค้นหาข้อมูลใน nested loops แล้วต้องการหยุดทั้งหมดเมื่อเจอ
+- ประมวลผล nested struct (เช่น order -> items) และต้องการยกเลิกการประมวลผลทั้งหมดเมื่อ error
+- ในการทำ SQL transaction ซ้อน loop: ถ้า error ต้อง rollback ทั้ง transaction
+
+## หลักการทำงาน
+1. ประกาศ label ก่อน loop ที่ต้องการควบคุม
+2. ภายใน loop ซ้อน ใช้ `break label` เพื่อออกจาก loop ที่มี label ทันที
+3. `continue label` จะข้าม iteration ของ loop ที่มี label ไป iteration ถัดไป
+
+## Dataflow Diagram (Flowchart TB)
+
+```mermaid
+graph TB
+    Start([เริ่ม]) --> OuterStart[OuterLoop: for ...]
+    OuterStart --> InnerStart[InnerLoop: for ...]
+    InnerStart --> Cond{พบเงื่อนไข break?}
+    Cond -- ใช่ --> BreakLabel[break OuterLoop]
+    Cond -- ไม่ใช่ --> ContinueInner[ทำ inner ต่อไป]
+    ContinueInner --> InnerStart
+    BreakLabel --> End([ออกจาก outer loop])
+```
+
+## ตัวอย่างกับ GORM / Redis / Queue Processor
+
+### ค้นหา user ในหลายกลุ่ม แล้วหยุดเมื่อพบ (nested loops)
+```go
+func FindUserInGroups(groups [][]User, targetID uint) (*User, bool) {
+OuterLoop:
+    for _, group := range groups {
+        for _, user := range group {
+            if user.ID == targetID {
+                return &user, true
+            }
+            // ถ้ามีเงื่อนไขอื่นเช่น user disabled
+            if user.Disabled {
+                // ข้าม group นี้ทั้งหมด
+                continue OuterLoop
+            }
+        }
+    }
+    return nil, false
+}
+```
+
+### ใน Queue Processor: ตรวจสอบข้อมูลหลายชั้นและ rollback transaction เมื่อ error
+```go
+func ProcessOrderWithItems(order Order, items []Item) error {
+    tx := db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    // INSERT order
+    if err := tx.Create(&order).Error; err != nil {
+        tx.Rollback()
+        return err
+    }
+
+MainLoop:
+    for _, item := range items {
+        // ตรวจสอบ stock
+        var product Product
+        if err := tx.First(&product, item.ProductID).Error; err != nil {
+            tx.Rollback()
+            break MainLoop
+        }
+        if product.Stock < item.Quantity {
+            // ไม่พอ stock -> rollback ทั้งหมด
+            tx.Rollback()
+            return fmt.Errorf("insufficient stock for product %d", product.ID)
+        }
+        // UPDATE stock
+        if err := tx.Model(&Product{}).Where("id = ?", item.ProductID).
+            Update("stock", gorm.Expr("stock - ?", item.Quantity)).Error; err != nil {
+            tx.Rollback()
+            break MainLoop
+        }
+        // INSERT order item
+        if err := tx.Create(&item).Error; err != nil {
+            tx.Rollback()
+            break MainLoop
+        }
+    }
+
+    // ถ้าผ่านทุก loop ให้ commit
+    return tx.Commit().Error
+}
+```
+
+### ใช้ label break ใน Redis pipeline loop
+```go
+func UpdateManyAccounts(ctx context.Context, rdb *redis.Client, updates map[string]int64) error {
+MainLoop:
+    for acc, delta := range updates {
+        err := rdb.Watch(ctx, func(tx *redis.Tx) error {
+            bal, err := tx.Get(ctx, acc).Int64()
+            if err != nil && err != redis.Nil {
+                return err
+            }
+            newBal := bal + delta
+            if newBal < 0 {
+                return fmt.Errorf("insufficient balance for %s", acc)
+            }
+            _, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+                pipe.Set(ctx, acc, newBal, 0)
+                return nil
+            })
+            return err
+        }, acc)
+        if err != nil {
+            if err == redis.TxFailedErr {
+                // conflict, retry outer loop
+                // ในที่นี้อาจทำ continue MainLoop เพื่อ retry
+                continue MainLoop
+            }
+            return err
+        }
+    }
+    return nil
+}
+```
+
+---
+
+## สรุป
+- **Queue Processor** ช่วยให้ระบบทำงานแบบ asynchronous, เพิ่มความเสถียรและ scalability
+- **if-else, switch** ใช้ควบคุม logic ตามเงื่อนไขและประเภทของงาน
+- **for loop, range** ใช้สำหรับ batch processing, retry และการวนผ่านข้อมูล
+- **label** มีประโยชน์เมื่อต้องการควบคุม nested loops อย่างแม่นยำ โดยเฉพาะใน transaction ที่ต้อง rollback ทั้งชุด
+
+สามารถนำตัวอย่างโค้ดไปปรับใช้กับ GORM และ Redis ร่วมกับ Queue Processor เพื่อสร้างระบบที่ robust และรองรับการทำงานที่มีความซับซ้อนได้
+
+---
+
+## แหล่งอ้างอิง
+- [Effective Go - Control structures](https://go.dev/doc/effective_go#control-structures)
+- [GORM Documentation](https://gorm.io/docs/)
+- [go-redis Documentation](https://redis.uptrace.dev/)
+- [Redis Streams](https://redis.io/docs/data-types/streams/)
+
 ## บทที่ 10: ฟังก์ชัน
 
 ### 10.1 การประกาศฟังก์ชัน
@@ -2019,7 +3703,74 @@ type MyInt = int // alias, MyInt และ int ใช้แทนกันได
 ความแตกต่าง: type definition (type MyInt int) สร้างชนิดใหม่, alias แค่ชื่ออื่น
 
 ---
+# Dataflow Diagram: Embedding in Go
 
+Embedding (also called composition) in Go allows a struct to include another struct as an anonymous field, making its fields and methods directly accessible on the outer struct. This promotes code reuse without classical inheritance.
+
+Below is a **dataflow diagram** (flowchart TB) that illustrates how embedding works when a method is called on the outer struct.
+
+## Diagram: Method Promotion with Embedding
+
+```mermaid
+graph TB
+    Start([Start: dog.Speak()]) --> CheckOuter{Does Dog have its own Speak method?}
+    CheckOuter -- Yes --> CallOuter[Call Dog.Speak]
+    CheckOuter -- No --> Promote[Promote Animal.Speak]
+    Promote --> CallAnimal[Call Animal.Speak]
+    CallOuter --> Return[Return result]
+    CallAnimal --> Return
+    Return --> End([End])
+```
+
+## Explanation
+
+1. **Outer struct** (`Dog`) embeds an inner struct (`Animal`) as an anonymous field.
+2. When a method is called on the outer struct (`dog.Speak()`), Go first checks if the outer struct defines that method directly.
+   - If **yes**, that method is invoked (overriding).
+   - If **no**, Go looks for the method in the embedded struct(s) and promotes it.
+3. The promoted method is called as if it were part of the outer struct.
+4. The result is returned to the caller.
+
+## Example Code
+
+```go
+type Animal struct {
+    Name string
+}
+
+func (a Animal) Speak() string {
+    return "Animal sound"
+}
+
+type Dog struct {
+    Animal   // embedded
+    Breed string
+}
+
+func (d Dog) Speak() string {
+    return "Woof!"   // overrides Animal.Speak
+}
+
+func main() {
+    dog := Dog{Animal: Animal{Name: "Max"}, Breed: "Golden"}
+    fmt.Println(dog.Speak()) // Woof!
+}
+```
+
+## Field Access Flow
+
+For fields, the same promotion applies. If a field is not found in the outer struct, Go looks into embedded structs.
+
+```mermaid
+graph TB
+    StartField([dog.Name]) --> CheckOuterField{Does Dog have Name field?}
+    CheckOuterField -- No --> LookEmbedded[Look in embedded Animal]
+    LookEmbedded --> Found[Return Animal.Name]
+    CheckOuterField -- Yes --> ReturnOuter[Return Dog.Name]
+    Found --> EndField([End])
+    ReturnOuter --> EndField
+```
+ 
 ## บทที่ 14: เมธอด (Methods)
 
 ### 14.1 การกำหนดเมธอด
