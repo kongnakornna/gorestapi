@@ -224,6 +224,22 @@ ls go.mod
 - บทที่ 50: Aggregates, Event Storming และ CQRS
 - บทที่ 51: การออกแบบบริการด้วย Go-DDD
 
+### ภาคที่ 9: การผสานระบบภายนอกและคุณลักษณะเสริม (Advanced Integrations)
+- **บทที่ 52:** Redis สำหรับ Cache และ Message Queue
+- **บทที่ 53:** RabbitMQ – Message Broker มาตรฐานองค์กร
+- **บทที่ 54:** MQTT สำหรับ IoT และระบบเรียลไทม์
+- **บทที่ 55:** InfluxDB – Time‑Series Database
+- **บทที่ 56:** WebSocket และ Socket.IO
+- **บทที่ 57:** การส่ง SMS และ LINE Notify
+- **บทที่ 58:** Discord Webhook สำหรับแจ้งเตือน
+
+### ภาคที่ 10: เทมเพลต กระบวนการพัฒนา และตัวอย่างโค้ด
+- **บทที่ 59:** ตัวอย่างโค้ดครบวงจร (Full‑stack Example)
+- **บทที่ 60:** Task List Template
+- **บทที่ 61:** Checklist Template
+- **บทที่ 62:** แผนภาพการทำงาน (Workflow Diagram)
+- **บทที่ 63:** mop Config – การจัดการ Configuration
+
 ---
 
 # ภาคที่ 1: ปฐมบทกับการเขียนโปรแกรม
@@ -14210,7 +14226,7 @@ project-root/
 ---
 
 # ภาคที่ 8: Domain-Driven Design (DDD) กับ Go
-### (บทที่ 49–51)
+## (บทที่ 49–51)
 
 ## แผนภาพ Data Flow (Flowchart TB)
 
@@ -15511,6 +15527,1460 @@ func eventName(event user.DomainEvent) string {
 - **Go เหมาะสม**: struct, interface, package system ช่วยให้จัดระเบียบตาม bounded context ได้ดี และการทำงาน concurrency ผ่าน goroutine ช่วยให้จัดการ domain events ได้มีประสิทธิภาพ
 
 ---
+### ภาคที่ 9: การผสานระบบภายนอกและคุณลักษณะเสริม (Advanced Integrations)
+
+---
+
+## บทที่ 52: Redis สำหรับ Cache และ Message Queue
+
+Redis เป็นฐานข้อมูลแบบ in‑memory ที่มีความเร็วสูง รองรับโครงสร้างข้อมูลที่หลากหลาย เช่น Strings, Hashes, Lists, Sets, Sorted Sets, Streams และ Pub/Sub ทำให้สามารถนำไปใช้ได้ทั้งเป็น Cache และ Message Queue
+
+### 52.1 การติดตั้งและเชื่อมต่อกับ Redis ใน Go
+
+```go
+go get github.com/redis/go-redis/v9
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/redis/go-redis/v9"
+)
+
+func main() {
+    // สร้าง client
+    rdb := redis.NewClient(&redis.Options{
+        Addr:     "localhost:6379",
+        Password: "", // no password set
+        DB:       0,  // use default DB
+        PoolSize: 10, // connection pool size
+    })
+
+    ctx := context.Background()
+
+    // ทดสอบเชื่อมต่อ
+    pong, err := rdb.Ping(ctx).Result()
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Redis connected:", pong)
+}
+```
+
+### 52.2 Redis เป็น Cache (CRUD)
+
+```go
+type Cache struct {
+    client *redis.Client
+    ttl    time.Duration
+}
+
+func NewCache(client *redis.Client, ttl time.Duration) *Cache {
+    return &Cache{client: client, ttl: ttl}
+}
+
+func (c *Cache) Set(ctx context.Context, key string, value interface{}) error {
+    data, err := json.Marshal(value)
+    if err != nil {
+        return err
+    }
+    return c.client.Set(ctx, key, data, c.ttl).Err()
+}
+
+func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
+    data, err := c.client.Get(ctx, key).Bytes()
+    if err != nil {
+        if err == redis.Nil {
+            return ErrCacheMiss
+        }
+        return err
+    }
+    return json.Unmarshal(data, dest)
+}
+
+func (c *Cache) Delete(ctx context.Context, key string) error {
+    return c.client.Del(ctx, key).Err()
+}
+
+var ErrCacheMiss = errors.New("cache: key not found")
+```
+
+**การใช้ Cache Pattern (Cache‑Aside)**
+
+```go
+func GetUser(ctx context.Context, cache *Cache, repo UserRepository, id string) (*User, error) {
+    var user User
+    err := cache.Get(ctx, "user:"+id, &user)
+    if err == nil {
+        return &user, nil
+    }
+    if err != ErrCacheMiss {
+        return nil, err
+    }
+
+    // cache miss → query DB
+    user, err := repo.FindByID(ctx, id)
+    if err != nil {
+        return nil, err
+    }
+
+    // เก็บ cache (แบบ async เพื่อไม่ให้กระทบ latency)
+    go cache.Set(context.Background(), "user:"+id, user)
+    return &user, nil
+}
+```
+
+### 52.3 Redis Pub/Sub (Message Queue แบบเบา)
+
+Redis Pub/Sub เหมาะสำหรับการส่งข้อความระหว่าง components โดยไม่ต้องมี broker ที่หนักหน่วง
+
+```go
+// Publisher
+func publishMessage(rdb *redis.Client, channel string, message string) error {
+    return rdb.Publish(context.Background(), channel, message).Err()
+}
+
+// Subscriber
+func subscribeChannel(rdb *redis.Client, channel string, handler func(string)) {
+    pubsub := rdb.Subscribe(context.Background(), channel)
+    defer pubsub.Close()
+
+    ch := pubsub.Channel()
+    for msg := range ch {
+        handler(msg.Payload)
+    }
+}
+```
+
+### 52.4 Redis Streams (Message Queue ที่มีความทนทาน)
+
+Redis Streams ให้คุณสมบัติคล้าย Kafka: การเก็บข้อความ, consumer groups, acknowledgment
+
+```go
+// ส่งข้อความเข้าสู่ stream
+func addToStream(rdb *redis.Client, stream string, values map[string]interface{}) (string, error) {
+    return rdb.XAdd(context.Background(), &redis.XAddArgs{
+        Stream: stream,
+        Values: values,
+    }).Result()
+}
+
+// อ่านข้อความจาก stream (consumer group)
+func readFromStream(rdb *redis.Client, stream, group, consumer string) error {
+    // สร้าง consumer group ถ้ายังไม่มี
+    rdb.XGroupCreateMkStream(context.Background(), stream, group, "0").Err()
+
+    for {
+        streams, err := rdb.XReadGroup(context.Background(), &redis.XReadGroupArgs{
+            Group:    group,
+            Consumer: consumer,
+            Streams:  []string{stream, ">"},
+            Count:    10,
+            Block:    0,
+        }).Result()
+
+        if err != nil {
+            return err
+        }
+
+        for _, stream := range streams {
+            for _, message := range stream.Messages {
+                // ประมวลผลข้อความ
+                fmt.Printf("Message ID: %s, Values: %v\n", message.ID, message.Values)
+
+                // ack ว่าได้ประมวลผลแล้ว
+                rdb.XAck(context.Background(), stream, group, message.ID).Result()
+            }
+        }
+    }
+}
+```
+
+---
+
+## บทที่ 53: RabbitMQ – Message Broker มาตรฐานองค์กร
+
+RabbitMQ เป็น message broker ที่รองรับ routing ที่ยืดหยุ่น (exchanges, queues, bindings) เหมาะกับระบบที่ต้องการความน่าเชื่อถือสูง
+
+### 53.1 การติดตั้งและเชื่อมต่อ
+
+```go
+go get github.com/rabbitmq/amqp091-go
+```
+
+```go
+package main
+
+import (
+    "log"
+    "github.com/rabbitmq/amqp091-go"
+)
+
+func main() {
+    conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+
+    ch, err := conn.Channel()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer ch.Close()
+}
+```
+
+### 53.2 การส่งและรับข้อความ (Simple Queue)
+
+```go
+// ประกาศ queue
+q, err := ch.QueueDeclare(
+    "hello", // name
+    false,   // durable
+    false,   // delete when unused
+    false,   // exclusive
+    false,   // no-wait
+    nil,     // arguments
+)
+
+// ส่งข้อความ
+err = ch.Publish(
+    "",     // exchange
+    q.Name, // routing key
+    false,  // mandatory
+    false,  // immediate
+    amqp091.Publishing{
+        ContentType: "text/plain",
+        Body:        []byte("Hello World"),
+    },
+)
+
+// รับข้อความ
+msgs, err := ch.Consume(
+    q.Name, // queue
+    "",     // consumer
+    true,   // auto-ack
+    false,  // exclusive
+    false,  // no-local
+    false,  // no-wait
+    nil,    // args
+)
+
+for msg := range msgs {
+    log.Printf("Received: %s", msg.Body)
+}
+```
+
+### 53.3 Work Queues (Task Distribution)
+
+```go
+// ประกาศ durable queue
+q, err := ch.QueueDeclare(
+    "task_queue", // name
+    true,         // durable
+    false,        // delete when unused
+    false,        // exclusive
+    false,        // no-wait
+    nil,
+)
+
+// ส่งข้อความแบบ persistent
+err = ch.Publish(
+    "",     // exchange
+    q.Name, // routing key
+    false,  // mandatory
+    false,
+    amqp091.Publishing{
+        DeliveryMode: amqp091.Persistent,
+        ContentType:  "text/plain",
+        Body:         []byte(body),
+    },
+)
+
+// Consumer: ตั้ง prefetch count เพื่อกระจายงานอย่างยุติธรรม
+err = ch.Qos(
+    1,     // prefetch count
+    0,     // prefetch size
+    false, // global
+)
+```
+
+### 53.4 Publish/Subscribe ด้วย Fanout Exchange
+
+```go
+// ประกาศ exchange แบบ fanout
+err = ch.ExchangeDeclare(
+    "logs",   // name
+    "fanout", // type
+    true,     // durable
+    false,    // auto-deleted
+    false,    // internal
+    false,    // no-wait
+    nil,
+)
+
+// ส่งข้อความไปยัง exchange
+err = ch.Publish(
+    "logs", // exchange
+    "",     // routing key
+    false,  // mandatory
+    false,
+    amqp091.Publishing{
+        ContentType: "text/plain",
+        Body:        []byte("log message"),
+    },
+)
+
+// สร้าง queue ชั่วคราวและ bind กับ exchange
+q, err := ch.QueueDeclare(
+    "",    // name (auto-generate)
+    false, // durable
+    false, // delete when unused
+    true,  // exclusive
+    false, // no-wait
+    nil,
+)
+err = ch.QueueBind(
+    q.Name, // queue name
+    "",     // routing key
+    "logs", // exchange
+    false,
+    nil,
+)
+```
+
+### 53.5 Routing (Direct Exchange) และ Topics
+
+```go
+// Direct exchange
+err = ch.ExchangeDeclare(
+    "direct_logs", // name
+    "direct",      // type
+    true, false, false, false, nil,
+)
+
+// ส่งโดยระบุ routing key (เช่น "info", "warning")
+err = ch.Publish(
+    "direct_logs",
+    "error",
+    false, false,
+    amqp091.Publishing{Body: []byte("error log")},
+)
+
+// รับเฉพาะ routing key ที่สนใจ
+err = ch.QueueBind(q.Name, "error", "direct_logs", false, nil)
+
+// Topic exchange (ใช้ pattern)
+err = ch.ExchangeDeclare(
+    "topic_logs",
+    "topic",
+    true, false, false, false, nil,
+)
+// routing key pattern: "*.critical", "kern.*", "#"
+err = ch.QueueBind(q.Name, "*.critical", "topic_logs", false, nil)
+```
+
+### 53.6 การทำ RPC (Remote Procedure Call) ด้วย RabbitMQ
+
+```go
+// Client: สร้าง callback queue และส่ง request
+corrId := randomString(32)
+replyTo := q.Name // queue ที่ client สร้างไว้
+
+err = ch.Publish(
+    "",          // exchange
+    "rpc_queue", // routing key
+    false, false,
+    amqp091.Publishing{
+        ContentType:   "text/plain",
+        CorrelationId: corrId,
+        ReplyTo:       replyTo,
+        Body:          []byte("10"),
+    },
+)
+
+// Client รับ response ผ่าน reply queue
+for msg := range msgs {
+    if msg.CorrelationId == corrId {
+        // response มาถึง
+    }
+}
+
+// Server: รับ request และส่ง response
+for msg := range msgs {
+    body := string(msg.Body)
+    // คำนวณผล
+    response := fmt.Sprintf("Result: %s", body)
+
+    err = ch.Publish(
+        "",          // exchange
+        msg.ReplyTo, // routing key ไปยัง client's reply queue
+        false, false,
+        amqp091.Publishing{
+            ContentType:   "text/plain",
+            CorrelationId: msg.CorrelationId,
+            Body:          []byte(response),
+        },
+    )
+    msg.Ack(false)
+}
+```
+
+---
+
+## บทที่ 54: MQTT สำหรับ IoT และระบบเรียลไทม์
+
+MQTT เป็น lightweight messaging protocol เหมาะสำหรับอุปกรณ์ IoT, เซ็นเซอร์, และระบบที่มีแบนด์วิดท์จำกัด
+
+### 54.1 การติดตั้งและเชื่อมต่อ MQTT Broker (เช่น Mosquitto)
+
+```go
+go get github.com/eclipse/paho.mqtt.golang
+```
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+func main() {
+    opts := mqtt.NewClientOptions()
+    opts.AddBroker("tcp://localhost:1883")
+    opts.SetClientID("go-mqtt-client")
+    opts.SetUsername("user")
+    opts.SetPassword("pass")
+    opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
+        fmt.Printf("Received: %s from %s\n", msg.Payload(), msg.Topic())
+    })
+
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        log.Fatal(token.Error())
+    }
+    defer client.Disconnect(250)
+
+    // Subscribe
+    token := client.Subscribe("sensor/temperature", 1, nil)
+    token.Wait()
+
+    // Publish
+    token = client.Publish("sensor/temperature", 1, false, "25.6")
+    token.Wait()
+
+    time.Sleep(5 * time.Second)
+}
+```
+
+### 54.2 QoS Levels
+
+- **0** – At most once (fire and forget)
+- **1** – At least once (อาจ duplicate)
+- **2** – Exactly once (สูงสุด)
+
+```go
+client.Publish("topic", 1, false, payload) // QoS 1
+```
+
+### 54.3 Retained Messages
+
+ข้อความที่ถูกเก็บไว้ที่ broker และจะส่งให้ subscriber ใหม่ทันทีที่ subscribe
+
+```go
+// ส่ง retained message
+client.Publish("status/device", 1, true, "online")
+
+// subscriber ใหม่จะได้รับ "online" ทันที
+```
+
+### 54.4 Last Will and Testament (LWT)
+
+ข้อความที่ broker จะส่งเมื่อ client disconnect โดยไม่ clean
+
+```go
+opts.SetWill("device/status", "offline", 1, true)
+```
+
+### 54.5 ตัวอย่าง: IoT Gateway ที่รับข้อมูลจากเซ็นเซอร์และส่งไปยัง Kafka หรือ InfluxDB
+
+```go
+func main() {
+    // MQTT subscriber
+    client := connectMQTT()
+    client.Subscribe("sensors/+/data", 1, func(c mqtt.Client, msg mqtt.Message) {
+        // แยก topic เช่น sensors/temperature/data
+        parts := strings.Split(msg.Topic(), "/")
+        sensorType := parts[1]
+
+        // แปลง payload เป็น float
+        value, _ := strconv.ParseFloat(string(msg.Payload), 64)
+
+        // บันทึกลง InfluxDB
+        writeToInfluxDB(sensorType, value)
+
+        // ส่งไป Kafka สำหรับ analytics
+        sendToKafka(sensorType, value)
+    })
+    select {}
+}
+```
+
+---
+
+## บทที่ 55: InfluxDB – Time‑Series Database
+
+InfluxDB เป็นฐานข้อมูลที่ออกแบบมาเฉพาะสำหรับ time‑series data (IoT metrics, monitoring data, sensor readings)
+
+### 55.1 การเชื่อมต่อและเขียนข้อมูล (InfluxDB 2.x)
+
+```go
+go get github.com/influxdata/influxdb-client-go/v2
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+)
+
+func main() {
+    client := influxdb2.NewClient("http://localhost:8086", "my-token")
+    defer client.Close()
+
+    writeAPI := client.WriteAPIBlocking("my-org", "my-bucket")
+
+    // สร้าง point
+    p := influxdb2.NewPoint(
+        "temperature",
+        map[string]string{"sensor": "sensor1", "unit": "celsius"},
+        map[string]interface{}{"value": 25.6},
+        time.Now(),
+    )
+
+    // เขียน
+    err := writeAPI.WritePoint(context.Background(), p)
+    if err != nil {
+        fmt.Println("Write error:", err)
+    }
+}
+```
+
+### 55.2 การ query ข้อมูล
+
+```go
+queryAPI := client.QueryAPI("my-org")
+
+fluxQuery := `
+    from(bucket:"my-bucket")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r._measurement == "temperature")
+    |> filter(fn: (r) => r.sensor == "sensor1")
+    |> aggregateWindow(every: 1m, fn: mean)
+`
+
+result, err := queryAPI.Query(context.Background(), fluxQuery)
+if err == nil {
+    for result.Next() {
+        record := result.Record()
+        fmt.Printf("Time: %s, Value: %v\n", record.Time(), record.Value())
+    }
+}
+```
+
+### 55.3 ตัวอย่าง: ระบบ monitor CPU และ Memory
+
+```go
+type MetricsCollector struct {
+    client influxdb2.Client
+    org    string
+    bucket string
+}
+
+func NewMetricsCollector(url, token, org, bucket string) *MetricsCollector {
+    return &MetricsCollector{
+        client: influxdb2.NewClient(url, token),
+        org:    org,
+        bucket: bucket,
+    }
+}
+
+func (m *MetricsCollector) RecordCPU(usage float64) error {
+    writeAPI := m.client.WriteAPIBlocking(m.org, m.bucket)
+    p := influxdb2.NewPoint(
+        "cpu",
+        map[string]string{"host": "server01"},
+        map[string]interface{}{"usage": usage},
+        time.Now(),
+    )
+    return writeAPI.WritePoint(context.Background(), p)
+}
+
+func (m *MetricsCollector) RecordMemory(used, total uint64) error {
+    writeAPI := m.client.WriteAPIBlocking(m.org, m.bucket)
+    p := influxdb2.NewPoint(
+        "memory",
+        map[string]string{"host": "server01"},
+        map[string]interface{}{"used_bytes": used, "total_bytes": total},
+        time.Now(),
+    )
+    return writeAPI.WritePoint(context.Background(), p)
+}
+```
+
+---
+
+## บทที่ 56: WebSocket และ Socket.IO
+
+WebSocket ช่วยให้มี connection แบบ full‑duplex เหมาะกับ real‑time feature เช่น chat, notifications, live dashboard
+
+### 56.1 WebSocket พื้นฐานด้วย Gorilla WebSocket
+
+```go
+go get github.com/gorilla/websocket
+```
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+
+    "github.com/gorilla/websocket"
+)
+
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan []byte)
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+    conn, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Print(err)
+        return
+    }
+    defer conn.Close()
+    clients[conn] = true
+
+    for {
+        _, msg, err := conn.ReadMessage()
+        if err != nil {
+            delete(clients, conn)
+            break
+        }
+        broadcast <- msg
+    }
+}
+
+func handleMessages() {
+    for {
+        msg := <-broadcast
+        for client := range clients {
+            err := client.WriteMessage(websocket.TextMessage, msg)
+            if err != nil {
+                client.Close()
+                delete(clients, client)
+            }
+        }
+    }
+}
+
+func main() {
+    http.HandleFunc("/ws", wsHandler)
+    go handleMessages()
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+### 56.2 Client-side ใน Go
+
+```go
+func main() {
+    c, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer c.Close()
+
+    go func() {
+        for {
+            _, msg, err := c.ReadMessage()
+            if err != nil {
+                log.Println("read error:", err)
+                return
+            }
+            fmt.Printf("Received: %s\n", msg)
+        }
+    }()
+
+    for {
+        msg := bufio.NewReader(os.Stdin)
+        text, _ := msg.ReadString('\n')
+        c.WriteMessage(websocket.TextMessage, []byte(text))
+    }
+}
+```
+
+### 56.3 Socket.IO (Alternative)
+
+Socket.IO ช่วยให้การจัดการ connection ง่ายขึ้น (reconnection, fallback)
+
+```go
+go get github.com/googollee/go-socket.io
+```
+
+```go
+server, _ := socketio.NewServer(nil)
+
+server.OnConnect("/", func(s socketio.Conn) error {
+    s.SetContext("")
+    s.Join("room")
+    return nil
+})
+
+server.OnEvent("/", "chat message", func(s socketio.Conn, msg string) {
+    s.Emit("chat message", "echo: "+msg)
+})
+
+server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+    log.Println("disconnected:", reason)
+})
+
+http.Handle("/socket.io/", server)
+http.ListenAndServe(":8080", nil)
+```
+
+---
+
+## บทที่ 57: การส่ง SMS และ LINE Notify
+
+### 57.1 ส่ง SMS ผ่าน Twilio
+
+```go
+go get github.com/twilio/twilio-go
+```
+
+```go
+import (
+    "github.com/twilio/twilio-go"
+    "github.com/twilio/twilio-go/rest/api/v2010"
+)
+
+func sendSMS(accountSid, authToken, from, to, body string) error {
+    client := twilio.NewRestClientWithParams(twilio.ClientParams{
+        Username: accountSid,
+        Password: authToken,
+    })
+    params := &api.CreateMessageParams{}
+    params.SetTo(to)
+    params.SetFrom(from)
+    params.SetBody(body)
+
+    _, err := client.Api.CreateMessage(params)
+    return err
+}
+```
+
+### 57.2 LINE Notify (ง่ายที่สุด)
+
+LINE Notify เป็นบริการแจ้งเตือนฟรี สามารถส่งข้อความผ่าน HTTP API
+
+**ขั้นตอน:**
+1. ลงทะเบียนที่ [notify-bot.line.me](https://notify-bot.line.me/th/)
+2. สร้าง token สำหรับกลุ่มหรือตัวคุณเอง
+
+```go
+func sendLineNotify(token, message string) error {
+    url := "https://notify-api.line.me/api/notify"
+    payload := strings.NewReader("message=" + url.QueryEscape(message))
+    req, _ := http.NewRequest("POST", url, payload)
+    req.Header.Set("Authorization", "Bearer "+token)
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("LINE Notify returned status %d", resp.StatusCode)
+    }
+    return nil
+}
+```
+
+### 57.3 ส่งข้อความผ่าน LINE Official Account (Messaging API)
+
+```go
+go get github.com/line/line-bot-sdk-go/v7/linebot
+```
+
+```go
+func main() {
+    bot, err := linebot.New("YOUR_CHANNEL_SECRET", "YOUR_CHANNEL_ACCESS_TOKEN")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // ส่งข้อความ push
+    _, err = bot.PushMessage("USER_ID", linebot.NewTextMessage("Hello")).Do()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // หรือ reply ต่อ request
+    http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+        events, err := bot.ParseRequest(r)
+        if err != nil {
+            if err == linebot.ErrInvalidSignature {
+                w.WriteHeader(400)
+            } else {
+                w.WriteHeader(500)
+            }
+            return
+        }
+        for _, event := range events {
+            if event.Type == linebot.EventTypeMessage {
+                if _, ok := event.Message.(*linebot.TextMessage); ok {
+                    bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage("Hello!")).Do()
+                }
+            }
+        }
+    })
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+---
+
+## บทที่ 58: Discord Webhook สำหรับแจ้งเตือน
+
+Discord Webhook ใช้ส่งข้อความแจ้งเตือนเข้า channel ได้ง่าย โดยไม่ต้องสร้าง bot
+
+### 58.1 การสร้าง Webhook ใน Discord
+
+1. เปิด Discord channel ที่ต้องการ
+2. คลิก Edit Channel → Integrations → Webhooks → Create Webhook
+3. คัดลอก URL ที่ได้
+
+### 58.2 ส่งข้อความด้วย Go
+
+```go
+type DiscordWebhook struct {
+    URL     string
+    Content string `json:"content"`
+    Username string `json:"username,omitempty"`
+    Embeds  []Embed `json:"embeds,omitempty"`
+}
+
+type Embed struct {
+    Title       string `json:"title"`
+    Description string `json:"description"`
+    Color       int    `json:"color"`
+    Fields      []Field `json:"fields"`
+}
+
+type Field struct {
+    Name   string `json:"name"`
+    Value  string `json:"value"`
+    Inline bool   `json:"inline,omitempty"`
+}
+
+func SendDiscordWebhook(url string, content string) error {
+    data := DiscordWebhook{Content: content}
+    payload, _ := json.Marshal(data)
+
+    resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("discord webhook returned status %d", resp.StatusCode)
+    }
+    return nil
+}
+```
+
+### 58.3 การส่งข้อความแบบมี Embed
+
+```go
+func SendAlert(title, description string, color int) {
+    embed := Embed{
+        Title:       title,
+        Description: description,
+        Color:       color, // 0xff0000 = red
+    }
+    data := DiscordWebhook{
+        Username: "Alert Bot",
+        Embeds:   []Embed{embed},
+    }
+    // ...
+}
+```
+
+---
+
+### ภาคที่ 10: เทมเพลต กระบวนการพัฒนา และตัวอย่างโค้ด
+
+---
+
+## บทที่ 59: ตัวอย่างโค้ดครบวงจร (Full‑stack Example)
+
+### 59.1 โครงสร้างโปรเจกต์ Full‑stack
+
+```
+fullstack/
+├── cmd/
+│   └── api/
+│       └── main.go
+├── internal/
+│   ├── config/
+│   ├── domain/
+│   │   ├── user/
+│   │   └── task/
+│   ├── application/
+│   │   ├── user/
+│   │   └── task/
+│   ├── infrastructure/
+│   │   ├── persistence/
+│   │   ├── cache/
+│   │   ├── queue/
+│   │   └── websocket/
+│   └── interfaces/
+│       ├── http/
+│       │   ├── handlers/
+│       │   ├── middleware/
+│       │   └── routes.go
+│       └── websocket/
+├── pkg/
+│   ├── logger/
+│   └── utils/
+├── web/
+│   ├── index.html
+│   └── app.js
+├── go.mod
+├── go.sum
+└── config.yaml
+```
+
+### 59.2 ตัวอย่าง: API Server + WebSocket + Redis Pub/Sub
+
+**main.go**
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/chi/v5/middleware"
+    "github.com/gorilla/websocket"
+    "github.com/redis/go-redis/v9"
+)
+
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func main() {
+    // Redis client
+    rdb := redis.NewClient(&redis.Options{
+        Addr: "localhost:6379",
+    })
+
+    // Chi router
+    r := chi.NewRouter()
+    r.Use(middleware.Logger)
+    r.Use(middleware.Recoverer)
+
+    // Serve static files
+    r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./web"))))
+
+    // WebSocket endpoint
+    r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
+        conn, err := upgrader.Upgrade(w, r, nil)
+        if err != nil {
+            log.Print("upgrade failed:", err)
+            return
+        }
+        defer conn.Close()
+
+        // Subscribe to Redis channel
+        pubsub := rdb.Subscribe(context.Background(), "notifications")
+        defer pubsub.Close()
+
+        // Goroutine for receiving messages from Redis and sending to WebSocket
+        go func() {
+            for msg := range pubsub.Channel() {
+                conn.WriteMessage(websocket.TextMessage, []byte(msg.Payload))
+            }
+        }()
+
+        // Keep connection alive
+        for {
+            if _, _, err := conn.ReadMessage(); err != nil {
+                break
+            }
+        }
+    })
+
+    // API endpoint that publishes to Redis
+    r.Post("/publish", func(w http.ResponseWriter, r *http.Request) {
+        message := r.FormValue("message")
+        if message == "" {
+            http.Error(w, "message required", http.StatusBadRequest)
+            return
+        }
+        rdb.Publish(context.Background(), "notifications", message)
+        w.Write([]byte("ok"))
+    })
+
+    srv := &http.Server{
+        Addr:    ":8080",
+        Handler: r,
+    }
+
+    go func() {
+        log.Println("Server starting on :8080")
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatal(err)
+        }
+    }()
+
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    log.Println("Shutting down...")
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    srv.Shutdown(ctx)
+}
+```
+
+**web/index.html**
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Demo</title>
+</head>
+<body>
+    <input id="message" type="text" placeholder="Enter message">
+    <button onclick="publish()">Send</button>
+    <div id="messages"></div>
+
+    <script>
+        const ws = new WebSocket("ws://localhost:8080/ws");
+        ws.onmessage = (event) => {
+            const div = document.createElement("div");
+            div.textContent = event.data;
+            document.getElementById("messages").appendChild(div);
+        };
+        function publish() {
+            const msg = document.getElementById("message").value;
+            fetch("/publish", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                body: "message=" + encodeURIComponent(msg)
+            });
+        }
+    </script>
+</body>
+</html>
+```
+
+---
+
+## บทที่ 60: Task List Template
+
+(เนื้อหาเดิมจาก Task List Template ในภาคที่ 7–8 สามารถนำมาใช้ได้ แต่สามารถเพิ่มเติมหรือปรับให้เข้ากับภาคนี้ได้)
+
+### 60.1 Task List Template สำหรับการพัฒนา Feature ใหม่ (ปรับปรุง)
+
+```markdown
+# Feature: [ชื่อ Feature]
+## Owner: [ชื่อผู้รับผิดชอบ]
+## Due Date: [วันที่กำหนดส่ง]
+
+---
+
+## Phase 1: Domain Design (1–2 วัน)
+- [ ] ระบุ domain model (entity, value objects)
+- [ ] กำหนด invariants (business rules)
+- [ ] ระบุ use cases
+- [ ] กำหนด domain events (ถ้ามี)
+- [ ] ออกแบบ repository interface
+- [ ] ออกแบบ DTOs (request/response)
+
+## Phase 2: Implementation (2–4 วัน)
+- [ ] สร้าง entity struct และ behavior methods
+- [ ] สร้าง value objects
+- [ ] สร้าง repository interface
+- [ ] สร้าง service interface
+- [ ] สร้าง DTOs
+- [ ] เขียน unit tests สำหรับ entity
+- [ ] เขียน unit tests สำหรับ service (mock repository)
+
+## Phase 3: Infrastructure (1–2 วัน)
+- [ ] สร้าง repository implementation (GORM)
+- [ ] สร้าง migration file
+- [ ] ตั้งค่า Redis cache (ถ้าจำเป็น)
+- [ ] ตั้งค่า message queue (ถ้าจำเป็น)
+- [ ] ทดสอบ repository ด้วย integration test
+
+## Phase 4: Delivery (1 วัน)
+- [ ] สร้าง HTTP handlers
+- [ ] เพิ่ม input validation
+- [ ] สร้าง routes
+- [ ] ลงทะเบียน dependencies ใน injection
+- [ ] ทดสอบ handler ด้วย httptest
+
+## Phase 5: Integration & Documentation (0.5–1 วัน)
+- [ ] ทดสอบ end-to-end
+- [ ] อัปเดต Swagger docs
+- [ ] อัปเดต README
+- [ ] รัน linter และแก้ไข warnings
+
+## Phase 6: Review & Deploy (0.5 วัน)
+- [ ] Code review
+- [ ] ตรวจสอบ performance
+- [ ] รัน test coverage (เป้า >80%)
+- [ ] รัน race detector
+- [ ] Deploy to staging
+- [ ] ทดสอบใน staging
+- [ ] Deploy to production
+
+**หมายเหตุ:** _________________________________
+```
+
+---
+
+## บทที่ 61: Checklist Template
+
+(ปรับปรุงให้ครอบคลุมการทำงานกับระบบภายนอก)
+
+### 61.1 Code Quality Checklist
+
+```markdown
+## Code Quality Checklist
+
+### Documentation
+- [ ] All exported functions have comments
+- [ ] Package has package-level documentation
+- [ ] Complex logic has inline comments
+
+### Code Style
+- [ ] Code formatted with `go fmt`
+- [ ] No unused imports/variables (`go vet`)
+- [ ] Consistent naming convention
+
+### Error Handling
+- [ ] All errors handled explicitly
+- [ ] Errors wrapped with context (`%w`)
+- [ ] No panic in library code
+
+### Concurrency
+- [ ] Goroutines have lifecycle management
+- [ ] Channels closed appropriately
+- [ ] No race conditions (`go test -race`)
+- [ ] Context passed as first parameter
+
+### Performance
+- [ ] Slice pre-allocated when size known
+- [ ] String concatenation uses `strings.Builder`
+- [ ] Database queries have indexes
+
+### Security
+- [ ] Input validation on all external inputs
+- [ ] No hardcoded secrets
+- [ ] Passwords hashed with bcrypt
+- [ ] SQL injection prevented
+- [ ] CORS properly configured
+
+### Testing
+- [ ] Unit tests cover business logic
+- [ ] Table-driven tests used
+- [ ] Mock external dependencies
+- [ ] Test coverage >80%
+
+### External Integrations
+- [ ] Connection pools configured (Redis, DB)
+- [ ] Timeout and retry configured for external APIs
+- [ ] Circuit breaker implemented for critical services
+- [ ] Graceful handling of connection loss (reconnect)
+```
+
+---
+
+## บทที่ 62: แผนภาพการทำงาน (Workflow Diagram)
+
+### 62.1 Workflow การพัฒนา Feature ใหม่ (ภาพรวม)
+
+```mermaid
+flowchart LR
+    A[Analyze<br/>Requirement] --> B[Design<br/>Domain]
+    B --> C[Implement<br/>Domain]
+    C --> D[Implement<br/>Infrastructure]
+    D --> E[Implement<br/>Application]
+    E --> F[Implement<br/>Delivery]
+    F --> G[Test]
+    G --> H[Review & Deploy]
+```
+
+### 62.2 Workflow การทำงานของ Full‑stack Application
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant WebUI
+    participant API
+    participant Cache
+    participant DB
+    participant Queue
+    participant Worker
+
+    User->>WebUI: Click "Create Task"
+    WebUI->>API: POST /tasks
+    API->>Cache: Check user session
+    Cache-->>API: OK
+    API->>DB: Insert task
+    DB-->>API: task id
+    API->>Queue: Publish "task.created"
+    API-->>WebUI: 201 Created
+    WebUI-->>User: Show success
+
+    Queue->>Worker: Consume "task.created"
+    Worker->>DB: Update task status
+    Worker->>API: Notify via WebSocket
+    API->>WebUI: Push notification
+    WebUI-->>User: Real-time update
+```
+
+### 62.3 แผนภาพการสื่อสารระหว่างระบบภายนอก
+
+```mermaid
+flowchart LR
+    subgraph GoApp[Go Application]
+        A1[HTTP Handler]
+        A2[Use Case]
+        A3[Repository]
+    end
+
+    subgraph External[External Systems]
+        B1[Redis<br/>Cache + Pub/Sub]
+        B2[RabbitMQ<br/>Message Queue]
+        B3[PostgreSQL<br/>Main DB]
+        B4[InfluxDB<br/>Metrics]
+        B5[Twilio<br/>SMS]
+        B6[LINE<br/>Notify]
+    end
+
+    A1 --> A2
+    A2 --> A3
+    A3 --> B3
+    A2 --> B1
+    A2 --> B2
+    A2 --> B4
+    A2 --> B5
+    A2 --> B6
+    B2 --> Worker
+    Worker --> B3
+```
+
+---
+
+## บทที่ 63: mop Config – การจัดการ Configuration
+
+### 63.1 ไฟล์ configuration ตัวอย่าง (config.yaml)
+
+```yaml
+# config/config.yaml
+app:
+  name: "myapp"
+  version: "1.0.0"
+
+server:
+  port: 8080
+  mode: release
+  read_timeout: 15s
+  write_timeout: 15s
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: ${DB_PASSWORD}   # ใช้ environment variable
+  name: mydb
+  sslmode: disable
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: 5m
+
+redis:
+  addr: localhost:6379
+  password: ${REDIS_PASSWORD}
+  db: 0
+  pool_size: 10
+  ttl: 10m
+
+rabbitmq:
+  url: amqp://guest:guest@localhost:5672/
+  exchange: "events"
+  queue: "task_queue"
+
+mqtt:
+  broker: tcp://localhost:1883
+  client_id: "go-mqtt-client"
+  username: ${MQTT_USER}
+  password: ${MQTT_PASS}
+
+influxdb:
+  url: http://localhost:8086
+  token: ${INFLUX_TOKEN}
+  org: "myorg"
+  bucket: "metrics"
+
+twilio:
+  account_sid: ${TWILIO_ACCOUNT_SID}
+  auth_token: ${TWILIO_AUTH_TOKEN}
+  from: "+1234567890"
+
+line_notify:
+  token: ${LINE_NOTIFY_TOKEN}
+
+discord_webhook:
+  url: ${DISCORD_WEBHOOK_URL}
+
+log:
+  level: info
+  format: json
+  output: stdout
+```
+
+### 63.2 โหลด Configuration ด้วย Viper (รองรับ Environment Variables)
+
+```go
+package config
+
+import (
+    "fmt"
+    "strings"
+    "time"
+
+    "github.com/spf13/viper"
+)
+
+type Config struct {
+    App          AppConfig
+    Server       ServerConfig
+    Database     DatabaseConfig
+    Redis        RedisConfig
+    RabbitMQ     RabbitMQConfig
+    MQTT         MQTTConfig
+    InfluxDB     InfluxDBConfig
+    Twilio       TwilioConfig
+    LineNotify   LineNotifyConfig
+    Discord      DiscordConfig
+    Log          LogConfig
+}
+
+// struct definitions...
+
+func Load() (*Config, error) {
+    viper.SetConfigName("config")
+    viper.SetConfigType("yaml")
+    viper.AddConfigPath(".")
+    viper.AddConfigPath("./config")
+    viper.AddConfigPath("/etc/app")
+
+    // Environment variables override
+    viper.AutomaticEnv()
+    viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+    // Defaults
+    viper.SetDefault("server.port", 8080)
+    viper.SetDefault("server.mode", "debug")
+    viper.SetDefault("log.level", "info")
+    viper.SetDefault("log.format", "json")
+    viper.SetDefault("log.output", "stdout")
+
+    if err := viper.ReadInConfig(); err != nil {
+        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+            return nil, fmt.Errorf("read config: %w", err)
+        }
+    }
+
+    var cfg Config
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return nil, fmt.Errorf("unmarshal: %w", err)
+    }
+
+    return &cfg, nil
+}
+```
+
+### 63.3 ตัวอย่างการใช้งานใน main.go
+
+```go
+func main() {
+    cfg, err := config.Load()
+    if err != nil {
+        log.Fatalf("Failed to load config: %v", err)
+    }
+
+    // ใช้ config
+    db := connectDB(cfg.Database)
+    redis := connectRedis(cfg.Redis)
+    mqtt := connectMQTT(cfg.MQTT)
+    // ...
+
+    // ส่งการแจ้งเตือนผ่าน Discord
+    if cfg.Discord.URL != "" {
+        sendDiscordWebhook(cfg.Discord.URL, "App started")
+    }
+}
+```
+
+---
+
+## สรุปภาคที่ 9–10
+
+ในภาคที่ 9 เราได้สำรวจการผสาน Go กับระบบภายนอกที่พบได้บ่อยในโลกจริง: Redis (cache/queue), RabbitMQ, MQTT, InfluxDB, WebSocket, SMS/LINE, Discord Webhook แต่ละตัวมีไลบรารี Go ที่พร้อมใช้งาน และสามารถนำไปสร้างระบบที่มีประสิทธิภาพสูงได้
+
+ภาคที่ 10 นำเสนอเทมเพลตและเครื่องมือช่วยในการพัฒนา: ตัวอย่างโค้ดครบวงจร, Task List Template, Checklist Template, แผนภาพ workflow และการจัดการ configuration อย่างเป็นระบบ ช่วยให้ทีมพัฒนาทำงานได้เป็นระเบียบและลดความผิดพลาด
+
+ด้วยองค์ความรู้ทั้งหมดในคู่มือนี้ ผู้อ่านสามารถเริ่มพัฒนาแอปพลิเคชัน Go ตั้งแต่ระดับพื้นฐานไปจนถึงระดับ enterprise และสามารถปรับใช้สถาปัตยกรรมที่เหมาะสมกับความต้องการทางธุรกิจได้อย่างมั่นใจ
 
 # คู่มือภาษา Go ฉบับ นำไปทำงานจริง
 
