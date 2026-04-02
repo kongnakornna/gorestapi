@@ -1554,16 +1554,7 @@ Go ใช้ **embedding** ซึ่งไม่ใช่ inheritance แท้ 
 ## Diagram: Method Promotion with Embedding
 <img width="1441" height="2555" alt="em" src="https://github.com/user-attachments/assets/b75c4937-d846-4373-8065-db7b6661cffa" />
 
-```mermaid
-graph TB
-    Start([Start: dog.Speak()]) --> CheckOuter{Does Dog have its own Speak method?}
-    CheckOuter -- Yes --> CallOuter[Call Dog.Speak]
-    CheckOuter -- No --> Promote[Promote Animal.Speak]
-    Promote --> CallAnimal[Call Animal.Speak]
-    CallOuter --> Return[Return result]
-    CallAnimal --> Return
-    Return --> End([End])
-```
+ 
 
 ## Explanation
 
