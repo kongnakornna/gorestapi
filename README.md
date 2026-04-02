@@ -121,4 +121,10 @@ ls Dockerfile
 ls main.go
 ls go.mod
 
-```  
+```
+
+![Icmon5](https://github.com/user-attachments/assets/fdf1b3b6-6c85-44a2-9c37-7019234d7961)
+![Icmon8](https://github.com/user-attachments/assets/512dcd86-391d-4a1f-8a60-51877ea9da3d)
+![Icmon9](https://github.com/user-attachments/assets/8d57348f-ceb6-4901-ad11-2a596fd3acc8)
+
+
