@@ -25347,8 +25347,6 @@ func TestUserRepository(t *testing.T) {
 - **ทีมพัฒนา** สามารถนำ Task List Template และ Checklist Template ไปปรับใช้ในการทำงาน
 
 ---
- 
---- 
 **ผู้เขียน:** คงนคร จันทะคุณ  
 **อีเมล:** kongnakornjantakun@gmail.com  
 **วันที่:** เมษายน 2026
