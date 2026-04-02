@@ -126,6 +126,18 @@ ls go.mod
  ![Icmon5](https://github.com/user-attachments/assets/c0ddd16f-8e63-4a4f-a1fc-71cf22c41f3e)
 
  email: kongnakornjantakun@gmail.com
+ 
+- http://cmoniot.trueddns.com:52160/
+- username : demo1
+- password : demo1
+
+ 
+
+![Icmon](https://github.com/user-attachments/assets/8c41aa84-257a-40cd-9141-4a24f4202937)
+
+![Icmon2](https://github.com/user-attachments/assets/fedc022d-1210-42ba-a8de-b311ee1e731c)
+
+![Icmon3](https://github.com/user-attachments/assets/92e759bb-9623-4e3d-ac5d-f82ace5569af)
 
 ![Icmon6](https://github.com/user-attachments/assets/ce64c53e-909f-4e98-9cda-e1704d33086f)
 
@@ -134,7 +146,8 @@ ls go.mod
 ![Icmon7](https://github.com/user-attachments/assets/d64d4abe-a588-48f1-a8c1-355c4c2aaf5b)
 
 ![Icmon8](https://github.com/user-attachments/assets/451ced98-3422-4cbf-a8b7-4507e03b576f)
- 
+
+![Icmon9](https://github.com/user-attachments/assets/035d5779-007c-424c-b9dc-24becf63264b)
 
 # คู่มือภาษา พื้นฐาน Golang  
 
