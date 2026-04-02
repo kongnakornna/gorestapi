@@ -1,3 +1,6 @@
+
+  ![Icmon5](https://github.com/user-attachments/assets/fdf1b3b6-6c85-44a2-9c37-7019234d7961)
+
   # Golang เล่ม 1
 
 > **ครอบคลุมทุกมิติ ตั้งแต่พื้นฐานสู่สถาปัตยกรรมระดับองค์กร พร้อมแผนภาพและโค้ดตัวอย่างที่รันได้จริง**
@@ -25403,3 +25406,13 @@ func TestUserRepository(t *testing.T) {
 เส้นทางกว่าสิบห้าปีที่ผ่านมา สอนให้รู้ว่านักพัฒนาซอฟต์แวร์ที่ดีไม่ได้มีแค่ทักษะการเขียนโค้ด แต่ต้องเข้าใจธุรกิจ มีวิสัยทัศน์ในการออกแบบระบบ มีทักษะการนำทีม และที่สำคัญคือต้องมีใจที่อยากเรียนรู้และแบ่งปันเสมอ ผมเชื่อว่าทุกโครงการ ทุกบรรทัดโค้ด ที่เขียนขึ้น ล้วนเป็นส่วนหนึ่งในการขับเคลื่อนองค์กรและสร้างประสบการณ์ที่ดีให้ผู้ใช้ และนั่นคือความภาคภูมิใจของนักพัฒนาทุกคน
 
 ---
+![Icmon8](https://github.com/user-attachments/assets/512dcd86-391d-4a1f-8a60-51877ea9da3d)
+![Icmon9](https://github.com/user-attachments/assets/8d57348f-ceb6-4901-ad11-2a596fd3acc8)
+![Icmon](https://github.com/user-attachments/assets/6a4f3f12-d049-437e-a7da-4ecf4c9fad4c)
+![Icmon2](https://github.com/user-attachments/assets/cc4b7af7-8a18-417c-9c87-40b08747b9f5)
+![Icmon3](https://github.com/user-attachments/assets/060744bc-e709-4402-9a28-23c108d4be65)
+![Icmon6](https://github.com/user-attachments/assets/f14d5283-8b42-4266-823b-110db201d060)
+![Icmon7](https://github.com/user-attachments/assets/3d4e04fd-5d93-43c8-8446-f29500b72f5f)
+![87795](https://github.com/user-attachments/assets/a32fdd8e-8fd6-4e56-ab03-e8ea795e070c)
+![87796](https://github.com/user-attachments/assets/3ba6efcc-4aa0-4a44-966b-5dc353794d4d)
+![87793](https://github.com/user-attachments/assets/eabc65a8-dce7-4f8f-83e3-dc230790edc0)
