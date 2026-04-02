@@ -1830,6 +1830,234 @@ func main() {
 }
 ```
 
+Below are detailed **dataflow diagrams** (using Mermaid syntax for draw.io) and explanations for each topic, following the **Flowchart TB (Top to Bottom)** style.  
+You can copy the Mermaid code into draw.io (or any Mermaid-compatible tool) to generate the actual diagrams.
+
+---
+
+## 1. โครงสร้างภาษา Go (Go Language Structure)
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    subgraph A [Go Program Structure]
+        direction TB
+        P[Package Declaration] --> I[Import Dependencies]
+        I --> F[Function Definitions]
+        F --> M[main() Function]
+        M --> S[Start HTTP Server]
+    end
+
+    subgraph B [HTTP Request Flow]
+        direction TB
+        C[Client Request] --> R[Router / ServeMux]
+        R --> H[Handler]
+        H --> L[Business Logic]
+        L --> D[Data Access / DB]
+        D --> RSP[Response Writer]
+        RSP --> C2[Client Response]
+    end
+
+    A --> B
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **Package Declaration**: ทุกโปรแกรม Go เริ่มต้นด้วยการประกาศ package (เช่น `package main` สำหรับโปรแกรมที่รันได้)
+- **Import Dependencies**: นำเข้าแพ็คเกจที่จำเป็น เช่น `net/http` สำหรับสร้างเว็บเซิร์ฟเวอร์
+- **Function Definitions**: กำหนดฟังก์ชันต่าง ๆ รวมถึง handler functions ที่จะจัดการ request
+- **main() Function**: จุดเริ่มต้นของโปรแกรม ภายในจะมีการสร้าง HTTP server และกำหนด routing
+- **Start HTTP Server**: เรียก `http.ListenAndServe` เพื่อให้เซิร์ฟเวอร์รอรับ request
+- **Client Request**: คำขอจาก client (เช่น browser) เข้ามายังเซิร์ฟเวอร์
+- **Router / ServeMux**: ตัวจับคู่เส้นทาง (path) กับ handler ที่เหมาะสม
+- **Handler**: ฟังก์ชันที่ประมวลผล request (เช่น `func(w http.ResponseWriter, r *http.Request)`)
+- **Business Logic**: ดำเนินการตามที่ต้องการ เช่น อ่านข้อมูล, คำนวณ, เรียกใช้ service
+- **Data Access / DB**: หากจำเป็นต้องติดต่อฐานข้อมูลหรือภายนอก
+- **Response Writer**: เขียน response กลับไปยัง client
+- **Client Response**: client ได้รับผลลัพธ์
+
+---
+
+## 2. Chi Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> R[chi.Router]
+    R --> M1[Middleware Chain]
+    M1 --> G[Group Routes]
+    G --> H[Handler Function]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[Response Writer]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **chi.Router**: เป็น router ที่มีประสิทธิภาพสูง รองรับการจัดกลุ่ม route และ middleware
+- **Middleware Chain**: chi ใช้ middleware แบบ chain ซึ่งจะถูกเรียกก่อนถึง handler (เช่น logging, auth, recovery)
+- **Group Routes**: สามารถจัดกลุ่ม route ที่ใช้ middleware ร่วมกันได้
+- **Handler Function**: handler ที่เขียนเอง (implement `http.Handler` interface)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูลหากจำเป็น
+- **Response Writer**: ส่ง response กลับไปยัง client
+
+> Chi เป็น lightweight router ที่เข้ากันได้กับ `net/http` มาตรฐาน เหมาะสำหรับ API ที่ต้องการความยืดหยุ่นและประสิทธิภาพ
+
+---
+
+## 3. Gin Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> G[gin.Engine]
+    G --> M[Middleware]
+    M --> R[Router Group / Routes]
+    R --> H[Handler with *gin.Context]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[gin.Context.JSON / XML / etc]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **gin.Engine**: instance หลักของ Gin ที่ใช้จัดการ request
+- **Middleware**: Gin มี middleware หลายตัว (logger, recovery, CORS) ซึ่งสามารถใส่เป็น global หรือเฉพาะ route
+- **Router Group / Routes**: กำหนด route ด้วย `GET`, `POST` ฯลฯ รองรับการจัดกลุ่ม URL
+- **Handler with *gin.Context**: handler รับ `*gin.Context` ซึ่งมีฟังก์ชันอำนวยความสะดวกมากมาย (binding, validation, response)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูล
+- **gin.Context.JSON / XML / etc**: ส่ง response ในรูปแบบต่างๆ ได้สะดวก
+
+> Gin เป็น framework ที่มีความเร็วสูง เนื่องจากใช้ httprouter และมีฟีเจอร์ครบครันสำหรับ REST API
+
+---
+
+## 4. Fiber Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> F[fiber.App]
+    F --> M[Middleware Chain]
+    M --> R[Route Handlers]
+    R --> H[Handler with *fiber.Ctx]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[Response via *fiber.Ctx]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **fiber.App**: instance หลักของ Fiber ที่ใช้จัดการ request
+- **Middleware Chain**: Fiber มี middleware แบบ chain คล้าย Express.js
+- **Route Handlers**: กำหนด route ด้วย `app.Get`, `app.Post` ฯลฯ
+- **Handler with *fiber.Ctx**: handler รับ `*fiber.Ctx` ซึ่งมี API ที่ใช้งานง่าย (body parser, validation, response)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูล
+- **Response via *fiber.Ctx**: ส่ง response ผ่าน `ctx.Send`, `ctx.JSON`, `ctx.Status` ฯลฯ
+
+> Fiber ได้รับแรงบันดาลใจจาก Express.js แต่ใช้ Fasthttp เป็นพื้นฐาน ทำให้มีประสิทธิภาพสูงมาก เหมาะกับงานที่ต้องการความเร็วสูง
+
+---
+
+## 5. Beego Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> B[beego.Run]
+    B --> R[Router / Namespace]
+    R --> F[Filter / Middleware]
+    F --> CT[Controller]
+    CT --> M[Model / ORM]
+    M --> D[Database]
+    D --> V[View / Template]
+    V --> RSP[Response]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **beego.Run**: เริ่มต้นเซิร์ฟเวอร์ Beego
+- **Router / Namespace**: กำหนด route โดยใช้ `beego.Router` หรือ namespace สำหรับจัดกลุ่ม
+- **Filter / Middleware**: ตัวกรองที่ทำงานก่อน/หลัง controller (คล้าย middleware)
+- **Controller**: รับ request และประมวลผล โดยสืบทอดจาก `beego.Controller`
+- **Model / ORM**: Beego มี ORM ในตัว ใช้สำหรับติดต่อฐานข้อมูล
+- **View / Template**: สร้าง HTML response ด้วย template engine
+- **Response**: ส่งผลลัพธ์กลับไปยัง client
+
+> Beego เป็น full-stack framework ที่มีส่วนประกอบครบ (MVC, ORM, caching, logs) เหมาะกับแอปพลิเคชันขนาดใหญ่
+
+---
+
+## 6. Buffalo Framework
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> B[Buffalo App]
+    B --> M[Middleware Stack]
+    M --> R[Router]
+    R --> A[Action]
+    A --> S[Service / Model]
+    S --> D[Database]
+    D --> T[Template / JSON]
+    T --> RSP[Response]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **Buffalo App**: instance ของแอปพลิเคชัน Buffalo ที่สร้างจาก `buffalo.New`
+- **Middleware Stack**: ใช้ middleware ในการจัดการ request (logger, CSRF, sessions)
+- **Router**: กำหนด route ผ่าน `app.GET`, `app.POST` ฯลฯ
+- **Action**: handler ที่รับ `buffalo.Context` ซึ่งมีฟังก์ชันครบ (render, param binding, session)
+- **Service / Model**: ดำเนิน business logic และติดต่อฐานข้อมูล (ผ่าน Pop ORM)
+- **Template / JSON**: ส่ง response ในรูปแบบ HTML template หรือ JSON
+- **Response**: ส่งกลับ client
+
+> Buffalo เป็น framework ที่เน้น productivity และคล้ายกับ Rails มีเครื่องมือ CLI ที่ช่วยสร้างโครงสร้างโปรเจกต์
+
+---
+
+## 7. Gorilla Mux (Web Toolkit)
+
+### 📊 Flowchart (Mermaid)
+
+```mermaid
+flowchart TB
+    C[Client Request] --> M[gorilla/mux.Router]
+    M --> MW[Middleware / Subrouters]
+    MW --> H[Handler]
+    H --> L[Business Logic]
+    L --> D[Data Access / DB]
+    D --> RSP[Response Writer]
+    RSP --> CR[Client Response]
+```
+
+### 📝 คำอธิบาย (Explanation)
+
+- **gorilla/mux.Router**: router ที่มีความสามารถมากกว่า `net/http` มาตรฐาน (path variables, regex, methods)
+- **Middleware / Subrouters**: สามารถใช้ middleware และ subrouters เพื่อจัดกลุ่ม route
+- **Handler**: handler มาตรฐานของ Go (`func(w http.ResponseWriter, r *http.Request)`)
+- **Business Logic & Data Access**: ดำเนินการตาม business logic และติดต่อฐานข้อมูล
+- **Response Writer**: ส่ง response กลับ client
+
+> Gorilla Mux ไม่ใช่ full-stack framework แต่เป็น router toolkit ที่เข้ากันได้ดีกับ `net/http` และมักถูกนำไปใช้ร่วมกับ middleware อื่น ๆ
+
+--- 
+ต้องการให้อธิบายส่วนใดเพิ่มเติม หรือปรับเปลี่ยนรูปแบบ flowchart ให้เหมาะกับงานของคุณไหมครับ?
+
+
+
 ### 2.5 ใครใช้ Go บ้าง?
 - **Google** : ระบบ backend, Kubernetes, Docker
 - **Uber** : ระบบการจับคู่การเดินทาง
