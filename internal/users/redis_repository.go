@@ -1,8 +1,8 @@
 package users
 
 import (
-	"icmongolang/internal"
-	"icmongolang/internal/models"
+	"gorestapi/internal"
+	"gorestapi/internal/models"
 )
 
 type UserRedisRepository interface {

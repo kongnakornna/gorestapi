@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"icmongolang/config"
-	"icmongolang/internal/users"
-	"icmongolang/pkg/logger"
+	"gorestapi/config"
+	"gorestapi/internal/users"
+	"gorestapi/pkg/logger"
 )
 
 type MiddlewareManager struct {

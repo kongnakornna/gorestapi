@@ -1646,7 +1646,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "http://localhost:5000",
 	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "iCmongolang API",
+	Title:            "gorestapi API",
 	Description:      "Go RestAPI Kongnakorn jantakun",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

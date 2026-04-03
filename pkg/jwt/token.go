@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"icmongolang/pkg/httpErrors"
+	"gorestapi/pkg/httpErrors"
 
 	"github.com/golang-jwt/jwt/v4"
 )

@@ -3,8 +3,8 @@ package items
 import (
 	"context"
 
-	"icmongolang/internal"
-	"icmongolang/internal/models"
+	"gorestapi/internal"
+	"gorestapi/internal/models"
 
 	"github.com/google/uuid"
 )

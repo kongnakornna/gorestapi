@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"icmongolang/internal"
+	"gorestapi/internal"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

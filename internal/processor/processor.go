@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"icmongolang/config"
-	"icmongolang/pkg/logger"
+	"gorestapi/config"
+	"gorestapi/pkg/logger"
 
 	"github.com/hibiken/asynq"
 )

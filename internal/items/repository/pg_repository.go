@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	"icmongolang/internal/items"
-	"icmongolang/internal/models"
-	"icmongolang/internal/repository"
+	"gorestapi/internal/items"
+	"gorestapi/internal/models"
+	"gorestapi/internal/repository"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

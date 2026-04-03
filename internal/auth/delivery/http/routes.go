@@ -2,8 +2,8 @@ package http
 
 import (
 	"github.com/go-chi/chi/v5"
-	"icmongolang/internal/auth"
-	"icmongolang/internal/middleware"
+	"gorestapi/internal/auth"
+	"gorestapi/internal/middleware"
 )
 
 func MapAuthRoute(router *chi.Mux, h auth.Handlers, mw *middleware.MiddlewareManager) {

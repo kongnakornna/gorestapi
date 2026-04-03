@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 
-	"icmongolang/config"
+	"gorestapi/config"
 
 	"gopkg.in/gomail.v2"
 )

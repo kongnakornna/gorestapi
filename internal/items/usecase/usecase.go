@@ -3,11 +3,11 @@ package usecase
 import (
 	"context"
 
-	"icmongolang/config"
-	"icmongolang/internal/items"
-	"icmongolang/internal/models"
-	"icmongolang/internal/usecase"
-	"icmongolang/pkg/logger"
+	"gorestapi/config"
+	"gorestapi/internal/items"
+	"gorestapi/internal/models"
+	"gorestapi/internal/usecase"
+	"gorestapi/pkg/logger"
 
 	"github.com/google/uuid"
 )

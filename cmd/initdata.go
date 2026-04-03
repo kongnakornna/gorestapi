@@ -3,14 +3,14 @@ package cmd
 import (
 	"context"
 
-	"icmongolang/config"
-	"icmongolang/internal/distributor"
-	userDistributor "icmongolang/internal/users/distributor"
-	userRepository "icmongolang/internal/users/repository"
-	userUseCase "icmongolang/internal/users/usecase"
-	"icmongolang/pkg/db/postgres"
-	"icmongolang/pkg/db/redis"
-	"icmongolang/pkg/logger"
+	"gorestapi/config"
+	"gorestapi/internal/distributor"
+	userDistributor "gorestapi/internal/users/distributor"
+	userRepository "gorestapi/internal/users/repository"
+	userUseCase "gorestapi/internal/users/usecase"
+	"gorestapi/pkg/db/postgres"
+	"gorestapi/pkg/db/redis"
+	"gorestapi/pkg/logger"
 
 	"github.com/spf13/cobra"
 )

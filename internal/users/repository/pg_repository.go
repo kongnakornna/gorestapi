@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"icmongolang/internal/models"
-	"icmongolang/internal/repository"
-	"icmongolang/internal/users"
+	"gorestapi/internal/models"
+	"gorestapi/internal/repository"
+	"gorestapi/internal/users"
 
 	"gorm.io/gorm"
 )
