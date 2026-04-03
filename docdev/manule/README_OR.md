@@ -111,7 +111,7 @@ go mod verify
 go run main.go serve
 
 # Or if the main file is in cmd directory:
-go run cmd/gorestapi//main.go serve
+go run cmd/gorestapi/main.go serve
 
 # Project Structure Check
 

@@ -106,7 +106,7 @@ go mod verify
 
 
 # Or if the main file is in cmd directory:
-go run cmd/gorestapi//main.go
+go run cmd/gorestapi/main.go
 
 # Project Structure Check
 
