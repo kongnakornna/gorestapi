@@ -1324,8 +1324,3 @@ air -c .air.toml
 - โครงสร้างได้รับแรงบันดาลใจจาก `go-clean-arch` และ project template ของบริษัท Fintech ในไทย
 
 ---
-
-> **หมายเหตุ**: ตัวอย่างโค้ดข้างต้นเป็นเพียงส่วนประกอบหลัก หากต้องการนำไปรันจริง
->  ต้องสร้างไฟล์ที่เหลือ (DTO, repository implementation, main.go, router.go, worker) ตามโครงสร้างที่อธิบายไว้ สามารถดูเทมเพลต
->  ได้ที่ [github.com/icmongolang/boilerplate](https://github.com/icmongolang/boilerplate) (ลิงก์สมมติ)
-
