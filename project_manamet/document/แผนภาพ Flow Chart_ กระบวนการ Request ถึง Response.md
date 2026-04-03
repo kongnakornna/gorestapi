@@ -1,5 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
+ 
 ## แผนภาพ Flow Chart: กระบวนการ Request ถึง Response ของ NestJS API
 
 แผนภาพด้านล่างแสดงกระบวนการทำงานแบบละเอียดของ NestJS API ตั้งแต่รับ HTTP Request จนถึงส่ง Response กลับไปยัง Client โดยผ่าน Middleware, Guards, Interceptors, Pipes, Controller, Service และ Database[^1][^2]
