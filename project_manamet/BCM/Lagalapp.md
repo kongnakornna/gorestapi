@@ -679,6 +679,7 @@ flowchart TB
 
 ### 1.4 การฟ้องคดีแบบกลุ่ม (Class Action – รถโดยสารแก๊สระเบิด)
 
+
 ```mermaid
 flowchart TB
     Start([เริ่ม: มีผู้เสียหายจำนวนมาก]) --> Step1[รวมกลุ่มผู้เสียหาย<br>และเลือกโจทก์ตัวแทน (Lead Plaintiff)]
@@ -702,6 +703,7 @@ flowchart TB
     Step6 --> End1
     Step17 --> End1
 ```
+
 
 ---
 
