@@ -1,5 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
+ 
 # แนะนำรูปแบบการตั้งชื่อ branch สำหรับฟีเจอร์ขนาดเล็ก
 
 สำหรับการตั้งชื่อ Branch ที่เป็น **"ฟีเจอร์ขนาดเล็ก" (Small Feature)** หรือการปรับแก้เล็กๆ น้อยๆ ที่อาจจะไม่ถึงขั้นเรียกว่าเป็น "Full Feature" ใหญ่ๆ นั้น หลักการสำคัญคือ **"อย่าสร้าง Prefix ใหม่เยอะเกินความจำเป็น"** เพื่อไม่ให้ทีมสับสนครับ
