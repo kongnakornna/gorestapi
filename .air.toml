@@ -1,53 +1,44 @@
-# .air.conf
-# Config file for [Air](https://github.com/cosmtrek/air) in TOML format
-
-# Working directory
-# . or absolute path, please note that the directories following must be under root.
-root = "." 
-tmp_dir = "/tmp"
+# Config file for Air in TOML format (Windows: gorestapi)
+root = "."
+tmp_dir = "tmp"  # use relative path; easier on Windows
 
 [build]
-# Just plain old shell command. You could use `make` as well.
-cmd = "go build -o /tmp/main ."
-# Binary file yields from `cmd`.
-bin = "/tmp/main"
-
-# Customize binary.
-full_bin = "APP_ENV=dev APP_USER=air /tmp/main"
-# Watch these filename extensions.
+# Build to a Windows .exe file
+cmd = "go build -o ./tmp/main.exe ."
+# Point to the built .exe
+bin = "./tmp/main.exe"
+# Optional: add environment variables when running
+full_bin = "APP_ENV=dev APP_USER=air ./tmp/main.exe"
+# Watch these extensions
 include_ext = ["go", "tpl", "tmpl", "html", "yml"]
-# Ignore these filename extensions or directories.
+# Ignore these directories
 exclude_dir = ["assets", "tmp", "vendor", "frontend/node_modules"]
-# Watch these directories if you specified.
+# Not needed here, but allowed if you want to narrow watches
 include_dir = []
-# Exclude files.
+# Exclude specific files
 exclude_file = []
-# It's not necessary to trigger build each time file changes if it's too frequent.
-delay = 1000 # ms
-# Stop to run old binary when build errors occur.
+# Wait a bit before rebuilding if files change rapidly
+delay = 1000  # ms
+# Stop the old binary on build errors
 stop_on_error = true
-# This log file places in your tmp_dir.
+# Air build error log (placed inside tmp_dir)
 log = "air_errors.log"
 
 [log]
-# Show log time
+# Show timestamp in logs? (optional)
 time = false
 
 [color]
-# Customize each part's color. If no color found, use the raw app log.
+# Colors for each part of the output
 main = "magenta"
 watcher = "cyan"
 build = "yellow"
 runner = "green"
 
 [misc]
-# Delete tmp directory on exit
+# Clean the tmp directory on exit
 clean_on_exit = true
 
-
 [env]
-  APP_ENV = "dev"
-  APP_USER = "air"
-
- 
- 
+APP_ENV = "dev"
+APP_USER = "air"

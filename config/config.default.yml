@@ -1,6 +1,6 @@
 server:
   AppVersion: 1.0.0
-  Port: 5000
+  Port: 8080
   Mode: Development
   ProcessTimeout: 60
   ReadTimeout: 5

@@ -50,8 +50,8 @@ In this project use 3 layer architecture
 ### Run
 - `docker-compose up`
 - OR  go run cmd/api/main.go serve  on loca Windows OS
-- Swagger: [localhost:5000/swagger/](http://localhost:5000/swagger/)
-- http://localhost:5000/swagger/index.html#/
+- Swagger: [localhost:8080/swagger/](http://localhost:8080/swagger/)
+- http://localhost:8080/swagger/index.html#/
 
 ```bash
   Email: root@gmail.com
