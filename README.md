@@ -954,3 +954,271 @@ flowchart LR
 **หมายเหตุ:** โครงสร้างนี้ **ไม่เหมาะกับโปรเจกต์เล็ก ๆ ที่มีแค่ 2–3 endpoint** เพราะ แต่เหมาะกับ **ระบบที่มี business logic ซับซ้อน, ต้องทดสอบบ่อย, และมีโอกาสเปลี่ยนเทคโนโลยีในอนาคต**
 
  
+
+# ภาค 2
+
+# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapi`  
+## ตัวอย่าง: เพิ่ม Module IoT (ระบบสั่งซื้อน้ำออนไลน์ + GPS Tracking + MQTT + Queue Processor)
+
+โครงสร้างเดิมเป็น Clean Architecture ที่แยก Model → Repository → Usecase → Delivery อย่างชัดเจน การเพิ่ม module ใหม่จะทำแบบ **Modular** โดยไม่กระทบ module เดิม (auth, users)
+
+---
+
+## 1. ขั้นตอนการเพิ่มฟีเจอร์ใหม่ (ตามลำดับ)
+
+### ✅ ขั้นตอนที่ 1: วิเคราะห์และออกแบบ entity / data model
+
+- ระบุ entity ที่เกี่ยวข้อง เช่น `Device` (IoT device), `WaterOrder`, `GpsLocation`, `MqttMessage`
+- กำหนดความสัมพันธ์ (Device มีหลาย WaterOrder, Device มีหลาย GpsLocation)
+- ออกแบบตารางใน PostgreSQL
+
+**ตัวอย่าง entity:**
+```go
+// internal/models/device.go
+type Device struct {
+    ID        uint      `gorm:"primaryKey"`
+    SerialNo  string    `gorm:"uniqueIndex"`
+    Name      string
+    UserID    uint      // เจ้าของ device (FK ไป users)
+    Status    string    // active, inactive, maintenance
+    CreatedAt time.Time
+}
+
+// internal/models/water_order.go
+type WaterOrder struct {
+    ID          uint
+    DeviceID    uint
+    Quantity    int       // ลิตร
+    OrderTime   time.Time
+    Status      string    // pending, processing, completed, failed
+    ProcessedAt *time.Time
+}
+
+// internal/models/gps_location.go
+type GpsLocation struct {
+    ID        uint
+    DeviceID  uint
+    Lat       float64
+    Lng       float64
+    Timestamp time.Time
+}
+```
+
+### ✅ ขั้นตอนที่ 2: สร้าง Repository Interface + Implementation (PostgreSQL + Redis cache)
+
+- สร้างไฟล์ `internal/repository/device_repo.go` (interface + GORM impl)
+- สร้าง `internal/repository/water_order_repo.go`
+- สร้าง `internal/repository/gps_repo.go` (อาจใช้ Redis สำหรับตำแหน่งล่าสุด)
+
+**ตัวอย่าง interface:**
+```go
+type DeviceRepository interface {
+    Create(ctx context.Context, device *models.Device) error
+    FindByID(ctx context.Context, id uint) (*models.Device, error)
+    FindBySerial(ctx context.Context, serial string) (*models.Device, error)
+    Update(ctx context.Context, device *models.Device) error
+    Delete(ctx context.Context, id uint) error
+    ListByUser(ctx context.Context, userID uint) ([]models.Device, error)
+}
+```
+
+### ✅ ขั้นตอนที่ 3: สร้าง Usecase (Business Logic)
+
+- สร้าง `internal/usecase/iot_usecase.go` (หรือแยกเป็น `device_usecase.go`, `order_usecase.go`)
+- ใช้ repository หลายตัว, เรียก MQTT client, ส่งงานเข้า queue
+
+**ตัวอย่าง:**
+```go
+type IotUsecase interface {
+    RegisterDevice(userID uint, serialNo, name string) (*models.Device, error)
+    CreateWaterOrder(deviceID uint, quantity int) (*models.WaterOrder, error)
+    PublishMqttCommand(deviceID uint, command string) error
+    ProcessOrderQueue() // worker จะเรียก
+    UpdateGpsLocation(deviceID uint, lat, lng float64) error
+}
+```
+
+### ✅ ขั้นตอนที่ 4: สร้าง Handler (Delivery/REST)
+
+- สร้าง `internal/delivery/rest/handler/device_handler.go`
+- สร้าง `internal/delivery/rest/handler/order_handler.go`
+- กำหนด DTO ใน `internal/delivery/rest/dto/iot_dto.go`
+
+**ตัวอย่าง handler:**
+```go
+func (h *DeviceHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+    // อ่าน deviceID จาก URL หรือ JWT claims
+    // เรียก iotUsecase.CreateWaterOrder
+    // response 201
+}
+```
+
+### ✅ ขั้นตอนที่ 5: เพิ่ม Route ใน `router.go`
+
+```go
+func (r *Router) SetupIotRoutes(deviceHandler *handler.DeviceHandler, authMiddleware func(http.Handler) http.Handler) {
+    r.router.Route("/api/v1/devices", func(dev chi.Router) {
+        dev.Use(authMiddleware)
+        dev.Post("/", deviceHandler.RegisterDevice)
+        dev.Get("/", deviceHandler.ListDevices)
+        dev.Post("/{deviceID}/orders", deviceHandler.CreateOrder)
+        dev.Post("/{deviceID}/command", deviceHandler.SendMqttCommand)
+    })
+}
+```
+
+### ✅ ขั้นตอนที่ 6: สร้าง MQTT Client (ใน `internal/pkg/mqtt/`)
+
+- ใช้ไลบรารี `eclipse/paho.mqtt.golang`
+- สร้าง interface `MqttPublisher`, `MqttSubscriber`
+- Subscribe topic เช่น `device/+/gps`, `device/+/response`
+
+### ✅ ขั้นตอนที่ 7: สร้าง Queue Processor สำหรับ Water Order
+
+- ใช้ Redis Stream หรือ Go channel (ตามโครงสร้างเดิมมี email queue อยู่แล้ว)
+- สร้าง worker ใหม่: `internal/delivery/worker/order_worker.go`
+- worker จะดึง order จาก queue → ประมวลผล → สั่ง MQTT → อัปเดตสถานะ
+
+### ✅ ขั้นตอนที่ 8: เพิ่ม Command ใน Cobra (ถ้าต้องการรัน worker แยก)
+
+- เพิ่ม `cmd/iotworker.go` (หรือขยาย `cmd/worker.go` ให้รองรับหลาย queue)
+- คำสั่ง: `go run cmd/api/main.go iot-worker`
+
+### ✅ ขั้นตอนที่ 9: อัปเดต Docker Compose (ถ้าต้องการ MQTT broker)
+
+- เพิ่ม service `mosquitto` (MQTT broker) ใน `docker-compose.dev.yml`
+- เพิ่ม environment variables ใน `.env.dev` (MQTT_BROKER_URL, MQTT_USERNAME, MQTT_PASSWORD)
+
+### ✅ ขั้นตอนที่ 10: ทดสอบและ Document API (Swagger)
+
+- ใส่ annotation ใน handler เพื่อให้ `swag` สร้าง docs
+- รัน `swag init` แล้วทดสอบที่ `/swagger/index.html`
+
+---
+
+## 2. ออกแบบ Workflow (Flowchart)
+
+### 2.1 Workflow การสั่งซื้อน้ำออนไลน์ (Water Order)
+
+```mermaid
+flowchart TB
+    A[User ผ่าน Mobile App] --> B[POST /api/v1/devices/{id}/orders]
+    B --> C[Device Handler]
+    C --> D[IotUsecase.CreateWaterOrder]
+    D --> E[WaterOrderRepo.Create -> status=pending]
+    E --> F[Enqueue order job ไปยัง Redis Stream]
+    F --> G[Order Worker (background)]
+    G --> H[Dequeue job]
+    H --> I[Publish MQTT command to device topic]
+    I --> J[Device ตอบกลับผ่าน MQTT]
+    J --> K[Update order status -> completed/failed]
+    K --> L[Notify user via WebSocket/Email (optional)]
+```
+
+### 2.2 Workflow การรับ GPS แบบ Real-time ผ่าน MQTT
+
+```mermaid
+flowchart LR
+    A[IoT Device] -- MQTT publish --> B[MQTT Broker (Mosquitto)]
+    B -- subscribe --> C[MQTT Subscriber (Go routine)]
+    C --> D[GpsUsecase.UpdateGpsLocation]
+    D --> E[เก็บตำแหน่งล่าสุดใน Redis]
+    D --> F[เก็บประวัติใน PostgreSQL]
+    E --> G[REST API: GET /devices/{id}/gps/latest]
+    F --> H[REST API: GET /devices/{id}/gps/history]
+```
+
+### 2.3 Workflow การควบคุมอุปกรณ์ผ่าน MQTT (สั่งเปิด/ปิด)
+
+```mermaid
+flowchart TB
+    A[User] --> B[POST /api/v1/devices/{id}/command]
+    B --> C[Device Handler]
+    C --> D[IotUsecase.SendCommand]
+    D --> E[MQTT Publisher]
+    E --> F[Mosquitto]
+    F --> G[Device]
+    G -- response MQTT --> H[Subscriber]
+    H --> I[Usecase.LogCommandResult]
+    I --> J[Response 200 OK to user]
+```
+
+---
+
+## 3. ประโยชน์ที่ได้รับ
+
+| ด้าน | ประโยชน์ |
+|------|----------|
+| **โครงสร้าง** | แยก IoT logic ออกจาก auth/user ชัดเจน, เปลี่ยน MQTT broker ได้โดยไม่กระทบ handler |
+| **ทดสอบ** | สามารถ mock MQTT client และ repository เพื่อ unit test usecase |
+| **Performance** | ใช้ queue processor ทำให้ REST API response ไว ไม่รอ MQTT response |
+| **Real-time** | MQTT subscriber แยก goroutine, รับ GPS ได้ทันที |
+| **Scalability** | สามารถเพิ่ม worker instances สำหรับ order queue และ MQTT subscriber ได้ |
+| **Maintainability** | เพิ่ม feature ใหม่โดยไม่ต้องแก้ไข layer อื่น (ถ้าใช้ interface) |
+
+---
+
+## 4. ข้อควรระวัง
+
+- **MQTT broker เป็น SPOF** – ควรใช้ cluster หรือมี fallback broker
+- **Idempotency** – MQTT message อาจถูกส่งซ้ำ (QoS 1,2) ต้องออกแบบ order processing ให้ idempotent (ใช้ unique request ID)
+- **Order queue overflow** – ต้องมี monitoring และ dead-letter queue
+- **GPS data ขนาดใหญ่** – ควรใช้ Redis geospatial หรือ TimescaleDB สำหรับเก็บประวัติ
+- **Device authentication** – ควรใช้ JWT หรือ API key สำหรับ MQTT connect (ไม่ใช่แค่ username/password)
+- **Network latency** – MQTT publish อาจ delay, ต้อง set timeout และ retry logic
+
+---
+
+## 5. ข้อดี
+
+- **Reuse existing infrastructure** – ใช้ Redis queue, logger, validator, GORM เดิมได้เลย
+- **Clean separation** – IoT module ไม่ต้องรู้จัก auth module (ยกเว้นผ่าน user ID)
+- **Flexible deployment** – MQTT subscriber สามารถรันเป็น separate microservice ได้ในอนาคต
+- **Real-time capability** – MQTT เหมาะกับ GPS tracking และ control command มากกว่า HTTP polling
+- **Async processing** – Order queue ป้องกันการ overload MQTT broker
+
+---
+
+## 6. ข้อเสีย
+
+- **Complexity เพิ่มขึ้น** – ต้องจัดการ MQTT connection, reconnection, และ message ordering
+- **Debug ยากขึ้น** – ต้องดู logs ทั้ง HTTP, worker, MQTT subscriber
+- **State management** – ต้อง track device online/offline status (ใช้ Redis หรือ MQTT Last Will)
+- **ต้องเพิ่ม infrastructure** – ต้องรัน MQTT broker (Mosquitto/EMQX) ใน docker-compose
+- **Security ซับซ้อน** – ต้องจัดการ TLS สำหรับ MQTT และ device credential
+
+---
+
+## 7. ข้อห้าม (ต้องห้าม)
+
+| ข้อห้าม | เหตุผล |
+|---------|--------|
+| **ห้ามทำ MQTT publish ใน HTTP handler โดยไม่ใช้ queue** | จะทำให้ request ติดขัดเมื่อ MQTT broker ช้า |
+| **ห้ามเก็บ raw GPS ทุกจุดโดยไม่มีการ downsample** | ฐานข้อมูลจะใหญ่เกินไป ควรเก็บเฉพาะตำแหน่งเปลี่ยนแปลง หรือใช้ aggregation |
+| **ห้ามส่งคำสั่ง control ผ่าน MQTT โดยไม่มีการ confirm** | ผู้ใช้ไม่รู้ว่าคำสั่งถึง device หรือไม่ ต้องมี response หรือ callback |
+| **ห้ามใช้ MQTT topic ที่ hardcode ชื่อ device ใน subscriber** | ควร subscribe pattern `device/+/command` แล้ว filter ใน application |
+| **ห้ามเก็บ MQTT password ใน plain text config** | ใช้ environment variables หรือ secret manager |
+| **ห้ามใช้ QoS 0 สำหรับ water order** | อาจสูญเสียคำสั่ง ควรใช้ QoS 1 หรือ 2 |
+| **ห้ามให้ device สั่งน้ำได้โดยไม่ตรวจสอบสิทธิ์** | ต้องตรวจสอบ JWT หรือ device token ทุกครั้ง |
+
+---
+
+## 8. สรุปตารางการเพิ่ม module ใหม่ (Checklist)
+
+| ลำดับ | การกระทำ | ไฟล์/โฟลเดอร์ที่เกี่ยวข้อง |
+|--------|-----------|----------------------------|
+| 1 | สร้าง model | `internal/models/device.go`, `water_order.go`, `gps_location.go` |
+| 2 | สร้าง repository interface + impl | `internal/repository/device_repo.go`, `order_repo.go` |
+| 3 | สร้าง usecase interface + impl | `internal/usecase/iot_usecase.go` |
+| 4 | สร้าง handler + DTO | `internal/delivery/rest/handler/device_handler.go`, `dto/iot_dto.go` |
+| 5 | เพิ่ม route | `internal/delivery/rest/router.go` |
+| 6 | สร้าง MQTT pkg | `internal/pkg/mqtt/client.go`, `publisher.go`, `subscriber.go` |
+| 7 | สร้าง queue worker | `internal/delivery/worker/order_worker.go` |
+| 8 | เพิ่ม CLI command | `cmd/iotworker.go` หรือขยาย `cmd/worker.go` |
+| 9 | อัปเดต docker-compose | เพิ่ม `mosquitto` service |
+| 10 | ทดสอบและทำ docs | `swag init`, เรียก API |
+
+---
+
+**หมายเหตุ:** ขั้นตอนทั้งหมดยึดตาม Clean Architecture ที่มีอยู่แล้วใน `gorestapi` 
+การเพิ่ม module ใหม่จะไม่ต้องแก้ไข `auth` หรือ `users` module ยกเว้นต้องเพิ่มความสัมพันธ์ (foreign key) เช่น Device มี UserID เป็นต้น
