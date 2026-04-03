@@ -1,5 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
+ 
 # Branch  Enchant Code
 
 คำว่า **"Enchant Code"** น่าจะเป็นการพิมพ์ผิดจากคำว่า **"Enhancement Code"** (การปรับปรุงโค้ดให้ดีขึ้น) หรืออาจหมายถึงการเขียนโค้ดให้ **"Clean" (Clean Code)** และมีคุณภาพสูง
