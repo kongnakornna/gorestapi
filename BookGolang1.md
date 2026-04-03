@@ -5259,38 +5259,8 @@ func main() {
 
 ## 📐 แผนภาพ Flowchart – Nil Channel + Context
 
-```mermaid
-flowchart TB
-    subgraph ContextUsage["การใช้ context กับ nil channel"]
-        A[สร้าง context] --> B{ต้องการเปิด/ปิด<br>การตอบสนองต่อ cancel?}
-        B -->|เปิด| C[ใช้ ctx.Done() โดยตรง]
-        B -->|ปิด| D[กำหนดตัวแปร cancelCh = nil]
-        C --> E[select case <-cancelCh]
-        D --> E
-        E --> F{case ถูกเลือก?}
-        F -->|cancelCh ไม่ใช่ nil และถูก cancel| G[ทำงาน case cancel]
-        F -->|cancelCh เป็น nil| H[ข้าม case นี้ไป]
-    end
 
-    subgraph DynamicTimeout["การปรับ timeout แบบไดนามิก"]
-        I[สร้าง timeoutCh = nil] --> J[รับค่า timeout ใหม่จาก channel]
-        J --> K{timeout > 0?}
-        K -->|ใช่| L[timeoutCh = time.After(d)]
-        K -->|ไม่ใช่| M[timeoutCh = nil]
-        L --> N[select case <-timeoutCh]
-        M --> N
-    end
-
-    subgraph GracefulShutdown["Graceful shutdown"]
-        O[worker รับงานจาก taskCh] --> P{ได้รับ shutdown signal?}
-        P -->|ใช่| Q[taskCh = nil]
-        Q --> R[หยุดรับงานใหม่ แต่ยังทำงานค้าง]
-        P -->|ไม่| O
-    end
-
-    ContextUsage --> DynamicTimeout
-    DynamicTimeout --> GracefulShutdown
-```
+<img width="6390" height="6245" alt="Nilcc" src="https://github.com/user-attachments/assets/5739ab09-8ba2-46ea-95c3-14e529d2f719" />
 
 ---
 
