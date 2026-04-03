@@ -121,7 +121,9 @@ go run cmd/api/main.go serve
 # Auto Run 
 air
 
-``` 
+```
+![Icmon5](https://github.com/user-attachments/assets/fa802d05-f4f7-4f60-bab0-897a95cea541)
+
 # 🚀 โครงสร้างและ Workflow ของโปรเจกต์ `gorestapi` (Go Backend Clean Architecture)
 
 เอกสารนี้  ประกอบด้วย  
@@ -130,6 +132,8 @@ air
 - ตัวอย่างโค้ดพร้อมคอมเมนต์ไทย/อังกฤษ ที่รันได้จริง  
 - กรณีศึกษา  
 - สรุป (ประโยชน์, ข้อควรระวัง, ข้อดี/เสีย, ข้อห้าม, แหล่งอ้างอิง)
+  
+![Icmon8](https://github.com/user-attachments/assets/214c3fbe-dd7f-458c-9ea7-b1c13d6fea67)
 
 ---
 
@@ -956,6 +960,13 @@ flowchart LR
  
 
 # ภาค 2
+![Icmon6](https://github.com/user-attachments/assets/090c0205-fbd3-43b1-be6a-d831fee5b7be)
+
+![Icmon9](https://github.com/user-attachments/assets/cb1af147-f601-47b7-b28f-f3e1f6f14551)
+
+![Icmon7](https://github.com/user-attachments/assets/4905b6e7-57cb-4ff7-a46d-31f90295d45e)
+
+![Icmon3](https://github.com/user-attachments/assets/cbb342e0-2e51-47c6-b755-40a58dc3f59f)
 
 # 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapi`  
 ## ตัวอย่าง: เพิ่ม Module IoT (ระบบสั่งซื้อน้ำออนไลน์ + GPS Tracking + MQTT + Queue Processor)
