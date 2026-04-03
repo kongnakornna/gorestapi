@@ -94,7 +94,6 @@
 - [GORM CRUD กับฐานข้อมูลหลายประเภท (PostgreSQL, MySQL, MongoDB, InfluxDB)](#gorm-crud-กับฐานข้อมูลหลายประเภท-postgresql-mysql-mongodb-influxdb)
 - [คู่มือภาษา Go ฉบับ นำไปทำงาน](#คู่มือภาษา-go-ฉบับ-นำไปทำงาน)
 - [Golang Live-reload เมื่อ code เปลี่ยนแปลง](#golang-live-reload-เมื่อ-code-เปลี่ยนแปลง)
-
 --- 
 # ภาคที่ 1: ปฐมบทกับการเขียนโปรแกรม
 
