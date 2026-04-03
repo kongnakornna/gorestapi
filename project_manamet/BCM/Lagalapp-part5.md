@@ -22,6 +22,8 @@
 
 ### 1.2 Flowchart กระบวนการล้มละลายระหว่างประเทศ
 
+<img width="2538" height="7739" alt="1" src="https://github.com/user-attachments/assets/a47b69f8-9752-41a5-b6f1-d55a2107c769" />
+
 
 ```mermaid
 flowchart TB
