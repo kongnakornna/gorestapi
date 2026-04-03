@@ -1270,7 +1270,7 @@ air -c .air.toml
 
 - ใช้โครงสร้างนี้เป็นฐาน → เพิ่ม role-based access control (RBAC) และ session management
 - เนื่องจากมี traffic สูง จึงใช้ Redis cache สำหรับ user profile และ rate limiter ป้องกัน brute force
-- ใช้ background worker ส่งอีเมลยืนยันและ forgot password แบบไม่阻塞 response
+- ใช้ background worker ส่งอีเมลยืนยันและ forgot password แบบไม่ response
 - ใช้ RSA JWT ทำให้ฝ่าย mobile และ frontend ตรวจสอบ token ได้โดยไม่ต้องเรียก API (ถ้ามี public key)
 - มี `initdata.go` สำหรับสร้าง admin user รายแรก และกำหนดสิทธิ์
 
@@ -1291,7 +1291,7 @@ air -c .air.toml
 - **ใช้ Docker compose** สำหรับ dev stack ทำให้ทีมงาน setup เร็ว
 
 ### ⚠️ ข้อควรระวัง
-- **RSA key management**: ต้อง保护好 private key (ใช้ secret manager หรือ vault)
+- **RSA key management**: ต้อง private key (ใช้ secret manager หรือ vault)
 - **Refresh token rotation**: ต้อง implement blacklist และป้องกัน replay attack
 - **Redis เป็น SPOF**: สำหรับ production ควรใช้ Redis Sentinel หรือ Cluster
 - **GORM AutoMigrate** อาจไม่ safe สำหรับ production ควรใช้ migration tool (golang-migrate)
