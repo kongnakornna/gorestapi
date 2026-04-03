@@ -156,26 +156,4 @@ const savedBooking = await this.bookingsRepository.save(booking);
 | 9 | Repository | Database access | Can throw errors |
 | 10 | Transform Interceptor | Format response | No |
 | 11 | Exception Filter | Handle errors | Only on errors |
-
-ระบบนี้ใช้ layered architecture ที่แยก concerns ชัดเจน ทำให้ code มีความเป็นระเบียบ ง่ายต่อการ maintain และ test[^1][^2][^5]
-
-<div align="center">⁂</div>
-
-[^1]: https://victorokoye.hashnode.dev/maximizing-performance-in-nestjs-with-middlewares-guards-interceptors-and-pipes
-
-[^2]: https://www.devcentrehouse.eu/blogs/nestjs-middleware-vs-guards-vs-interceptors/
-
-[^3]: https://www.geeksforgeeks.org/javascript/folder-structure-of-a-nestjs-project/
-
-[^4]: https://www.freecodecamp.org/news/how-to-add-jwt-based-authentication-in-nest-js/
-
-[^5]: https://dev.to/tak089/nestjs-roadmap-for-2025-5jj
-
-[^6]: https://www.linkedin.com/posts/nandhakumar1488_nestjs-redis-nodejs-activity-7393299511475036161-hEf-
-
-[^7]: https://betterprogramming.pub/optimizing-your-apps-performance-by-using-redis-as-a-caching-layer-dc48ce7551ab
-
-[^8]: https://dev.to/refifauzan/nestjs-with-typeorm-and-postgresql-3466
-
-[^9]: https://docs.nestjs.com/techniques/database
-
+ 
