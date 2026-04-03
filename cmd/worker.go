@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"gorestapi/config"
-	"gorestapi/internal/worker"
-	"gorestapi/pkg/logger"
+	"gorestapi//config"
+	"gorestapi//internal/worker"
+	"gorestapi//pkg/logger"
 
 	"github.com/spf13/cobra"
 )

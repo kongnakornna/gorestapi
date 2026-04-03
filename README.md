@@ -93,7 +93,7 @@ Perfect! You're setting up an existing Go project (gorestapi/). Here's how to pr
 ```bash
 # 1. Clone the repository
 git clone [https://gorestapi/](https://github.com/kongnakornna/gorestapi/)
-cd gorestapi/
+cd gorestapi
 
 # 2. Download and tidy up dependencies
 go mod tidy
@@ -107,7 +107,7 @@ go mod verify
 
 
 # Or if the main file is in cmd directory:
-go run cmd/gorestapi/main.go serve
+go run cmd/api/main.go serve
 
 # Project Structure Check
 
