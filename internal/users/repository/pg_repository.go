@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"gorestapi/internal/models"
-	"gorestapi/internal/repository"
-	"gorestapi/internal/users"
+	"gorestapi//internal/models"
+	"gorestapi//internal/repository"
+	"gorestapi//internal/users"
 
 	"gorm.io/gorm"
 )

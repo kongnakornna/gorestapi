@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"gorestapi/config"
-	"gorestapi/pkg/logger"
+	"gorestapi//config"
+	"gorestapi//pkg/logger"
 
 	"github.com/hibiken/asynq"
 )

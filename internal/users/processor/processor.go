@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gorestapi/config"
-	"gorestapi/internal/processor"
-	"gorestapi/internal/users"
-	"gorestapi/pkg/logger"
-	"gorestapi/pkg/sendEmail"
+	"gorestapi//config"
+	"gorestapi//internal/processor"
+	"gorestapi//internal/users"
+	"gorestapi//pkg/logger"
+	"gorestapi//pkg/sendEmail"
 
 	"github.com/hibiken/asynq"
 )

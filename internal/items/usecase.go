@@ -3,8 +3,8 @@ package items
 import (
 	"context"
 
-	"gorestapi/internal"
-	"gorestapi/internal/models"
+	"gorestapi//internal"
+	"gorestapi//internal/models"
 
 	"github.com/google/uuid"
 )

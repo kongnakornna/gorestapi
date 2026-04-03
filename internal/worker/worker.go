@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hibiken/asynq"
-	"gorestapi/config"
+	"gorestapi//config"
 
-	"gorestapi/internal/users"
-	userProcessor "gorestapi/internal/users/processor"
-	"gorestapi/pkg/logger"
-	"gorestapi/pkg/sendEmail"
+	"github.com/hibiken/asynq"
+
+	"gorestapi//internal/users"
+	userProcessor "gorestapi//internal/users/processor"
+	"gorestapi//pkg/logger"
+	"gorestapi//pkg/sendEmail"
 )
 
 const (

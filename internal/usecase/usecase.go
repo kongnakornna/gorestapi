@@ -3,9 +3,9 @@ package usecase
 import (
 	"context"
 
-	"gorestapi/config"
-	"gorestapi/internal"
-	"gorestapi/pkg/logger"
+	"gorestapi//config"
+	"gorestapi//internal"
+	"gorestapi//pkg/logger"
 
 	"github.com/google/uuid"
 )

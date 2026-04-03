@@ -1,4 +1,4 @@
-module gorestapi
+module gorestapi/
 
 go 1.25.0
 

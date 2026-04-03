@@ -11,8 +11,8 @@ import (
 	"errors"
 	"time"
 
-	"gorestapi/internal"
-	"gorestapi/pkg/httpErrors"
+	"gorestapi//internal"
+	"gorestapi//pkg/httpErrors"
 	"github.com/redis/go-redis/v9"
 )
 

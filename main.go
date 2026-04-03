@@ -1,6 +1,6 @@
 package main
 
-import cmd "gorestapicmd"
+import cmd "gorestapi/cmd"
 
 func main() {
 	cmd.Execute()

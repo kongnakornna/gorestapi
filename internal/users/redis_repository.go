@@ -1,8 +1,8 @@
 package users
 
 import (
-	"gorestapi/internal"
-	"gorestapi/internal/models"
+	"gorestapi//internal"
+	"gorestapi//internal/models"
 )
 
 type UserRedisRepository interface {
