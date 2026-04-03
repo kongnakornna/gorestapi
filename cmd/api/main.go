@@ -1,6 +1,6 @@
 package main
 
-import "gorestapi/cmd"
+import "icmongolang/cmd"
 
 func main() {
 	cmd.Execute()

@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"gorestapi/config"
-	"gorestapi/internal/worker"
-	"gorestapi/pkg/logger"
-
+	"icmongolang/config"
+	"icmongolang/internal/worker"
+	"icmongolang/pkg/logger"
 	"github.com/spf13/cobra"
 )
 

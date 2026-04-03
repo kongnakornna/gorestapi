@@ -3,7 +3,7 @@ package postgres
 import (
 	"fmt"
 
-	"gorestapi//config"
+	"icmongolang/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

@@ -1,8 +1,8 @@
 package http
 
 import (
-	"gorestapi//internal/middleware"
-	"gorestapi//internal/users"
+	"icmongolang/internal/middleware"
+	"icmongolang/internal/users"
 
 	"github.com/go-chi/chi/v5"
 )

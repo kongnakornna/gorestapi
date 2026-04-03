@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"gorestapi//internal/models"
-	"gorestapi//internal/repository"
-	"gorestapi//internal/users"
+	"icmongolang/internal/models"
+	"icmongolang/internal/repository"
+	"icmongolang/internal/users"
 
 	"github.com/redis/go-redis/v9"
 )

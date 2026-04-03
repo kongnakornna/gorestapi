@@ -3,7 +3,7 @@ package responses
 import (
 	"net/http"
 
-	"gorestapi//pkg/httpErrors"
+	"icmongolang/pkg/httpErrors"
 
 	"github.com/go-chi/render"
 )

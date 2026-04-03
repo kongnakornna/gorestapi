@@ -5,8 +5,7 @@ import (
 	"log"
 	"os"
 
-	"gorestapi/config"
-
+	"icmongolang/config"
 	"github.com/spf13/cobra"
 )
 

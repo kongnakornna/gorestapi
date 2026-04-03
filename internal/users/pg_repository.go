@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"gorestapi//internal"
-	"gorestapi//internal/models"
+	"icmongolang/internal"
+	"icmongolang/internal/models"
 )
 
 type UserPgRepository interface {

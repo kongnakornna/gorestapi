@@ -48,7 +48,7 @@ taskRedis:
 email:
   From: kongnakornna@gamil.com
   Name: Go restapi
-  Link: https://gorestapi/
+  Link: https://gorestapi
   LogoLink: https://media.vov.vn/sites/default/files/styles/front_large/public/2022-12/nhung-dieu-thu-vi-ve-logo-apple-ma-ban-chua-biet-4.png
   Copyright: Copyright © 2026 example inc. All rights reserved.
   VerificationSubject: Your account verification code

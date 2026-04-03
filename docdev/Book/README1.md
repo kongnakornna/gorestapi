@@ -81,14 +81,14 @@ In this project use 3 layer architecture
 
 ### Installation
 
-Perfect! You're setting up an existing Go project (gorestapi/). Here's how to properly set it up and run it:
+Perfect! You're setting up an existing Go project (gorestapi). Here's how to properly set it up and run it:
 
-## Complete Setup Steps for Your gorestapi/ Project
+## Complete Setup Steps for Your gorestapi Project
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/kongnakornna/gorestapi/
-cd gorestapi/
+git clone https://gorestapi
+cd gorestapi
 
 # 2. Download and tidy up dependencies
 go mod tidy
@@ -135,18 +135,18 @@ curl http://localhost:5000/api/users
 
 ```bash
 # Build for current OS
-go build -o gorestapi/
+go build -o gorestapi
 
 # Run the binary
-./gorestapi/
+./gorestapi
 
 # Build for different platforms (optional)
 # Windows:
-GOOS=windows GOARCH=amd64 go build -o gorestapi/.exe
+GOOS=windows GOARCH=amd64 go build -o gorestapi.exe
 # Linux:
-GOOS=linux GOARCH=amd64 go build -o gorestapi/-linux
+GOOS=linux GOARCH=amd64 go build -o gorestapi-linux
 # macOS:
-GOOS=darwin GOARCH=arm64 go build -o gorestapi/-mac
+GOOS=darwin GOARCH=arm64 go build -o gorestapi-mac
 ```
 
 ## Troubleshooting Common Issues
@@ -201,7 +201,7 @@ After cloning, look for these common patterns:
 # Check the project structure
 ls -la
 
-# Typical gorestapi/ structure might look like:
+# Typical gorestapi structure might look like:
 # .
 # ├── main.go
 # ├── go.mod

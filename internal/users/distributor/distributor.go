@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gorestapi//config"
-	"gorestapi//internal/distributor"
-	"gorestapi//internal/users"
-	"gorestapi//pkg/logger"
+	"icmongolang/config"
+	"icmongolang/internal/distributor"
+	"icmongolang/internal/users"
+	"icmongolang/pkg/logger"
 
 	"github.com/hibiken/asynq"
 )

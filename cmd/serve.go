@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"gorestapi/config"
-	"gorestapi/internal/distributor"
-	"gorestapi/internal/server"
-	"gorestapi/pkg/db/postgres"
-	"gorestapi/pkg/db/redis"
-	"gorestapi/pkg/logger"
-
+	"icmongolang/config"
+	"icmongolang/internal/distributor"
+	"icmongolang/internal/server"
+	"icmongolang/pkg/db/postgres"
+	"icmongolang/pkg/db/redis"
+	"icmongolang/pkg/logger"
 	"github.com/spf13/cobra"
 )
 

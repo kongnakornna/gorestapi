@@ -43,3 +43,11 @@ runner = "green"
 [misc]
 # Delete tmp directory on exit
 clean_on_exit = true
+
+
+[env]
+  APP_ENV = "dev"
+  APP_USER = "air"
+
+ 
+ 

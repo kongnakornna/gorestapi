@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 
-	"gorestapi//config"
+	"icmongolang/config"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

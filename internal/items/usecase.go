@@ -3,10 +3,9 @@ package items
 import (
 	"context"
 
-	"gorestapi//internal"
-	"gorestapi//internal/models"
-
 	"github.com/google/uuid"
+	"icmongolang/internal"
+	"icmongolang/internal/models"
 )
 
 type ItemUseCaseI interface {

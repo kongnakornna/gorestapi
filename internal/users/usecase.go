@@ -3,8 +3,8 @@ package users
 import (
 	"context"
 
-	"gorestapi/internal"
-	"gorestapi/internal/models"
+	"icmongolang/internal"
+	"icmongolang/internal/models"
 
 	"github.com/google/uuid"
 )

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"gorestapi//internal/models"
-	"gorestapi//pkg/httpErrors"
-	"gorestapi//pkg/jwt"
-	"gorestapi//pkg/responses"
+	"icmongolang/internal/models"
+	"icmongolang/pkg/httpErrors"
+	"icmongolang/pkg/jwt"
+	"icmongolang/pkg/responses"
 
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
