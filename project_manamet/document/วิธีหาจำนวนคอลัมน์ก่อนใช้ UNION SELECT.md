@@ -1,5 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
+ 
 # วิธีหาจำนวนคอลัมน์ก่อนใช้ UNION SELECT
 
 เทคนิคการหาจำนวนคอลัมน์ (Column Enumeration) เป็น **ขั้นตอนแรกที่สำคัญที่สุด** ในการทำ SQL Injection แบบ Union-Based เพราะกฎเหล็กของ `UNION` คือ **"จำนวนคอลัมน์ของทั้งสองตารางต้องเท่ากัน"** ถ้าไม่เท่ากัน Database จะแจ้ง Error ทันที
