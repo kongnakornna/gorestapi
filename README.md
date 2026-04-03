@@ -90,13 +90,13 @@ In this project use 3 layer architecture
 
 ```bash
 - ตรวจสอบว่า go.mod มี replace directive หรือใช้ local module หรือไม่
-- ถ้า icmongolang เป็น local module ให้ใช้ replace icmongolang => icmongolang
+- ถ้า gorestapi เป็น local module ให้ใช้ replace gorestapi => gorestapi
 - หรือถ้าเป็น private repo ให้ตั้ง GOPRIVATE และใช้ access token
-- Perfect! You're setting up an existing Go project (icmongolang). Here's how to properly set it up and run it:
+- Perfect! You're setting up an existing Go project (gorestapi). Here's how to properly set it up and run it:
 ```bash
-## Complete Setup Steps for Your icmongolang Project
-## 📘 การจัดการ `go.mod` และ dependencies สำหรับโปรเจกต์ `icmongolang`  
-## 📘 Managing `go.mod` and dependencies for `icmongolang` project
+## Complete Setup Steps for Your gorestapi Project
+## 📘 การจัดการ `go.mod` และ dependencies สำหรับโปรเจกต์ `gorestapi`  
+## 📘 Managing `go.mod` and dependencies for `gorestapi` project
 
 > คำแนะนำแบบทีละขั้นตอน (ไทย / อังกฤษ)  
 > Step-by-step guide (Thai / English)
@@ -109,8 +109,8 @@ In this project use 3 layer architecture
 ```bash
 # ไทย: โคลน repository จาก GitHub และเปลี่ยนไปยังไดเรกทอรีโปรเจกต์
 # EN: Clone the repository from GitHub and change into the project directory
-git clone github.com/kongnakornna/icmongolang.git
-cd icmongolang
+git clone github.com/kongnakornna/gorestapi.git
+cd gorestapi
 ```
 ```bash
 
@@ -183,7 +183,7 @@ go run cmd/api/main.go serve
 
 # หรือ (หรือ) ถ้า main.go อยู่ใน cmd/
 # Or if main.go is inside cmd/
-go run cmd/icmongolang/main.go serve
+go run cmd/gorestapi/main.go serve
 ```
 
 ---
@@ -301,7 +301,7 @@ If you want to **completely regenerate** `go.mod` from scratch (keeping only the
 ```bash
 # WARNING: deletes existing go.mod
 rm go.mod go.sum
-go mod init icmongolang
+go mod init gorestapi
 go mod tidy
 ```
 
@@ -386,8 +386,8 @@ air -c .air.toml
 สามารถ clone มาใช้ได้เลย:
 
 ```bash
-git clone https://icmongolang
-cd icmongolang
+git clone https://gorestapi
+cd gorestapi
 go mod tidy
 go run cmd/api/main.go serve
 
@@ -399,7 +399,7 @@ OR  air
 ---
 ## 📁 โครงสร้างโปรเจค `gorestapi`
 ```  
-    icmongolang/
+    gorestapi/
     ├── .vscode/                         # VS Code config (debug, launch)
     ├── cmd/                             # CLI commands (ใช้ Cobra)
     │   ├── /api/main.go                 # entry point (cobra.Execute())
@@ -539,7 +539,7 @@ OR  air
 
 | ไฟล์ | หน้าที่ |
 |------|--------|
-| `root.go` | คำสั่งหลัก (`icmongolang`) แสดง help และตั้งค่า flags ร่วม (เช่น `--config`) |
+| `root.go` | คำสั่งหลัก (`gorestapi`) แสดง help และตั้งค่า flags ร่วม (เช่น `--config`) |
 | `serve.go` | เริ่ม HTTP server (โหลด config, เชื่อมต่อ DB, ตั้ง router, เริ่ม worker) |
 | `migrate.go` | รัน database migration (auto migrate GORM หรือ raw SQL) |
 | `initdata.go` | seed ข้อมูลเริ่มต้น เช่น สร้าง root user (admin) |
@@ -732,7 +732,7 @@ sequenceDiagram
 โครงสร้างนี้เหมาะกับ REST API ขนาดกลางถึงใหญ่ สามารถขยับขยายไปใช้ event-driven หรือ microservices ได้ง่าย โดยการเพิ่ม message broker แทน channel worker.
 
 
-# 🧱 โครงสร้างโปรเจกต์ `icmongolang` – Go Backend สำหรับระบบ Authentication & User Management
+# 🧱 โครงสร้างโปรเจกต์ `gorestapi` – Go Backend สำหรับระบบ Authentication & User Management
 
 โครงสร้างนี้เป็นเทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go 遵循 Clean Architecture (ใช้ layer: Model → Repository → Usecase → Delivery) รองรับ JWT (RSA), Redis cache, email queue, migration, และ hot-reload
 
@@ -741,7 +741,7 @@ sequenceDiagram
 ## 1. โครงสร้างการทำงานของแต่ละโฟลเดอร์/ไฟล์
 
 ```
-icmongolang/
+gorestapi/
 ├── .vscode/                 # debug & launch configuration สำหรับ VS Code
 ├── cmd/                     # CLI commands (ใช้ Cobra)
 │   ├── api/main.go          # entry point – เรียก cobra.Execute()
