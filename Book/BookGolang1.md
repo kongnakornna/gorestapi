@@ -906,6 +906,8 @@ Go มีรูปแบบการ "สืบทอด" ผ่าน Compositi
 
 ### 📐 แผนภาพ Dataflow (Flowchart TB) – Struct Embedding ใน Go
 
+<img width="1141" height="4011" alt="g1" src="https://github.com/user-attachments/assets/9869a3d0-7418-48e0-9745-8e2c0ef92bb8" />
+
 ```mermaid
 flowchart TB
     subgraph Base["struct แม่ (Animal)"]
