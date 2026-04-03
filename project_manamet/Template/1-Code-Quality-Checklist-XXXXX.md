@@ -1,5 +1,5 @@
 ```markdown
-# Tirle  xxxxxxxxxxxxxxxxxx
+# Title  xxxxxxxxxxxxxxxxxx
 
 ## Symbol | สัญลักษณ์
 
