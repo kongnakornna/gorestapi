@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"gorestapi/pkg/httpErrors"
+
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
 )
 
 type AuthClaims struct {

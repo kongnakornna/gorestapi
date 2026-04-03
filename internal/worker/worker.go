@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/hibiken/asynq"
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
 
-	"github.com/kongnakornna/gorestapi/internal/users"
-	userProcessor "github.com/kongnakornna/gorestapi/internal/users/processor"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
-	"github.com/kongnakornna/gorestapi/pkg/sendEmail"
+	"gorestapi/internal/users"
+	userProcessor "gorestapi/internal/users/processor"
+	"gorestapi/pkg/logger"
+	"gorestapi/pkg/sendEmail"
 )
 
 const (

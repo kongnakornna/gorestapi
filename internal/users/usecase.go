@@ -3,9 +3,10 @@ package users
 import (
 	"context"
 
+	"gorestapi/internal"
+	"gorestapi/internal/models"
+
 	"github.com/google/uuid"
-	"github.com/kongnakornna/gorestapi/internal"
-	"github.com/kongnakornna/gorestapi/internal/models"
 )
 
 type UserUseCaseI interface {

@@ -7,19 +7,20 @@ import (
 	"strings"
 	"time"
 
+	"gorestapi/config"
+	"gorestapi/internal/models"
+	"gorestapi/internal/usecase"
+	"gorestapi/internal/users"
+	"gorestapi/internal/worker"
+	"gorestapi/pkg/cryptpass"
+	"gorestapi/pkg/emailTemplates"
+	"gorestapi/pkg/httpErrors"
+	"gorestapi/pkg/jwt"
+	"gorestapi/pkg/logger"
+	"gorestapi/pkg/secureRandom"
+
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/internal/usecase"
-	"github.com/kongnakornna/gorestapi/internal/users"
-	"github.com/kongnakornna/gorestapi/internal/worker"
-	"github.com/kongnakornna/gorestapi/pkg/cryptpass"
-	"github.com/kongnakornna/gorestapi/pkg/emailTemplates"
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
-	"github.com/kongnakornna/gorestapi/pkg/jwt"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
-	"github.com/kongnakornna/gorestapi/pkg/secureRandom"
 )
 
 type userUseCase struct {

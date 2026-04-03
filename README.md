@@ -92,7 +92,7 @@ Perfect! You're setting up an existing Go project (gorestapi). Here's how to pro
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/kongnakornna/gorestapi
+git clone [https://gorestapi](https://github.com/kongnakornna/gorestapi)
 cd gorestapi
 
 # 2. Download and tidy up dependencies
@@ -103,12 +103,8 @@ go mod verify
 
 
 # Inside container or locally
-go mod tidy
-go mod download
-go mod verify
 
-# 4. Run the application
-go run main.go serve
+
 
 # Or if the main file is in cmd directory:
 go run cmd/gorestapi/main.go serve

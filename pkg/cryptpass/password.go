@@ -3,7 +3,8 @@ package cryptpass
 import (
 	"errors"
 
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
+	"gorestapi/pkg/httpErrors"
+
 	"golang.org/x/crypto/bcrypt"
 )
 

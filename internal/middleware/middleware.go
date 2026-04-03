@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/users"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
+	"gorestapi/config"
+	"gorestapi/internal/users"
+	"gorestapi/pkg/logger"
 )
 
 type MiddlewareManager struct {

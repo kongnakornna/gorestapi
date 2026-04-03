@@ -3,7 +3,8 @@ package postgres
 import (
 	"fmt"
 
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

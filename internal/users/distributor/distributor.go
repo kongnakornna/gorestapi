@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"gorestapi/config"
+	"gorestapi/internal/distributor"
+	"gorestapi/internal/users"
+	"gorestapi/pkg/logger"
+
 	"github.com/hibiken/asynq"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/distributor"
-	"github.com/kongnakornna/gorestapi/internal/users"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
 type userRedisTaskDistributor struct {

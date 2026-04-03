@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 
+	"gorestapi/internal/items"
+	"gorestapi/internal/models"
+	"gorestapi/internal/repository"
+
 	"github.com/google/uuid"
-	"github.com/kongnakornna/gorestapi/internal/items"
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/internal/repository"
 	"gorm.io/gorm"
 )
 

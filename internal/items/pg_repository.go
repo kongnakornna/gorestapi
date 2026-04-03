@@ -3,9 +3,10 @@ package items
 import (
 	"context"
 
+	"gorestapi/internal"
+	"gorestapi/internal/models"
+
 	"github.com/google/uuid"
-	"github.com/kongnakornna/gorestapi/internal"
-	"github.com/kongnakornna/gorestapi/internal/models"
 )
 
 type ItemPgRepository interface {

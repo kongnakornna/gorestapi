@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"strings"
 
+	"gorestapi/internal/models"
+	"gorestapi/pkg/httpErrors"
+	"gorestapi/pkg/jwt"
+	"gorestapi/pkg/responses"
+
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
-	"github.com/kongnakornna/gorestapi/pkg/jwt"
-	"github.com/kongnakornna/gorestapi/pkg/responses"
 )
 
 var (

@@ -3,15 +3,16 @@ package cmd
 import (
 	"context"
 
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/distributor"
-	userDistributor "github.com/kongnakornna/gorestapi/internal/users/distributor"
-	userRepository "github.com/kongnakornna/gorestapi/internal/users/repository"
-	userUseCase "github.com/kongnakornna/gorestapi/internal/users/usecase"
-	"github.com/kongnakornna/gorestapi/pkg/db/postgres"
-	"github.com/kongnakornna/gorestapi/pkg/db/redis"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
-	"github.com/spf13/cobra" 
+	"gorestapi/config"
+	"gorestapi/internal/distributor"
+	userDistributor "gorestapi/internal/users/distributor"
+	userRepository "gorestapi/internal/users/repository"
+	userUseCase "gorestapi/internal/users/usecase"
+	"gorestapi/pkg/db/postgres"
+	"gorestapi/pkg/db/redis"
+	"gorestapi/pkg/logger"
+
+	"github.com/spf13/cobra"
 )
 
 var initDataCmd = &cobra.Command{

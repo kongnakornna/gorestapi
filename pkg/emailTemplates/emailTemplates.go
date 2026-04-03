@@ -3,7 +3,8 @@ package emailTemplates
 import (
 	"context"
 
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
+
 	"github.com/matcornic/hermes/v2"
 )
 

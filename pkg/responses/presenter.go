@@ -1,6 +1,6 @@
 package responses
 
-import "github.com/kongnakornna/gorestapi/pkg/httpErrors"
+import "gorestapi/pkg/httpErrors"
 
 type Response[D any] struct {
 	Data      D                       `json:"data"`

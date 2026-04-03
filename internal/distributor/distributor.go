@@ -1,9 +1,10 @@
 package distributor
 
 import (
+	"gorestapi/config"
+	"gorestapi/pkg/logger"
+
 	"github.com/hibiken/asynq"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
 type RedisTaskDistributor struct {

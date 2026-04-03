@@ -3,7 +3,8 @@ package logger
 import (
 	"os"
 
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

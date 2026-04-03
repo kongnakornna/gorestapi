@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/distributor"
-	"github.com/kongnakornna/gorestapi/internal/server"
-	"github.com/kongnakornna/gorestapi/pkg/db/postgres"
-	"github.com/kongnakornna/gorestapi/pkg/db/redis"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
+	"gorestapi/config"
+	"gorestapi/internal/distributor"
+	"gorestapi/internal/server"
+	"gorestapi/pkg/db/postgres"
+	"gorestapi/pkg/db/redis"
+	"gorestapi/pkg/logger"
+
 	"github.com/spf13/cobra"
 )
 

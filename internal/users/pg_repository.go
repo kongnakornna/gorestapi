@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/kongnakornna/gorestapi/internal"
-	"github.com/kongnakornna/gorestapi/internal/models"
+	"gorestapi/internal"
+	"gorestapi/internal/models"
 )
 
 type UserPgRepository interface {

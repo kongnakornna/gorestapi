@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/internal/repository"
-	"github.com/kongnakornna/gorestapi/internal/users"
+	"gorestapi/internal/models"
+	"gorestapi/internal/repository"
+	"gorestapi/internal/users"
+
 	"gorm.io/gorm"
 )
 

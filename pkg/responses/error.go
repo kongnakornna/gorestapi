@@ -3,8 +3,9 @@ package responses
 import (
 	"net/http"
 
+	"gorestapi/pkg/httpErrors"
+
 	"github.com/go-chi/render"
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
 )
 
 // render.Renderer Render() interface method

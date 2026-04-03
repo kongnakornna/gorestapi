@@ -5,7 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ var (
 		Long:  `A RESTful API dev with password less authentication.`,
 		// Uncomment the following line if your bare application
 		// has an action associated with it:
-		//	Run: func(cmd *cobra.Command, args []string) { },
+		// Run: func(cmd *cobra.Command, args []string) { },
 	}
 )
 

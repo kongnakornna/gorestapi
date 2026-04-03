@@ -3,7 +3,8 @@ package redis
 import (
 	"time"
 
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
+
 	"github.com/redis/go-redis/v9"
 )
 

@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"gorestapi/config"
+	"gorestapi/internal/auth"
+	"gorestapi/internal/middleware"
+	"gorestapi/internal/users"
+	"gorestapi/internal/users/presenter"
+	"gorestapi/pkg/httpErrors"
+	"gorestapi/pkg/jwt"
+	"gorestapi/pkg/logger"
+	"gorestapi/pkg/responses"
+	"gorestapi/pkg/utils"
+
 	"github.com/go-chi/render"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/auth"
-	"github.com/kongnakornna/gorestapi/internal/middleware"
-	"github.com/kongnakornna/gorestapi/internal/users"
-	"github.com/kongnakornna/gorestapi/internal/users/presenter"
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
-	"github.com/kongnakornna/gorestapi/pkg/jwt"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
-	"github.com/kongnakornna/gorestapi/pkg/responses"
-	"github.com/kongnakornna/gorestapi/pkg/utils"
 )
 
 type authHandler struct {

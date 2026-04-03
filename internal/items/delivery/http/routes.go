@@ -1,9 +1,10 @@
 package http
 
 import (
+	"gorestapi/internal/items"
+	"gorestapi/internal/middleware"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/kongnakornna/gorestapi/internal/items"
-	"github.com/kongnakornna/gorestapi/internal/middleware"
 )
 
 func MapItemRoute(router *chi.Mux, h items.Handlers, mw *middleware.MiddlewareManager) {

@@ -1,9 +1,10 @@
 package http
 
 import (
+	"gorestapi/internal/middleware"
+	"gorestapi/internal/users"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/kongnakornna/gorestapi/internal/middleware"
-	"github.com/kongnakornna/gorestapi/internal/users"
 )
 
 func MapUserRoute(router *chi.Mux, h users.Handlers, mw *middleware.MiddlewareManager) {

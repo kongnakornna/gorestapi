@@ -3,10 +3,11 @@ package usecase
 import (
 	"context"
 
+	"gorestapi/config"
+	"gorestapi/internal"
+	"gorestapi/pkg/logger"
+
 	"github.com/google/uuid"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
 type UseCase[M any] struct {

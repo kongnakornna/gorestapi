@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/pkg/db/postgres"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
+	"icmongolang/config"
+	"icmongolang/internal/models"
+	"icmongolang/pkg/db/postgres"
+	"icmongolang/pkg/logger"
+
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 )

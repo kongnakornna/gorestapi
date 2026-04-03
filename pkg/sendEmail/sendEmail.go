@@ -4,7 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 
-	"github.com/kongnakornna/gorestapi/config"
+	"gorestapi/config"
+
 	"gopkg.in/gomail.v2"
 )
 

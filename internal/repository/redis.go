@@ -6,8 +6,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/kongnakornna/gorestapi/internal"
-	"github.com/kongnakornna/gorestapi/pkg/httpErrors"
+	"gorestapi/internal"
+	"gorestapi/pkg/httpErrors"
+
 	"github.com/redis/go-redis/v9"
 )
 

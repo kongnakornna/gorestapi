@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"gorestapi/config"
+	"gorestapi/internal/processor"
+	"gorestapi/internal/users"
+	"gorestapi/pkg/logger"
+	"gorestapi/pkg/sendEmail"
+
 	"github.com/hibiken/asynq"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/processor"
-	"github.com/kongnakornna/gorestapi/internal/users"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
-	"github.com/kongnakornna/gorestapi/pkg/sendEmail"
 )
 
 type userRedisTaskProcessor struct {

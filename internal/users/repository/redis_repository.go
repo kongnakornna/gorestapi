@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/internal/repository"
-	"github.com/kongnakornna/gorestapi/internal/users"
+	"gorestapi/internal/models"
+	"gorestapi/internal/repository"
+	"gorestapi/internal/users"
+
 	"github.com/redis/go-redis/v9"
 )
 

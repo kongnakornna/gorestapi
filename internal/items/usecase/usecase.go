@@ -3,12 +3,13 @@ package usecase
 import (
 	"context"
 
+	"gorestapi/config"
+	"gorestapi/internal/items"
+	"gorestapi/internal/models"
+	"gorestapi/internal/usecase"
+	"gorestapi/pkg/logger"
+
 	"github.com/google/uuid"
-	"github.com/kongnakornna/gorestapi/config"
-	"github.com/kongnakornna/gorestapi/internal/items"
-	"github.com/kongnakornna/gorestapi/internal/models"
-	"github.com/kongnakornna/gorestapi/internal/usecase"
-	"github.com/kongnakornna/gorestapi/pkg/logger"
 )
 
 type itemUseCase struct {
