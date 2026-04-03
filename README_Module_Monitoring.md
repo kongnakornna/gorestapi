@@ -1234,6 +1234,7 @@ flowchart TB
 **หมายเหตุ:** ขั้นตอนทั้งหมดยึดตาม Clean Architecture ที่มีอยู่แล้วใน `gorestapi` 
 การเพิ่ม module ใหม่จะไม่ต้องแก้ไข `auth` หรือ `users` module ยกเว้นต้องเพิ่มความสัมพันธ์ (foreign key) เช่น Device มี UserID เป็นต้น
 
+
 # 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `icmongolang`  
 ## ตัวอย่าง: เพิ่ม Module **Monitoring & Auto Control** (ระบบเฝ้าระวังภัย, แจ้งเตือน, ควบคุมอัตโนมัติ, รายงาน)
 
