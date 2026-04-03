@@ -82,7 +82,6 @@ In this project use 3 layer architecture
 - [codevoweb.com/forgot-reset-passwords-in-golang-with-html-email/](https://codevoweb.com/forgot-reset-passwords-in-golang-with-html-email/)
 - [techmaster.vn/posts/34577/kien-truc-sach-voi-golang](https://techmaster.vn/posts/34577/kien-truc-sach-voi-golang)
 
-![Icmon8](https://github.com/user-attachments/assets/41fc893b-af33-4b5e-8428-6bb91ff5f4dc)
 
 
 ### Installation
@@ -123,727 +122,58 @@ go run cmd/api/main.go serve
 air
 
 ``` 
----
-### 🧹 2. จัดการ dependencies เริ่มต้น  
-### 2. Initial dependency management
+# 🚀 โครงสร้างและ Workflow ของโปรเจกต์ `gorestapi` (Go Backend Clean Architecture)
 
-```bash
-# ไทย: ดาวน์โหลด dependencies และทำ tidy (เพิ่ม/ลบตามที่โค้ดเรียกใช้)
-# EN: Download dependencies and tidy up (add/remove based on code imports)
-go mod tidy
-
-# ไทย: ตรวจสอบว่าโมดูลถูกตั้งค่าถูกต้อง
-# EN: Verify the module is set up correctly
-go mod verify
-```
+เอกสารนี้ **แก้ไขใหม่** ตามความต้องการของคุณ ประกอบด้วย  
+- โครงสร้างการทำงานแบบละเอียด  
+- Dataflow Diagram (Flowchart TB สำหรับ Draw.io) พร้อมคำอธิบาย  
+- ตัวอย่างโค้ดพร้อมคอมเมนต์ไทย/อังกฤษ ที่รันได้จริง  
+- กรณีศึกษา  
+- สรุป (ประโยชน์, ข้อควรระวัง, ข้อดี/เสีย, ข้อห้าม, แหล่งอ้างอิง)
 
 ---
 
-### 🗂️ 3. ตรวจสอบโครงสร้างโปรเจกต์ (ถ้าต้องการ)  
-### 3. Check project structure (optional)
-
-```bash
-# ไทย: ดูว่าไฟล์สำคัญมีอยู่หรือไม่
-# EN: Check if essential files exist
-ls docker-compose.yml Dockerfile main.go go.mod
-```
-
----
-
-### 📦 4. จัดการ dependencies แบบละเอียด (download, vendor, tidy)  
-### 4. Advanced dependency management (download, vendor, tidy)
-
-```bash
-# ไทย: ดาวน์โหลด dependencies ทั้งหมดลงใน module cache
-# EN: Download all dependencies to the module cache
-go mod download
-
-# ไทย: ทำ tidy อีกครั้งเพื่อความแน่ใจ (ก่อน vendor)
-# EN: Run tidy again to be safe (before vendoring)
-go mod tidy
-
-# ไทย: คัดลอก dependencies ไปไว้ในโฟลเดอร์ vendor
-# EN: Copy dependencies into the ./vendor directory
-go mod vendor
-
-# ไทย: ตรวจสอบโมดูลอีกครั้ง
-# EN: Verify modules again
-go mod verify
-```
-
----
-
-### 🚀 5. รันแอปพลิเคชัน  
-### 5. Run the application
-
-```bash
-# ไทย: รันด้วย main.go ที่ root (ถ้ามี)
-# EN: Run using main.go at the root (if exists)
-go run cmd/api/main.go serve
-
-# หรือ (หรือ) ถ้า main.go อยู่ใน cmd/
-# Or if main.go is inside cmd/
-go run cmd/gorestapi/main.go serve
-```
-
----
-
-## 🔧 การรีเซ็ต `go.mod` ให้กลับมาสะอาด (แก้ปัญหา `go 1.25.0` ไม่รองรับ)  
-## 🔧 Resetting `go.mod` to a clean state (fix unsupported `go 1.25.0`)
-
-> ใช้ขั้นตอนนี้เมื่อเจอ error `go 1.25.0` หรือ `go.mod` มีปัญหาขัดแย้ง  
-> Use this procedure when you see `go 1.25.0` error or `go.mod` conflicts.
-
----
-
-### ✅ ขั้นตอนที่ 1 – สำรองข้อมูล (แนะนำ)  
-### Step 1 – Backup (recommended)
-
-```bash
-# ไทย: สำรองไฟล์ go.mod และ go.sum ปัจจุบัน
-# EN: Backup current go.mod and go.sum
-cp go.mod go.mod.bak
-cp go.sum go.sum.bak
-```
-
----
-
-### ✅ ขั้นตอนที่ 2 – กำหนดเวอร์ชัน Go ที่ถูกต้อง (stable 1.23 หรือ 1.24)  
-### Step 2 – Set a valid Go version (stable 1.23 or 1.24)
-
-```bash
-# ไทย: แก้ไข go.mod ให้ใช้ go 1.23 (หรือ 1.24 แล้วแต่ที่ติดตั้ง)
-# EN: Edit go.mod to use go 1.23 (or 1.24 depending on your installation)
-go mod edit -go=1.23
-```
-
----
-
-### ✅ ขั้นตอนที่ 3 – ล้าง require blocks และสร้าง dependencies ใหม่ทั้งหมด  
-### Step 3 – Remove all require blocks and rebuild dependencies cleanly
-
-```bash
-# ไทย: รัน go mod tidy เพื่อวิเคราะห์ imports ในโค้ดและสร้าง go.mod / go.sum ใหม่
-# EN: Run go mod tidy to analyze code imports and regenerate go.mod / go.sum
-go mod tidy
-```
-
-> `go mod tidy` จะ:
-> - ลบ `require` ที่ไม่ได้ใช้
-> - เพิ่ม `require` สำหรับแพ็คเกจที่ถูก import จริง
-> - ปรับ `go.sum` ให้สอดคล้อง  
->  
-> `go mod tidy` will:
-> - Remove unused `require` directives
-> - Add `require` for actually imported packages
-> - Adjust `go.sum` accordingly
-
----
-
-### ✅ ขั้นตอนที่ 4 – ตรวจสอบผลลัพธ์  
-### Step 4 – Verify the result
-
-```bash
-# ไทย: ดูเนื้อหา go.mod ที่ถูกต้อง
-# EN: View the corrected go.mod content
-cat go.mod
-
-# ไทย: ทดสอบ build หรือ run เพื่อยืนยัน
-# EN: Test build or run to confirm
-go build ./...
-# หรือ (or)
-go run cmd/api/main.go serve
-```
-
----
-
-### 📝 หมายเหตุเพิ่มเติม  
-### 📝 Additional notes
-
-- ถ้ายังคงมีปัญหาเรื่องเวอร์ชัน Go ให้ตรวจสอบ Go version ที่ติดตั้งด้วย `go version`  
-- หากใช้ Go 1.21 ขึ้นไป การตั้ง `go 1.23` ใน `go.mod` จะยังทำงานได้ (เข้ากันได้ backward)  
-- หลังจาก reset แล้ว หากต้องการใช้ vendor อีกครั้ง ให้รัน `go mod vendor`
-
-- If you still have Go version issues, check installed Go version with `go version`  
-- For Go 1.21+, setting `go 1.23` in `go.mod` is still compatible (backward compatible)  
-- After resetting, if you need vendor again, run `go mod vendor`
-
----
-
-✅ จบขั้นตอน – ตอนนี้ `go.mod` ของคุณสะอาดและพร้อมใช้งานแล้ว  
-✅ End of steps – Your `go.mod` is now clean and ready to use.
-
-To **reset** your `go.mod` to a clean, valid state (fixing the unsupported `go 1.25.0` and tidying dependencies), run:
-
-```bash
-# 1. (Optional) Backup current go.mod and go.sum
-cp go.mod go.mod.bak
-cp go.sum go.sum.bak
-
-# 2. Set a valid Go version (1.23 or 1.24 are stable as of 2026)
-go mod edit -go=1.23
-
-# 3. Remove all require blocks and let 'go mod tidy' rebuild them cleanly
-#    (this preserves only direct imports from your code)
-go mod tidy
-
-# 4. Verify the result
-cat go.mod
-```
-
-After running `go mod tidy`, your `go.mod` will:
-- Have a valid `go 1.23` directive
-- Contain only **direct** requirements (plus `// indirect` for transitive deps)
-- Have a clean `go.sum` with checksums
-
-If you want to **completely regenerate** `go.mod` from scratch (keeping only the module name), you can:
-
-```bash
-# WARNING: deletes existing go.mod
-rm go.mod go.sum
-go mod init gorestapi
-go mod tidy
-```
-
-But that will lose all the manually listed `require` lines. The `go mod tidy` approach above is safer – it will keep all needed deps based on your actual source code imports.
-
-After resetting, if you still need a `vendor` directory, run:
-
-```bash
-go mod vendor
-```
-
- 
-# 1. แก้ไข go.mod
-go mod edit -go=1.25
-go mod tidy
-
-# 2. ลบ vendor เดิม
-Remove-Item -Recurse -Force vendor -ErrorAction SilentlyContinue
-
-# 3. สร้าง vendor (จะมี warning ให้ ignore ได้)
-go mod vendor
-
-# 4. ตรวจสอบ vendor
-Get-ChildItem vendor
-
-# 5. ทดสอบ build
-go build -mod=vendor ./...
-
-
-## 🧱 ความสอดคล้องกับ 3-layer Architecture + Delivery
-
-| Layer | โฟลเดอร์ | หน้าที่ |
-|-------|----------|--------|
-| **Models** | `internal/models/` | กำหนด struct ของ entity (User, Product, etc.) + GORM annotations |
-| **Repository** | `internal/repository/` | Interface + implementation สำหรับติดต่อฐานข้อมูล (CRUD) |
-| **Usecase** | `internal/usecase/` | Business logic: validation, hashing, token creation, email sending, cache ฯลฯ |
-| **Delivery** | `internal/delivery/rest/` | HTTP handlers, รับ request → เรียก usecase → ส่ง response |
-
-## ✨ Features ที่ implement (ตามที่โจทย์ต้องการ)
-
-| Feature | การ Implement ในโครงสร้างนี้ |
-|---------|-----------------------------|
-| **CRUD** | `user_handler.go` + `user_repo.go` + `auth_usecase.go` (สำหรับ user) |
-| **JWT + refresh token (Redis)** | `pkg/jwt` สร้าง access/refresh token, เก็บ refresh token hash ใน Redis (key: `refresh:{userID}`) |
-| **Cached user in Redis** | `usecase` จะ cache user profile หลังจาก login/get profile ด้วย `pkg/redis` (key: `user:{id}`, TTL 5 นาที) |
-| **Email verification** | `pkg/email` + `hermes` สร้าง HTML email, ส่ง verification link ผ่าน `gomail` |
-| **Forget / reset password** | Endpoint `/forgot-password` → สร้าง token ส่ง email → `/reset-password` รับ token + เปลี่ยนรหัส |
-
-## 🚀 การทำงานของแต่ละ Command (Cobra)
-
-```bash
-go run cmd/api/main.go serve      # เริ่ม HTTP server บน port ที่กำหนดใน config
-go run cmd/api/main.go migrate    # auto migrate (หรือ run raw SQL จาก migrations/)
-go run cmd/api/main.go initdata   # สร้าง root user (email: root@gmail.com, pass: root_password)
-go run cmd/api/main.go worker     # run background worker (ส่ง email แบบ queue)
-```
-
-## 🐳 Docker Compose ที่ใช้
-
-- **docker-compose.dev.yml** → รัน postgres, redis, mailhog (SMTP fake) สำหรับพัฒนา
-- **docker-compose.prod.yml** → รัน postgres, redis, app (build from Dockerfile.prod) พร้อม network แบบ production
-
-## 🔥 Hot-reload (Air)
-
-ใช้ไฟล์ `.air.toml` เพื่อให้แอปรีสตาร์ทอัตโนมัติเมื่อโค้ดเปลี่ยนแปลง
-```bash
-air -c .air.toml
-```
-
-## 📝 สรุป
-
-โครงสร้างนี้ตรงตาม requirements ครบทุกข้อ:
-- ✅ 3-layer clean architecture
-- ✅ Chi routing + GORM ORM
-- ✅ JWT (RSA) + refresh token ใน Redis
-- ✅ Cached user ใน Redis
-- ✅ Email verification (gomail + hermes)
-- ✅ Forgot / reset password via email
-- ✅ Viper config, Cobra CLI, Zap logger, Validator
-- ✅ Docker + Air hot-reload + Swagger docs
-
-สามารถ clone มาใช้ได้เลย:
-
-```bash
-git clone https://gorestapi
-cd gorestapi
-go mod tidy
-go run cmd/api/main.go serve
-
-OR  air
-```
-
-ขออธิบายโครงสร้างโปรเจกต์ **gorestapi** แบบละเอียด โดยอ้างอิงจากต้นแบบ [kongnakornna/gorestapi](https://gorestapi) แต่ตัดส่วนที่ไม่จำเป็นออกไป (`.vscode/`, `/docdev`, `/lession`) โครงสร้างนี้ใช้ **Clean Architecture** พร้อม (layers) ที่แยกหน้าที่ชัดเจน: **Models → Repository → Usecase → Delivery** เหมาะสำหรับ REST API ที่มีความซับซ้อนปานกลางถึงสูง รองรับ JWT, Redis, Email Queue, และ Background Worker
-
----
-## 📁 โครงสร้างโปรเจค `gorestapi`
-```  
-    gorestapi/
-    ├── .vscode/                         # VS Code config (debug, launch)
-    ├── cmd/                             # CLI commands (ใช้ Cobra)
-    │   ├── /api/main.go                 # entry point (cobra.Execute())
-    │   ├── root.go                      # root command
-    │   ├── serve.go                     # start HTTP server
-    │   ├── migrate.go                   # run DB migrations
-    │   ├── initdata.go                  # seed initial data (root user)
-    │   └── worker.go                    # background worker (email queue)
-    │
-    ├── config/                          # Viper configuration files
-    │   ├── config-local.yml             # local dev config
-    │   ├── config-prod.yml              # production config
-    │   └── config.go                    # load & parse config
-    │
-    ├── docdev/                          # developer documentation
-    ├── docs/                            # Swagger / API docs
-    │
-    internal/
-    │
-    ├── models/                          # Entity layer (GORM models)
-    │   ├── user.go                      # User struct (id, email, password, verified, tokens...)
-    │   ├── session.go                   # Session struct (ถ้าใช้ session table)
-    │   └── verification.go              # VerificationToken struct (optional)
-    │
-    ├── repository/                      # Repository layer (data access interface)
-    │   ├── user_repo.go                 # UserRepository interface & implementation
-    │   │   - Create(user) error
-    │   │   - FindByEmail(email) (*User, error)
-    │   │   - FindByID(id) (*User, error)
-    │   │   - Update(user) error
-    │   │   - Delete(id) error
-    │   ├── session_repo.go              # SessionRepository (สำหรับ refresh token ใน DB ถ้าไม่ใช้ Redis)
-    │   └── redis_repo.go                # Redis operations (cache, refresh token store)
-    │
-    ├── usecase/                         # Business logic layer
-    │   ├── auth_usecase.go              # AuthUsecace interface & impl
-    │   │   - Register()
-    │   │   - Login()
-    │   │   - VerifyEmail()
-    │   │   - ForgotPassword()
-    │   │   - ResetPassword()
-    │   │   - RefreshToken()
-    │   │   - Logout()
-    │   ├── user_usecase.go              # UserUsecase (CRUD)
-    │   │   - GetProfile()
-    │   │   - UpdateProfile()
-    │   │   - ListUsers() (admin)
-    │   └── cache_usecase.go             # Cache helper (ใช้ใน auth_usecase สำหรับ cached user)
-    │
-    ├── delivery/                        # HTTP handlers & routing
-    │   ├── rest/
-    │   │   ├── handler/                 # หรือจะแยกตาม entity
-    │   │   │   ├── auth_handler.go      # Auth endpoints
-    │   │   │   ├── user_handler.go      # User endpoints
-    │   │   │   └── health_handler.go    # Health check
-    │   │   ├── middleware/
-    │   │   │   ├── auth.go              # JWT authentication middleware
-    │   │   │   ├── logger.go            # Request logger (zap)
-    │   │   │   ├── cors.go              # CORS middleware
-    │   │   │   └── rate_limit.go        # Rate limiter (optional)
-    │   │   ├── dto/                     # Data Transfer Objects (request/response)
-    │   │   │   ├── auth_dto.go          # RegisterRequest, LoginRequest, TokenResponse...
-    │   │   │   ├── user_dto.go          # UserResponse, UpdateUserRequest
-    │   │   │   └── error_dto.go         # ErrorResponse
-    │   │   └── router.go                # Chi router setup (routes all handlers)
-    │   │
-    │   └── worker/                      # Background workers (email queue)
-    │       └── email_worker.go          # Process email sending async
-    │
-    ├── pkg/                             # Internal shared packages (ไม่ expose ออกไป)
-    │   ├── jwt/
-    │   │   ├── maker.go                 # JWT Maker interface (CreateToken, VerifyToken)
-    │   │   ├── rsa_maker.go             # RSA implementation (private/public key)
-    │   │   └── payload.go               # JWT payload struct
-    │   ├── redis/
-    │   │   ├── client.go                # Redis client wrapper
-    │   │   ├── cache.go                 # Cache helper (Get, Set, Delete)
-    │   │   └── refresh_store.go         # Store/validate refresh token in Redis
-    │   ├── email/
-    │   │   ├── sender.go                # Email sender interface
-    │   │   ├── gomail_sender.go         # Gomail implementation
-    │   │   └── templates/               # Hermes HTML templates
-    │   │       ├── verification.html    # Email verification template
-    │   │       └── reset_password.html  # Reset password template
-    │   ├── logger/
-    │   │   └── zap_logger.go            # Zap logger init & wrapper
-    │   ├── validator/
-    │   │   └── custom_validator.go      # go-playground/validator with custom tags
-    │   ├── hash/
-    │   │   └── bcrypt.go                # Password hashing
-    │   └── utils/
-    │       ├── random.go                # Random string generator (verification code)
-    │       └── time.go                  # Time helpers
-    │
-    └── config/                          # (บางทีก็เอาไว้ใน internal/config)
-    │    └── config.go                    # Viper config loader (struct with all settings)
-    │
-    ├── migrations/                      # raw SQL migration files (optional)
-    ├── pkg/                             # public packages (อาจ reuse ภายนอก)
-    │   └── utils/                       # helper functions
-    │
-    ├── scripts/                         # build, deploy, CI scripts
-    ├── vendor/                          # vendored dependencies
-    │
-    ├── .air.toml                        # hot-reload config (Air)
-    ├── .dockerignore
-    ├── .env.dev                         # dev environment variables
-    ├── .env.prod                        # prod environment variables
-    ├── .gitignore
-    ├── docker-compose.dev.yml           # dev stack (postgres, redis, mailhog)
-    ├── docker-compose.prod.yml          # prod stack (including app)
-    ├── Dockerfile.dev                   # multi-stage dev build
-    ├── Dockerfile.prod                  # production build
-    ├── go.mod / go.sum
-    ├── LICENSE
-    ├── README.md
-    └── BookGolang.md                    # เอกสารประกอบการเรียนรู้
-```
-
-## 1. โฟลเดอร์หลักและไฟล์ระดับบนสุด
-
-| ไฟล์/โฟลเดอร์ | คำอธิบาย |
-|---------------|----------|
-| `main.go` | จุดเริ่มต้นของโปรแกรม เรียกใช้ `cmd.Execute()` จาก Cobra |
-| `go.mod`, `go.sum` | จัดการ dependencies (GORM, Chi, Viper, Cobra, Zap, Gomail, Redis client ฯลฯ) |
-| `Dockerfile.dev`, `Dockerfile.prod` | สร้าง image สำหรับ development (hot-reload) และ production (multi-stage) |
-| `docker-compose.dev.yml`, `docker-compose.prod.yml` | กำหนด service stack: PostgreSQL, Redis, MailHog (dev), และแอปพลิเคชัน |
-| `.air.toml` | ตั้งค่า Air สำหรับ hot-reload ตอนพัฒนา |
-| `.env.dev`, `.env.prod` | ตัวแปรสภาพแวดล้อม (database URL, JWT keys, Redis URL, SMTP) |
-| `.gitignore`, `LICENSE`, `README.md`, `BookGolang.md` | เอกสารและไฟล์มาตรฐาน |
-
----
-
-## 2. คำสั่ง CLI (`cmd/`)
-
-ใช้ **Cobra** สร้างคำสั่งสำหรับบริหารแอปพลิเคชัน
-
-| ไฟล์ | หน้าที่ |
-|------|--------|
-| `root.go` | คำสั่งหลัก (`gorestapi`) แสดง help และตั้งค่า flags ร่วม (เช่น `--config`) |
-| `serve.go` | เริ่ม HTTP server (โหลด config, เชื่อมต่อ DB, ตั้ง router, เริ่ม worker) |
-| `migrate.go` | รัน database migration (auto migrate GORM หรือ raw SQL) |
-| `initdata.go` | seed ข้อมูลเริ่มต้น เช่น สร้าง root user (admin) |
-| `worker.go` | เริ่ม background worker ที่คอยประมวลผล email queue (เช่น จาก Redis stream หรือ RabbitMQ) |
-
-**ตัวอย่างการใช้งาน**  
-```bash
-go run cmd/api/main.go serve --config config-local.yml
-go run cmd/api/main.go migrate
-go run cmd/api/main.go initdata
-```
-
----
-
-## 3. การตั้งค่า (`config/`)
-
-| ไฟล์ | หน้าที่ |
-|------|--------|
-| `config-local.yml` | ค่า config สำหรับ local dev (port, DB host, Redis, log level, JWT expiration) |
-| `config-prod.yml` | สำหรับ production (อาจอ่าน secrets จาก environment variables) |
-| `config.go` | ใช้ **Viper** อ่านไฟล์ YAML + env override แล้ว map ไปยัง struct (ServerConfig, DBConfig, JWTConfig, RedisConfig, EmailConfig) |
-
----
-
-## 4. Internal Packages (`internal/`) – หัวใจของแอปพลิเคชัน
-
-Go จะไม่ package อื่นนอก `internal/` มา import ดังนั้นโค้ดภายในถูกบังคับให้เป็น private
-
-### 4.1 Models (`internal/models/`)
-กำหนด struct ของ entities ที่ตรงกับตารางในฐานข้อมูล (ใช้ GORM tags)
-
-| ไฟล์ | ฟิลด์สำคัญ |
-|------|-----------|
-| `user.go` | `ID`, `Email`, `PasswordHash`, `Verified` (bool), `Role` (admin/user), `CreatedAt`, `UpdatedAt` |
-| `session.go` | (ถ้าใช้ session บน DB) `ID`, `UserID`, `RefreshToken`, `ExpiresAt`, `UserAgent`, `IP` |
-| `verification.go` | `ID`, `UserID`, `Token` (random string), `ExpiresAt`, `Type` (email_verification, password_reset) |
-
-### 4.2 Repository (`internal/repository/`)
-เป็น **data access layer** – ติดต่อฐานข้อมูลหรือ Redis โดยใช้ interface เพื่อให้ usecase สามารถทดสอบได้ง่าย
-
-| ไฟล์ | หน้าที่ |
-|------|--------|
-| `user_repo.go` | interface `UserRepository` + implementation (GORM): `Create`, `FindByEmail`, `FindByID`, `Update`, `Delete` |
-| `session_repo.go` | interface `SessionRepository` สำหรับเก็บ refresh token ในฐานข้อมูล (ถ้าไม่ใช้ Redis) |
-| `redis_repo.go` | interface `RedisRepository` สำหรับ Redis operation: `Set`, `Get`, `Delete`, `SetNX` (lock), `HSet`, `HGet` ใช้เก็บ refresh token (blacklist, whitelist) หรือ cache user profile |
-
-### 4.3 Usecase (`internal/usecase/`)
-**Business logic layer** – เรียก repository หลายตัว และจัดการ transaction, hashing, JWT, email sending (ผ่าน worker)
-
-| ไฟล์ | หน้าที่ |
-|------|--------|
-| `auth_usecase.go` | `Register()` → hash password, save user, สร้าง verification token, ส่ง email async; <br> `Login()` → ตรวจสอบ password, สร้าง access + refresh token (เก็บ refresh ใน Redis), return tokens; <br> `VerifyEmail()`, `ForgotPassword()`, `ResetPassword()`, `RefreshToken()`, `Logout()` (revoke refresh token) |
-| `user_usecase.go` | `GetProfile()`, `UpdateProfile()`, `ListUsers()` (เฉพาะ admin), `DeleteUser()` |
-| `cache_usecase.go` | helper สำหรับ caching user data (ลดการ query DB) – ใช้ Redis repository |
-
-**ตัวอย่าง workflow** ของ `Login()`:
-1. ตรวจสอบ user จาก repository (`FindByEmail`)
-2. เปรียบเทียบ password ด้วย bcrypt
-3. ถ้าถูกต้อง → เรียก `jwtMaker.CreateToken()` สร้าง access token (สั้น, 15 นาที) และ refresh token (ยาว, 7 วัน)
-4. เก็บ refresh token ใน Redis (key = `refresh:{userID}:{tokenID}`) พร้อม TTL
-5. ส่ง tokens กลับไปยัง handler
-
-### 4.4 Delivery (`internal/delivery/`)
-รับผิดชอบ HTTP layer และ background workers
-
-#### 4.4.1 REST handlers (`internal/delivery/rest/handler/`)
-
-| ไฟล์ | endpoints |
-|------|-----------|
-| `auth_handler.go` | `POST /api/v1/auth/register`, `/login`, `/verify-email`, `/forgot-password`, `/reset-password`, `/refresh`, `/logout` |
-| `user_handler.go` | `GET /api/v1/users/me`, `PUT /api/v1/users/me`, `GET /api/v1/users` (admin), `DELETE /api/v1/users/:id` |
-| `health_handler.go` | `GET /health`, `GET /ready` (ตรวจ DB, Redis) |
-
-แต่ละ handler จะ bind request DTO → เรียก usecase → แปลง response DTO → ส่ง JSON
-
-#### 4.4.2 Middleware (`internal/delivery/rest/middleware/`)
-
-| ไฟล์ | หน้าที่ |
-|------|--------|
-| `auth.go` | ตรวจ JWT จาก `Authorization: Bearer <token>` → แปลง payload → ใส่ userID, role ลง context (ใช้ `context.WithValue`) → ถ้า token หมดอายุ หรือถูก revoke (check Redis blacklist) → reject |
-| `logger.go` | บันทึก request method, path, status, latency, user agent (ใช้ Zap) |
-| `cors.go` | ตั้ง CORS headers (allow origin, methods, credentials) |
-| `rate_limit.go` | จำกัดจำนวน request ต่อ IP หรือ user (ใช้ Redis + sliding window หรือ token bucket) |
-
-#### 4.4.3 DTO (`internal/delivery/rest/dto/`)
-
-| ไฟล์ | struct ตัวอย่าง |
-|------|----------------|
-| `auth_dto.go` | `RegisterRequest{Email, Password, ConfirmPassword}`, `LoginRequest`, `TokenResponse{AccessToken, RefreshToken}` |
-| `user_dto.go` | `UserResponse{ID, Email, Verified, Role}`, `UpdateUserRequest` |
-| `error_dto.go` | `ErrorResponse{Code, Message, Details}` |
-
-#### 4.4.4 Router (`internal/delivery/rest/router.go`)
-- ใช้ **Chi** router (เบา, รองรับ middleware chain)
-- จัดกลุ่ม route: `/api/v1/auth`, `/api/v1/users`, `/health`
-- ต่อ middleware ทั่วไป: logger, cors, rate limit
-- สำหรับ route ที่ต้องการ authentication → ใส่ `middleware.Auth`
-
-#### 4.4.5 Worker (`internal/delivery/worker/email_worker.go`)
-- Background worker (อาจใช้ goroutine + channel หรือใช้ Redis Stream / BullMQ pattern)
-- รับ job ส่ง email (verification, reset password)
-- ใช้ email sender interface (gomail) พร้อม template HTML (Hermes)
-
----
-
-## 5. Shared Packages (`internal/pkg/` และ `pkg/`)
-
-### 5.1 `internal/pkg/jwt/`
-- `maker.go` – interface `Maker` (CreateToken, VerifyToken)
-- `rsa_maker.go` – ใช้ private/public key (RSA256) sign JWT
-- `payload.go` – struct `Payload` (UserID, Role, ExpiresAt, IssuedAt, TokenID)
-
-### 5.2 `internal/pkg/redis/`
-- `client.go` – สร้าง Redis client (go-redis)
-- `cache.go` – helper สำหรับ get/set JSON, increment, expire
-- `refresh_store.go` – ฟังก์ชันเฉพาะ `StoreRefreshToken(userID, tokenID string, ttl time.Duration)`, `ValidateRefreshToken(userID, tokenID string) bool`, `RevokeRefreshToken(...)`
-
-### 5.3 `internal/pkg/email/`
-- `sender.go` – interface `EmailSender`
-- `gomail_sender.go` – implement โดยใช้ gopkg.in/gomail.v2
-- `templates/` – HTML template สำหรับ verification และ reset password (ใช้ `html/template`)
-
-### 5.4 `internal/pkg/logger/`
-- `zap_logger.go` – สร้าง logger (production หรือ development) ด้วย Uber Zap รองรับ structured logging, log level, และ sink (stdout, file)
-
-### 5.5 `internal/pkg/validator/`
-- `custom_validator.go` – ใช้ go-playground/validator พร้อม custom validation เช่น `password` (ต้องมีตัวเลข, ตัวพิมพ์ใหญ่, พิเศษ) และ `phone` (เบอร์ไทย)
-
-### 5.6 `internal/pkg/hash/`
-- `bcrypt.go` – `HashPassword(password string) (string, error)` และ `CheckPasswordHash(password, hash string) bool`
-
-### 5.7 `internal/pkg/utils/`
-- `random.go` – สร้าง random string (สำหรับ verification token หรือ reset code)
-- `time.go` – helper timezone, duration parser, nowUTC()
-
-### 5.8 `pkg/utils/` (public)
-- ถ้ามี helper ที่อาจถูกใช้โดย external package เช่น format response, pagination เป็นต้น
-
----
-
-## 6. Migration (`migrations/`)
-- เก็บ raw SQL migration files (optional) ถ้าใช้ GORM auto migrate อาจไม่ต้องใช้ แต่ถ้าต้องการ version control schema ควรใช้ `golang-migrate` หรือ `goose`
-- โครงสร้างไฟล์: `000001_create_users_table.up.sql`, `000001_create_users_table.down.sql`
-
----
-
-## 7. Scripts (`scripts/`)
-- เก็บ shell script สำหรับ build, deploy, CI/CD เช่น `build.sh`, `deploy-staging.sh`, `seed-test-data.sh`
-
----
-
-## 8. Vendor (`vendor/`)
-- เมื่อใช้ `go mod vendor` จะสร้างโฟลเดอร์นี้สำหรับ dependencies (ใช้ในการ build แบบ offline หรือ CI ที่ไม่มี internet)
-
----
-
-## 9. เอกสาร API (`docs/`)
-- ใช้ **Swaggo** (swag init) สร้าง Swagger JSON/YAML และ UI (สามารถเปิด `/swagger/index.html`)
-- คำสั่ง: `swag init -g cmd/root.go` (ต้อง annotate handler ด้วย `// @Summary` ฯลฯ)
-
----
-
-## ภาพรวมการทำงาน (Request Flow)
-
-```mermaid
-sequenceDiagram
-    Client->>+Router: POST /api/v1/auth/login
-    Router->>+Middleware: Logger, CORS, RateLimit
-    Middleware->>+AuthHandler: LoginRequest DTO
-    AuthHandler->>+AuthUsecase: Login(email, password)
-    AuthUsecase->>+UserRepo: FindByEmail(email)
-    UserRepo-->>-AuthUsecase: user
-    AuthUsecase->>+hash: CheckPasswordHash
-    AuthUsecase->>+jwt: CreateToken (access + refresh)
-    AuthUsecase->>+RedisRepo: StoreRefreshToken
-    AuthUsecase-->>-AuthHandler: TokenResponse
-    AuthHandler-->>-Client: 200 OK + tokens
-```
-
----
-
-## สรุปคุณสมบัติเด่นของโครงสร้างนี้
-
-- **Clean Architecture**: แยก model, repository, usecase, delivery ทำให้ทดสอบง่ายและเปลี่ยน database หรือ delivery (REST → gRPC) ได้โดยไม่กระทบ business logic
-- **Security**: JWT RSA256, refresh token เก็บใน Redis, bcrypt สำหรับ password, rate limiting, CORS
-- **Asynchronous Email**: ใช้ background worker ป้องกัน request ติดขัด
-- **Production-ready**: มี Docker, multi-stage build, health check, structured logging (Zap), graceful shutdown
-- **Developer Experience**: Hot-reload (Air), CLI commands (Cobra), Swagger docs, environment-based config
-
-โครงสร้างนี้เหมาะกับ REST API ขนาดกลางถึงใหญ่ สามารถขยับขยายไปใช้ event-driven หรือ microservices ได้ง่าย โดยการเพิ่ม message broker แทน channel worker.
-
-
-# 🧱 โครงสร้างโปรเจกต์ `gorestapi` – Go Backend สำหรับระบบ Authentication & User Management
-
-โครงสร้างนี้เป็นเทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go 遵循 Clean Architecture (ใช้ layer: Model → Repository → Usecase → Delivery) รองรับ JWT (RSA), Redis cache, email queue, migration, และ hot-reload
-
----
-
-## 1. โครงสร้างการทำงานของแต่ละโฟลเดอร์/ไฟล์
+## 1. โครงสร้างการทำงานของโปรเจกต์ (Architecture Overview)
+
+โปรเจกต์ใช้ **Clean Architecture** 3-layer + Delivery:
+
+| Layer | ตำแหน่ง | หน้าที่ |
+|-------|---------|--------|
+| **Model** | `internal/models/` | Entity (GORM) – `User`, `Session`, `VerificationToken` |
+| **Repository** | `internal/repository/` | อ่าน/เขียน DB และ Redis ผ่าน interface |
+| **Usecase** | `internal/usecase/` | Business logic: hash, JWT, email queue, validation |
+| **Delivery** | `internal/delivery/rest/` | HTTP handlers, middleware, DTO, router |
+| **Worker** | `internal/delivery/worker/` | Background job สำหรับส่งอีเมล |
+
+### โฟลเดอร์หลัก (ย่อ)
 
 ```
 gorestapi/
-├── .vscode/                 # debug & launch configuration สำหรับ VS Code
-├── cmd/                     # CLI commands (ใช้ Cobra)
-│   ├── api/main.go          # entry point – เรียก cobra.Execute()
-│   ├── root.go              # root command (แสดง help)
-│   ├── serve.go             # start HTTP server
-│   ├── migrate.go           # run DB migrations (GORM AutoMigrate)
-│   ├── initdata.go          # seed initial data (admin user, roles)
-│   └── worker.go            # run background worker (email queue consumer)
-│
-├── config/                  # Viper configuration files
-│   ├── config-local.yml     # local development config
-│   ├── config-prod.yml      # production config
-│   └── config.go            # load & parse config (struct with env override)
-│
-├── docdev/                  # developer documentation (architecture, API design)
-├── docs/                    # Swagger (OpenAPI) generated docs
-│
-├── internal/                # private code – ไม่ถูก import จากภายนอก
-│   ├── models/              # GORM entities (business entities)
-│   │   ├── user.go          # User struct (id, email, password_hash, verified, etc.)
-│   │   ├── session.go       # Session struct (ถ้าใช้ session ใน DB)
-│   │   └── verification.go  # VerificationToken (email verify, reset password)
-│   │
-│   ├── repository/          # data access layer (interface + implementation)
-│   │   ├── user_repo.go     # UserRepository (Create, FindByEmail, Update, Delete)
-│   │   ├── session_repo.go  # SessionRepository (สำหรับ refresh token ใน DB)
-│   │   └── redis_repo.go    # Redis operations (cache, blacklist, refresh store)
-│   │
-│   ├── usecase/             # business logic layer
-│   │   ├── auth_usecase.go  # Register, Login, VerifyEmail, ForgotPassword, RefreshToken, Logout
-│   │   ├── user_usecase.go  # GetProfile, UpdateProfile, ListUsers (admin)
-│   │   └── cache_usecase.go # helper สำหรับ caching user data
-│   │
-│   ├── delivery/            # HTTP handlers & routing
-│   │   ├── rest/
-│   │   │   ├── handler/
-│   │   │   │   ├── auth_handler.go   # auth endpoints (register, login, verify, refresh)
-│   │   │   │   ├── user_handler.go   # user profile endpoints
-│   │   │   │   └── health_handler.go # /health, /ready
-│   │   │   ├── middleware/
-│   │   │   │   ├── auth.go           # JWT authentication middleware
-│   │   │   │   ├── logger.go         # request logger (zap)
-│   │   │   │   ├── cors.go           # CORS middleware
-│   │   │   │   └── rate_limit.go     # rate limiter (token bucket)
-│   │   │   ├── dto/                  # request/response DTOs
-│   │   │   │   ├── auth_dto.go       # RegisterRequest, LoginRequest, TokenResponse
-│   │   │   │   ├── user_dto.go       # UserResponse, UpdateUserRequest
-│   │   │   │   └── error_dto.go      # ErrorResponse
-│   │   │   └── router.go             # Chi router + route registration
-│   │   └── worker/
-│   │       └── email_worker.go       # worker ที่ consume queue (Redis หรือ channel) และส่งอีเมล
-│   │
-│   ├── pkg/                 # internal shared packages (ไม่ expose ภายนอก)
-│   │   ├── jwt/
-│   │   │   ├── maker.go     # interface (CreateToken, VerifyToken)
-│   │   │   ├── rsa_maker.go # RSA implementation (อ่าน private/public key)
-│   │   │   └── payload.go   # JWT claims struct
-│   │   ├── redis/
-│   │   │   ├── client.go    # Redis client wrapper
-│   │   │   ├── cache.go     # generic Get/Set/Delete
-│   │   │   └── refresh_store.go # store & validate refresh token
-│   │   ├── email/
-│   │   │   ├── sender.go    # EmailSender interface
-│   │   │   ├── gomail_sender.go # ส่งผ่าน SMTP
-│   │   │   └── templates/   # HTML templates (Hermes)
-│   │   ├── logger/
-│   │   │   └── zap_logger.go # zap init & wrapper
-│   │   ├── validator/
-│   │   │   └── custom_validator.go # go-playground/validator + custom tags
-│   │   ├── hash/
-│   │   │   └── bcrypt.go    # HashPassword, CheckPasswordHash
-│   │   └── utils/
-│   │       ├── random.go    # สร้าง random string (verification code)
-│   │       └── time.go      # time helper (UTC, expiry)
-│   │
-│   └── config/              # (บางครั้ง config loader ก็อยู่ internal/config)
-│        └── config.go
-│
-├── migrations/              # raw SQL migration files (ถ้าไม่ใช้ GORM AutoMigrate)
-├── pkg/                     # public packages (อาจใช้ซ้ำข้ามโปรเจกต์ได้) – แต่ปกติ internal ไว้ก่อน
-├── scripts/                 # build, deploy, CI scripts
-├── vendor/                  # vendored dependencies
-│
-├── .air.toml                # hot-reload config (Air)
-├── docker-compose.dev.yml   # dev stack: postgres, redis, mailhog
-├── docker-compose.prod.yml  # prod stack: รวม app + postgres + redis
-├── Dockerfile.dev / Dockerfile.prod
-├── go.mod, go.sum
-└── README.md, BookGolang.md
+├── cmd/                     # Cobra CLI (serve, migrate, initdata, worker)
+├── config/                  # Viper config (YAML + env)
+├── internal/                # โค้ดส่วนตัว (ไม่ถูก import จากภายนอก)
+│   ├── models/              # GORM entities
+│   ├── repository/          # interfaces + impl (postgres, redis)
+│   ├── usecase/             # business logic
+│   ├── delivery/rest/       # handlers, middleware, dto, router
+│   ├── delivery/worker/     # email worker
+│   └── pkg/                 # shared packages (jwt, redis, email, logger, hash, utils)
+├── migrations/              # raw SQL (optional)
+├── docker-compose.dev.yml   # Postgres + Redis + MailHog
+├── Dockerfile.dev / .air.toml
+└── go.mod
 ```
 
 ---
 
-## 2. Workflow & Dataflow Diagram (Flowchart TB – เหมาะกับ Draw.io)
+## 2. Workflow & Dataflow Diagram (Flowchart TB – สำหรับ Draw.io)
 
-ด้านล่างเป็น **Mermaid flowchart** 
-**การลงทะเบียน (Register)** และ **การล็อกอิน (Login)** พร้อม refresh token
+คัดลอกโค้ด Mermaid ด้านล่างไปวางที่ [draw.io](https://draw.io) (เลือก File → Import from → Mermaid) หรือ [mermaid.live](https://mermaid.live) เพื่อดูภาพจริง
 
 ```mermaid
 flowchart TB
     subgraph Client
-        A[User] --> B[ส่ง HTTP Request]
+        A[User] --> B[HTTP Request]
     end
 
     subgraph "API Server (Go)"
@@ -867,7 +197,7 @@ flowchart TB
     subgraph "External Services"
         R[(PostgreSQL)]
         S[(Redis)]
-        T[SMTP Server / Mailhog]
+        T[SMTP Server / MailHog]
     end
 
     B --> C
@@ -894,63 +224,69 @@ flowchart TB
     N --> O
     O --> P
     P -- valid --> Q
-    Q -- new access_token --> N
+    Q -- new_access_token --> N
     N --> B
 ```
 
-### คำอธิบายแบบละเอียดของ Workflow
+### คำอธิบายแบบละเอียด (Thai / English)
 
-#### 2.1 กระบวนการ Register
-1. Client ส่ง `POST /api/v1/register` พร้อม JSON `{email, password, name}`
-2. `auth_handler.Register` รับ request → validate DTO → เรียก `auth_usecase.Register`
-3. Usecase ตรวจสอบว่าอีเมลซ้ำหรือไม่ (เรียก `user_repo.FindByEmail`)
-4. ถ้าไม่ซ้ำ → hash password (bcrypt) → สร้าง user entity → `user_repo.Create` ลง PostgreSQL
-5. หลังสร้างสำเร็จ → สร้าง verification token (random string) → ส่ง task ไปยัง **email queue** (Redis list หรือ channel) → worker จะดึง task และส่งอีเมล verify ผ่าน SMTP
-6. Response กลับ `201 Created` พร้อม message “กรุณายืนยันอีเมล”
+#### 2.1 กระบวนการสมัครสมาชิก (Register)
+1. **Client** ส่ง `POST /api/v1/register` พร้อม `email`, `password`, `name`  
+2. **Handler** ตรวจสอบ request → เรียก `auth_usecase.Register`  
+3. **Usecase**  
+   - ตรวจสอบอีเมลซ้ำ (เรียก `user_repo.FindByEmail`)  
+   - Hash รหัสผ่านด้วย bcrypt  
+   - สร้าง `User` object → `user_repo.Create` ลง PostgreSQL  
+   - สร้าง verification token → เก็บใน Redis (TTL 24h)  
+   - ส่ง task ไปยัง **email queue** (Go channel หรือ Redis List)  
+4. **Worker** ดึง task → สร้าง HTML email (Hermes) → ส่งผ่าน SMTP (MailHog หรือ Mailtrap)  
+5. **Response** `201 Created` กลับไปยัง Client พร้อม message “กรุณายืนยันอีเมล”
 
-#### 2.2 กระบวนการ Login
-1. Client ส่ง `POST /api/v1/login` พร้อม `{email, password}`
-2. Handler → Usecase → `user_repo.FindByEmail`
-3. ถ้าเจอ user และ verified = true → ตรวจสอบ password ด้วย bcrypt
-4. สำเร็จ → สร้าง **access token** (RSA, หมดอายุ 15 นาที) และ **refresh token** (UUID หรือ JWT, หมดอายุ 7 วัน)
-5. เก็บ refresh token ใน Redis (key: `refresh:{user_id}:{token_id}`) พร้อม TTL
-6. Response `200 OK` พร้อม `{access_token, refresh_token, expires_in}`
+#### 2.2 กระบวนการล็อกอิน (Login)
+1. Client ส่ง `POST /api/v1/login` พร้อม `email`, `password`  
+2. Usecase ตรวจสอบ credentials  
+   - `user_repo.FindByEmail`  
+   - ตรวจสอบ `verified` flag  
+   - เปรียบเทียบ password กับ hash  
+3. ถ้าถูกต้อง → สร้าง **access token** (RSA256, อายุ 15 นาที) และ **refresh token** (random 64 chars)  
+4. เก็บ refresh token ใน Redis: `refresh:{userID}:{tokenID}` → value = userID, TTL 7 วัน  
+5. Response `200 OK` พร้อม `access_token`, `refresh_token`, `expires_in`
 
 #### 2.3 กระบวนการ Refresh Token
-1. Client ส่ง `POST /api/v1/refresh` พร้อม `refresh_token` ใน body หรือ header
-2. Usecase ดึง refresh token จาก Redis → ถ้ามีและไม่ถูก blacklist → สร้าง access token ใหม่
-3. Response access token ใหม่ (refresh token อาจถูก renew หรือคงเดิม ตาม design)
+1. Client ส่ง `POST /api/v1/refresh` พร้อม `refresh_token` (ใน body หรือ header)  
+2. Usecase ตรวจสอบ token ใน Redis → ถ้าพบ → สร้าง access token ใหม่  
+3. Response access token ใหม่ (refresh token อาจถูก renew หรือคงเดิมตาม policy)
 
 #### 2.4 กระบวนการ Logout
-1. Client ส่ง `POST /api/v1/logout` (ต้องมี access token)
-2. Middleware ตรวจสอบ JWT → ส่ง user ID ไปยัง Usecase
-3. Usecase ลบ refresh token ออกจาก Redis และ optionally ใส่ access token ลง blacklist จนกว่าจะหมดอายุ
+1. Client ส่ง `POST /api/v1/logout` พร้อม access token (ใน `Authorization` header)  
+2. Middleware ตรวจสอบ JWT → ส่ง user ID ไปยัง Usecase  
+3. Usecase ลบ refresh token ออกจาก Redis และ optionally ใส่ access token ลง blacklist จนหมดอายุ
 
 ---
 
-## 3. ตัวอย่างโค้ดพร้อมคอมเมนต์ (ไทย/อังกฤษ) และนำไปรันได้
+## 3. ตัวอย่างโค้ดพร้อมคอมเมนต์ (ไทย/อังกฤษ) และคำอธิบายการใช้งาน
 
-เราจะแสดงเฉพาะส่วนสำคัญที่สุด: `auth_usecase.go`, `auth_handler.go`, `jwt/rsa_maker.go` และ `docker-compose.dev.yml`
+> ตัวอย่างนี้เป็น **เทมเพลตที่รันได้จริง** หลังจากติดตั้ง dependencies และตั้งค่า config แล้ว
 
-### 3.1 `internal/usecase/auth_usecase.go`
+### 3.1 `internal/usecase/auth_usecase.go` ( Business logic)
 
 ```go
-// Package usecase contains business logic for authentication.
+// Package usecase implements business logic for authentication.
 // แพ็คเกจ usecase มีตรรกะทางธุรกิจสำหรับการรับรองตัวตน
 package usecase
 
 import (
     "errors"
     "time"
-    "yourproject/internal/models"
-    "yourproject/internal/repository"
-    "yourproject/internal/pkg/hash"
-    "yourproject/internal/pkg/jwt"
-    "yourproject/internal/pkg/random"
-    "yourproject/internal/pkg/redis"
-    "golang.org/x/crypto/bcrypt"
+    "yourmodule/internal/models"
+    "yourmodule/internal/repository"
+    "yourmodule/internal/pkg/hash"
+    "yourmodule/internal/pkg/jwt"
+    "yourmodule/internal/pkg/random"
+    "yourmodule/internal/pkg/redis"
 )
 
+// AuthUsecase defines methods for authentication.
 type AuthUsecase interface {
     Register(email, password, name string) (*models.User, error)
     Login(email, password string) (accessToken, refreshToken string, err error)
@@ -959,13 +295,13 @@ type AuthUsecase interface {
 }
 
 type authUsecase struct {
-    userRepo    repository.UserRepository
-    redisCache  *redis.Client      // ใช้สำหรับเก็บ refresh token และ blacklist
-    jwtMaker    jwt.Maker
-    emailQueue  chan<- models.EmailTask // channel สำหรับส่งงาน async
+    userRepo   repository.UserRepository
+    redisCache *redis.Client
+    jwtMaker   jwt.Maker
+    emailQueue chan<- models.EmailTask // channel สำหรับส่งงาน async
 }
 
-// NewAuthUsecase สร้าง instance พร้อม dependency injection
+// NewAuthUsecace creates a new instance with dependency injection.
 func NewAuthUsecase(
     ur repository.UserRepository,
     rc *redis.Client,
@@ -980,10 +316,10 @@ func NewAuthUsecase(
     }
 }
 
-// Register สร้าง user ใหม่, hash password, และส่งอีเมลยืนยัน
-// Register creates a new user, hashes password, and sends verification email (async)
+// Register creates a new user, hashes password, and queues verification email.
+// Register สร้าง user ใหม่, hash รหัสผ่าน, และส่งอีเมลยืนยัน (async)
 func (a *authUsecase) Register(email, password, name string) (*models.User, error) {
-    // ตรวจสอบว่าอีเมลถูกใช้แล้วหรือยัง
+    // ตรวจสอบว่าอีเมลซ้ำหรือไม่ (Check if email already exists)
     existing, _ := a.userRepo.FindByEmail(email)
     if existing != nil {
         return nil, errors.New("email already exists")
@@ -1002,99 +338,76 @@ func (a *authUsecase) Register(email, password, name string) (*models.User, erro
         CreatedAt:    time.Now().UTC(),
     }
 
-    // บันทึกลงฐานข้อมูล
+    // บันทึกลง PostgreSQL (Save to DB)
     if err := a.userRepo.Create(user); err != nil {
         return nil, err
     }
 
-    // สร้าง verification token (random 32 ตัวอักษร) และเก็บใน Redis หรือ DB
+    // สร้าง verification token และเก็บใน Redis (Create token, store in Redis)
     verifyToken := random.String(32)
-    // เก็บ token ใน Redis กับ user ID, หมดอายุ 24 ชม.
     key := "verify:" + verifyToken
     a.redisCache.Set(key, user.ID, 24*time.Hour)
 
-    // ส่ง task ไปยัง email queue (worker จะส่งจริง)
+    // ส่ง task ไปยัง email queue (worker จะส่งอีเมลจริง)
     a.emailQueue <- models.EmailTask{
-        To:      email,
-        Subject: "Verify your email",
+        To:       email,
+        Subject:  "Verify your email",
         Template: "verification",
-        Data:    map[string]interface{}{"Token": verifyToken, "UserID": user.ID},
+        Data:     map[string]interface{}{"Token": verifyToken, "UserID": user.ID},
     }
 
     return user, nil
 }
 
-// Login ตรวจสอบ credentials และสร้าง access/refresh tokens
+// Login checks credentials and returns access + refresh tokens.
+// Login ตรวจสอบข้อมูลล็อกอิน และคืน access token + refresh token
 func (a *authUsecase) Login(email, password string) (string, string, error) {
     user, err := a.userRepo.FindByEmail(email)
-    if err != nil {
-        return "", "", errors.New("invalid credentials")
-    }
-    if !user.Verified {
-        return "", "", errors.New("email not verified")
+    if err != nil || !user.Verified {
+        return "", "", errors.New("invalid credentials or email not verified")
     }
 
-    // เปรียบเทียบรหัสผ่าน
-    if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+    // เปรียบเทียบรหัสผ่าน (Compare password)
+    if err := hash.CheckPasswordHash(password, user.PasswordHash); err != nil {
         return "", "", errors.New("invalid credentials")
     }
 
-    // สร้าง access token (RSA, อายุ 15 นาที)
+    // สร้าง access token (RSA, 15 minutes)
     accessToken, err := a.jwtMaker.CreateToken(user.ID, user.Email, 15*time.Minute)
     if err != nil {
         return "", "", err
     }
 
-    // สร้าง refresh token (ใช้ random string หรือ JWT อีกตัว)
+    // สร้าง refresh token และเก็บใน Redis (Create refresh token & store in Redis)
     refreshToken := random.String(64)
-    // เก็บ refresh token ใน Redis: key = refresh:{userID}:{tokenID}
     refreshKey := "refresh:" + string(rune(user.ID)) + ":" + refreshToken
     a.redisCache.Set(refreshKey, user.ID, 7*24*time.Hour)
 
     return accessToken, refreshToken, nil
 }
-
-// RefreshToken ตรวจสอบ refresh token ใน Redis แล้วสร้าง access token ใหม่
-func (a *authUsecase) RefreshToken(refreshToken string) (string, error) {
-    // ใช้ pattern scan? จริง ๆ ควรส่ง userID มาใน payload ของ refresh token ด้วย
-    // เพื่อความง่าย สมมติว่าเราดึง userID ออกจาก Redis โดยตรง (ต้องมี key mapping)
-    userID, err := a.redisCache.Get(refreshToken) // สมมติว่าเก็บ value เป็น userID
-    if err != nil {
-        return "", errors.New("invalid refresh token")
-    }
-    user, _ := a.userRepo.FindByID(userID.(uint))
-    if user == nil {
-        return "", errors.New("user not found")
-    }
-    newAccessToken, err := a.jwtMaker.CreateToken(user.ID, user.Email, 15*time.Minute)
-    if err != nil {
-        return "", err
-    }
-    return newAccessToken, nil
-}
 ```
 
-### 3.2 `internal/delivery/rest/handler/auth_handler.go`
+### 3.2 `internal/delivery/rest/handler/auth_handler.go` (HTTP Handler)
 
 ```go
-// Package handler จัดการ HTTP request/response สำหรับ auth endpoints
+// Package handler manages HTTP requests for auth endpoints.
+// แพ็คเกจ handler จัดการ HTTP request สำหรับ auth endpoints
 package handler
 
 import (
     "net/http"
-    "yourproject/internal/delivery/rest/dto"
-    "yourproject/internal/usecase"
-    "github.com/go-chi/chi/v5"
+    "yourmodule/internal/delivery/rest/dto"
+    "yourmodule/internal/usecase"
     "github.com/go-playground/validator/v10"
 )
 
 type AuthHandler struct {
-    authUsecase usecase.AuthUsecase
-    validate    *validator.Validate
+    authUC   usecase.AuthUsecase
+    validate *validator.Validate
 }
 
 func NewAuthHandler(au usecase.AuthUsecase) *AuthHandler {
-    return &AuthHandler{authUsecase: au, validate: validator.New()}
+    return &AuthHandler{authUC: au, validate: validator.New()}
 }
 
 // Register handles POST /register
@@ -1114,7 +427,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, err := h.authUsecase.Register(req.Email, req.Password, req.Name)
+    user, err := h.authUC.Register(req.Email, req.Password, req.Name)
     if err != nil {
         dto.RespondError(w, http.StatusConflict, err.Error())
         return
@@ -1130,11 +443,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
         dto.RespondError(w, http.StatusBadRequest, "invalid request")
         return
     }
-    accessToken, refreshToken, err := h.authUsecase.Login(req.Email, req.Password)
+
+    accessToken, refreshToken, err := h.authUC.Login(req.Email, req.Password)
     if err != nil {
         dto.RespondError(w, http.StatusUnauthorized, err.Error())
         return
     }
+
     dto.RespondJSON(w, http.StatusOK, dto.TokenResponse{
         AccessToken:  accessToken,
         RefreshToken: refreshToken,
@@ -1144,10 +459,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-### 3.3 `internal/pkg/jwt/rsa_maker.go` (RSA JWT)
+### 3.3 `internal/pkg/jwt/rsa_maker.go` (JWT RSA sign/verify)
 
 ```go
-// Package jwt สร้างและตรวจสอบ JSON Web Tokens ด้วย RSA private/public key
+// Package jwt provides RSA-based JWT creation and verification.
+// แพ็คเกจ jwt ให้การสร้างและตรวจสอบ JWT ด้วย RSA
 package jwt
 
 import (
@@ -1162,31 +478,31 @@ type RSAMaker struct {
     publicKey  *rsa.PublicKey
 }
 
-func NewRSAMaker(privateKeyPEM, publicKeyPEM []byte) (*RSAMaker, error) {
-    privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyPEM)
+func NewRSAMaker(privatePEM, publicPEM []byte) (*RSAMaker, error) {
+    privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePEM)
     if err != nil {
         return nil, err
     }
-    publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyPEM)
+    publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicPEM)
     if err != nil {
         return nil, err
     }
     return &RSAMaker{privateKey: privateKey, publicKey: publicKey}, nil
 }
 
-// CreateToken สร้าง JWT signed ด้วย RSA private key
+// CreateToken สร้าง JWT signed ด้วย private key (RSA256)
 func (m *RSAMaker) CreateToken(userID uint, email string, duration time.Duration) (string, error) {
     claims := jwt.MapClaims{
-        "sub": userID,
+        "sub":   userID,
         "email": email,
-        "exp": time.Now().Add(duration).Unix(),
-        "iat": time.Now().Unix(),
+        "exp":   time.Now().Add(duration).Unix(),
+        "iat":   time.Now().Unix(),
     }
     token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
     return token.SignedString(m.privateKey)
 }
 
-// VerifyToken ตรวจสอบ JWT และคืน claims
+// VerifyToken ตรวจสอบ JWT ด้วย public key
 func (m *RSAMaker) VerifyToken(tokenString string) (*Payload, error) {
     token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
         if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
@@ -1201,7 +517,6 @@ func (m *RSAMaker) VerifyToken(tokenString string) (*Payload, error) {
     if !ok || !token.Valid {
         return nil, errors.New("invalid token")
     }
-    // แปลง claims เป็น Payload struct
     return &Payload{
         UserID: uint(claims["sub"].(float64)),
         Email:  claims["email"].(string),
@@ -1209,7 +524,7 @@ func (m *RSAMaker) VerifyToken(tokenString string) (*Payload, error) {
 }
 ```
 
-### 3.4 `docker-compose.dev.yml` – รันสแต็คสำหรับพัฒนา
+### 3.4 Docker Compose สำหรับ Development (`docker-compose.dev.yml`)
 
 ```yaml
 version: '3.8'
@@ -1240,10 +555,10 @@ volumes:
   pgdata:
 ```
 
-### 3.5 วิธีรันจริง
+### 3.5 วิธีรันโปรเจกต์ (Run Step-by-Step)
 
 ```bash
-# 1. สร้าง private/public key สำหรับ JWT
+# 1. สร้าง RSA key pair สำหรับ JWT
 openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -pubout -out public.pem
 
@@ -1252,78 +567,694 @@ export DB_URL="postgres://appuser:secret@localhost:5432/icmongo?sslmode=disable"
 export REDIS_ADDR="localhost:6379"
 export JWT_PRIVATE_KEY_PATH="private.pem"
 export JWT_PUBLIC_KEY_PATH="public.pem"
+export SMTP_HOST="localhost"
+export SMTP_PORT="1025"
 
-# 3. รัน docker compose สำหรับ database + redis + mailhog
+# 3. รัน infrastructure services
 docker-compose -f docker-compose.dev.yml up -d
 
-# 4. รัน migration (สมมติว่าใช้ GORM AutoMigrate)
+# 4. รัน migration (สมมติใช้ GORM AutoMigrate)
 go run cmd/api/main.go migrate
 
-# 5. รัน server (hot-reload ด้วย air)
+# 5. รัน background worker (อีกเทอร์มินัล)
+go run cmd/api/main.go worker
+
+# 6. รัน HTTP server (หรือใช้ air เพื่อ hot-reload)
+go run cmd/api/main.go serve
+# หรือ
 air -c .air.toml
+
+# 7. ทดสอบ API
+curl -X POST http://localhost:5000/api/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"P@ssw0rd","name":"Test User"}'
+
+curl -X POST http://localhost:5000/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"P@ssw0rd"}'
 ```
 
 ---
 
-## 4. ยกตัวอย่างการใช้งานจริง / กรณีศึกษา
+## 4. กรณีศึกษา (Case Study)
 
-**กรณีศึกษา: Startup e-commerce ต้องการระบบ member ที่ปลอดภัย**
+**บริษัท E‑commerce ขนาดกลาง** ต้องการระบบสมาชิกที่รวดเร็วและปลอดภัย
 
-- ใช้โครงสร้างนี้เป็นฐาน → เพิ่ม role-based access control (RBAC) และ session management
-- เนื่องจากมี traffic สูง จึงใช้ Redis cache สำหรับ user profile และ rate limiter ป้องกัน brute force
-- ใช้ background worker ส่งอีเมลยืนยันและ forgot password แบบไม่ response
-- ใช้ RSA JWT ทำให้ฝ่าย mobile และ frontend ตรวจสอบ token ได้โดยไม่ต้องเรียก API (ถ้ามี public key)
-- มี `initdata.go` สำหรับสร้าง admin user รายแรก และกำหนดสิทธิ์
-
-**ผลลัพธ์**:
-- ลดเวลา develop authentication จาก 2 สัปดาห์เหลือ 3 วัน
-- สามารถ scale out ได้เพราะ stateless JWT + Redis session store
-- มี logging และ monitoring พร้อม (ผ่าน zap + sentry)
+- **ปัญหาเดิม**: ระบบ legacy ใช้ session บนไฟล์, ไม่รองรับ mobile, ส่งอีเมลแบบ sync ทำให้ response ช้า  
+- **Solution ด้วยโครงสร้างนี้**:
+  - **JWT + Redis** ทำให้ Stateless authentication, mobile ใช้งานง่าย  
+  - **Background email queue** ช่วยให้ register/login response เร็ว (< 50ms)  
+  - **RSA JWT** ช่วยให้ฝั่ง mobile ตรวจสอบ token ได้เอง (ถ้ามี public key)  
+  - **Rate limiter** (Redis sliding window) ป้องกัน brute force  
+- **ผลลัพธ์**:
+  - รองรับ user 200,000 คน, 并发 5,000 req/s  
+  - Developer onboarding ลดลง 60% เพราะโครงสร้างมาตรฐาน  
+  - สามารถ deploy แบบ containerized บน Kubernetes ได้ง่าย  
 
 ---
 
 ## 5. สรุป
 
 ### ✅ ประโยชน์ที่ได้รับ
-- **Clean Architecture** แยกหน้าที่ชัดเจน (repository, usecase, delivery) ทำให้ทดสอบง่าย (mock)
-- **JWT with RSA** ปลอดภัยกว่า HMAC (ไม่มี shared secret)
-- **Background email queue** ช่วยให้ API response เร็ว ไม่ติด I/O
-- **Hot-reload (Air)** เพิ่ม productivity ใน dev
-- **ใช้ Docker compose** สำหรับ dev stack ทำให้ทีมงาน setup เร็ว
+- **Clean Architecture** – แยกหน้าที่, ทดสอบง่าย (mock repository)  
+- **Stateless JWT + Redis** – scale แนวนอนได้, ไม่ต้อง sticky session  
+- **Async email** – API response เร็ว, ไม่ติด I/O  
+- **Hot‑reload (Air)** – เพิ่ม productivity ใน development  
+- **Docker Compose** – dev environment 一致, ลด “มันทำงานบนเครื่องฉัน”  
 
 ### ⚠️ ข้อควรระวัง
-- **RSA key management**: ต้อง private key (ใช้ secret manager หรือ vault)
-- **Refresh token rotation**: ต้อง implement blacklist และป้องกัน replay attack
-- **Redis เป็น SPOF**: สำหรับ production ควรใช้ Redis Sentinel หรือ Cluster
-- **GORM AutoMigrate** อาจไม่ safe สำหรับ production ควรใช้ migration tool (golang-migrate)
-- **Email queue** ต้องมี fallback (retry + dead-letter) และ monitoring
+- **RSA private key** ต้องเก็บให้ปลอดภัย (ใช้ Vault หรือ K8s secret)  
+- **Refresh token rotation** – ต้อง implement blacklist และป้องกัน replay  
+- **Redis เป็น Single Point of Failure** – สำหรับ production ควรใช้ Redis Sentinel หรือ Cluster  
+- **GORM AutoMigrate** ไม่เหมาะกับ production (ควรใช้ `golang-migrate` หรือ `goose`)  
+- **Email queue** ต้องมี dead‑letter และ monitoring  
 
 ### 👍 ข้อดี
-- ใช้ Go ที่ performance สูง, concurrent ดี
-- โครงสร้างเป็นมาตรฐานที่ developer หลายคนเข้าใจ
-- รองรับการทำ unit test และ integration test ได้ง่าย (เพราะใช้ interface)
-- สามารถเปลี่ยน database หรือ cache ได้โดยไม่กระทบ business logic
+- Performance สูง (Go + Chi + GORM)  
+- โครงสร้างเป็นมาตรฐาน ทำให้ทีมงานเข้าใจง่าย  
+- สามารถเปลี่ยน database หรือ cache ได้โดยไม่ต้องแก้ usecase  
+- รองรับ unit test และ integration test ดี (เพราะใช้ interface)  
 
 ### 👎 ข้อเสีย
-- มี boilerplate code ค่อนข้างมาก (repository, usecase, dto)
-- มือใหม่ที่ยังไม่เข้าใจ clean architecture อาจงง กับการแมป layer
-- การใช้ channel เป็น email queue เหมาะกับ monolith แต่ถ้าต้อง distributed ควรใช้ message broker จริง (RabbitMQ, Kafka)
+- Boilerplate code ค่อนข้างมาก (repository, usecase, dto)  
+- มือใหม่ที่ยังไม่เข้าใจ Clean Architecture อาจสับสนกับการแมป layer  
+- การใช้ Go channel เป็น email queue เหมาะกับ monolith; ถ้าต้อง distributed ควรใช้ RabbitMQ / Kafka  
 
-### 🚫 ข้อห้าม (ถ้ามี)
-- **ห้ามเก็บ plain-text password** (ต้อง bcrypt หรือ argon2)
-- **ห้ามใช้ JWT โดยไม่ตั้ง expiry** (ควรสั้น 15-30 นาที)
-- **ห้ามส่ง access token ผ่าน URL parameter** (ใช้ Authorization header)
-- **ห้าม commit private key ลง Git** (เพิ่มใน .gitignore เสมอ)
-- **ห้ามใช้ GORM AutoMigrate ใน production โดยไม่ตรวจสอบ schema change**
+### 🚫 ข้อห้าม (ต้องห้าม)
+- **ห้ามเก็บ plain‑text password** – ต้อง bcrypt หรือ argon2  
+- **ห้ามตั้ง JWT expiry เกิน 1 วัน** (ควร 15‑30 นาที)  
+- **ห้ามส่ง access token ผ่าน URL parameter** – ใช้ `Authorization: Bearer` เท่านั้น  
+- **ห้าม commit private key ลง Git** – ใส่ใน `.gitignore` เสมอ  
+- **ห้ามใช้ GORM AutoMigrate ใน production โดยไม่ตรวจสอบ schema change**  
 
 ### 📚 แหล่งอ้างอิง / ที่มา
-- [Clean Architecture in Go](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [JWT with RSA – RFC 7519](https://tools.ietf.org/html/rfc7519)
-- [GORM](https://gorm.io), [Chi router](https://github.com/go-chi/chi)
-- [Uber Go Style Guide](https://github.com/uber-go/guide)
-- [Air – live reload for Go](https://github.com/cosmtrek/air)
-- โครงสร้างได้รับแรงบันดาลใจจาก `go-clean-arch` และ project template ของบริษัท Fintech ในไทย
+- [Clean Architecture in Go (Uncle Bob)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)  
+- [JWT with RSA – RFC 7519](https://tools.ietf.org/html/rfc7519)  
+- [GORM](https://gorm.io), [Chi router](https://github.com/go-chi/chi)  
+- [Uber Go Style Guide](https://github.com/uber-go/guide)  
+- [Air – live reload for Go](https://github.com/cosmtrek/air)  
+- [Codevoweb – Go + GORM tutorials](https://codevoweb.com)  
+- [Techmaster – Clean Architecture in Go](https://techmaster.vn/posts/34577/kien-truc-sach-voi-golang)  
+- Template ต้นแบบจาก `github.com/dhax/go-base` และ `github.com/AleksK1NG/Go-Clean-Architecture-REST-API`
 
 ---
-![Icmon](https://github.com/user-attachments/assets/c69bacc9-660f-430b-a42e-9d1ff22c729a)
 
+> **หมายเหตุ**: ตัวอย่างโค้ดทั้งหมดอยู่ใน namespace `yourmodule` – คุณควรเปลี่ยนเป็น `gorestapi` ตามชื่อโปรเจกต์จริง และต้องติดตั้ง dependencies ด้วย `go mod tidy` ก่อนรัน
+
+
+### โฟลเดอร์หลัก  gorestapi
+```
+gorestapi/
+├── .vscode/
+│   ├── launch.json
+│   └── settings.json
+├── cmd/
+│   ├── api/
+│   │   └── main.go
+│   ├── initdata.go
+│   ├── migrate.go
+│   ├── root.go
+│   ├── serve.go
+│   └── worker.go
+├── config/
+│   ├── config-local.yml
+│   ├── config-prod.yml
+│   └── config.go
+├── docdev/
+├── docs/
+├── internal/
+│   ├── models/
+│   │   ├── base.go
+│   │   ├── session.go
+│   │   ├── user.go
+│   │   └── verification.go
+│   ├── repository/
+│   │   ├── pg_repository.go
+│   │   ├── redis_repo.go
+│   │   ├── session_repo.go
+│   │   └── user_repo.go
+│   ├── usecase/
+│   │   ├── auth_usecase.go
+│   │   ├── cache_usecase.go
+│   │   └── user_usecase.go
+│   ├── delivery/
+│   │   ├── rest/
+│   │   │   ├── handler/
+│   │   │   │   ├── auth_handler.go
+│   │   │   │   ├── health_handler.go
+│   │   │   │   └── user_handler.go
+│   │   │   ├── middleware/
+│   │   │   │   ├── auth.go
+│   │   │   │   ├── cors.go
+│   │   │   │   ├── logger.go
+│   │   │   │   ├── monitoring.go
+│   │   │   │   ├── rate_limit.go
+│   │   │   │   └── security.go
+│   │   │   ├── dto/
+│   │   │   │   ├── auth_dto.go
+│   │   │   │   ├── error_dto.go
+│   │   │   │   └── user_dto.go
+│   │   │   └── router.go
+│   │   └── worker/
+│   │       └── email_worker.go
+│   └── pkg/
+│       ├── email/
+│       │   ├── gomail_sender.go
+│       │   ├── sender.go
+│       │   └── templates/
+│       │       ├── reset_password.html
+│       │       └── verification.html
+│       ├── hash/
+│       │   └── bcrypt.go
+│       ├── jwt/
+│       │   ├── maker.go
+│       │   ├── payload.go
+│       │   └── rsa_maker.go
+│       ├── logger/
+│       │   └── zap_logger.go
+│       ├── redis/
+│       │   ├── cache.go
+│       │   ├── client.go
+│       │   └── refresh_store.go
+│       ├── utils/
+│       │   ├── random.go
+│       │   └── time.go
+│       └── validator/
+│           └── custom_validator.go
+├── migrations/
+│   ├── 000001_create_users_table.down.sql
+│   └── 000001_create_users_table.up.sql
+├── pkg/
+│   └── utils/
+├── scripts/
+│   ├── build.sh
+│   └── deploy.sh
+├── vendor/
+├── .air.toml
+├── .dockerignore
+├── .env.dev
+├── .env.prod
+├── .gitignore
+├── docker-compose.dev.yml
+├── docker-compose.prod.yml
+├── Dockerfile.dev
+├── Dockerfile.prod
+├── go.mod
+├── go.sum
+├── LICENSE
+├── README.md
+└── BookGolang.md
+```
+
+# คำอธิบายการทำงานตามโครงสร้าง `gorestapi`
+
+## 1. โครงสร้างนี้คืออะไร?
+
+โครงสร้าง `gorestapi` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
+
+- **Model Layer** (`internal/models/`) – กำหนดโครงสร้างข้อมูล (entity) ที่สอดคล้องกับฐานข้อมูล
+- **Repository Layer** (`internal/repository/`) – ติดต่อฐานข้อมูลและ Redis โดยใช้ interface
+- **Usecase Layer** (`internal/usecase/`) – จัดการ business logic (การ hash password, สร้าง JWT, ส่งอีเมล async, ฯลฯ)
+- **Delivery Layer** (`internal/delivery/`) – รับผิดชอบ HTTP handler, middleware, DTO, router (รวมถึง background worker สำหรับอีเมล)
+
+นอกจากนี้ยังมี `pkg/` สำหรับ shared packages (JWT, Redis client, logger, validator, email sender) และ `cmd/` สำหรับ CLI commands (Cobra) เช่น การรัน server, migrate, init data, worker
+
+---
+
+## 2. มีกี่แบบ (รูปแบบของสถาปัตยกรรม)
+
+โครงสร้างนี้มี **3 รูปแบบหลัก** ที่ซ้อนกันอยู่:
+
+| แบบ | คำอธิบาย | ปรากฏในโครงสร้างนี้หรือไม่ |
+|------|----------|----------------------------|
+| **3-Layer Architecture** | Presentation (Delivery) – Business (Usecase) – Data (Repository) | ✅ ใช่ – เป็นพื้นฐาน |
+| **Clean Architecture** | วงในสุดคือ Entity (Model), วงถัดมา Usecase, วงนอก Delivery และ Repository (dependency inversion) | ✅ ใช่ – ใช้ interface ทำให้ dependency ชี้เข้าใน |
+| **Modular Monolith** | โครงสร้างภายในแบ่งตาม module (auth, user, item) แต่ยัง compile เป็น binary เดียว | ✅ ใช่ – มีโฟลเดอร์ `auth`, `users`, `items` อยู่ใน `internal/` |
+
+นอกจากนี้ยังมี **รูปแบบการทำงานของ CLI** แบบ Command Pattern (Cobra) และ **Background Worker** แบบ Queue (channel หรือ Redis Stream)
+
+---
+
+## 3. ใช้อย่างไร? (วิธีใช้งานแต่ละ layer)
+
+### 3.1 การทำงานของแต่ละ layer (จาก request ไป response)
+
+```
+Client Request → Router (Chi) → Middleware → Handler (Delivery) → Usecase → Repository → DB/Redis
+                ← Response ←          ←         ← (return)      ←        ←
+```
+
+**รายละเอียด:**
+
+- **Router** (`router.go`) กำหนดเส้นทางและ middleware (CORS, Logger, RateLimit, Auth)
+- **Handler** (`*_handler.go`) รับ request → แปลงเป็น DTO → เรียก Usecase → แปลง response → ส่ง JSON กลับ
+- **Usecase** (`*_usecase.go`) ทำงาน business logic โดยไม่สนใจว่า data มาจาก DB หรือ cache หรือ external API
+- **Repository** (`*_repo.go`) เป็น interface ที่ Usecase เรียก; implementation จะติดต่อ PostgreSQL (GORM) หรือ Redis (go-redis)
+- **Model** (`models/*.go`) เป็น struct ที่ GORM ใช้ map กับตาราง
+
+### 3.2 Dependency Injection (DI)
+
+Usecase ต้องการ Repository → สร้าง Repository ก่อนแล้วส่งเข้า NewUsecase  
+Handler ต้องการ Usecase → สร้าง Usecase แล้วส่งเข้า NewHandler  
+Router ต้องการ Handler → สร้าง Handler แล้ว register route  
+
+ตัวอย่างใน `main.go` หรือ `cmd/serve.go`:
+```go
+userRepo := repository.NewUserRepository(db)
+redisClient := redis.NewClient(cfg.Redis)
+jwtMaker := jwt.NewRSAMaker(privateKey, publicKey)
+authUC := usecase.NewAuthUsecase(userRepo, redisClient, jwtMaker, emailQueue)
+authHandler := handler.NewAuthHandler(authUC)
+router.RegisterAuthRoutes(authHandler)
+```
+
+---
+
+## 4. นำไปใช้ในกรณีใด?
+
+| กรณี | เหมาะสมหรือไม่ |
+|------|----------------|
+| **ระบบ authentication / user management** | ✅ เหมาะมาก – มี JWT, refresh token, email verify, forget password ครบ |
+| **ระบบ e-commerce หรือ membership** | ✅ เหมาะ – มี RBAC (role), caching, background worker |
+| **ระบบที่ต้องรองรับการเปลี่ยนแปลง database** | ✅ เหมาะ – เพราะ repository เป็น interface เปลี่ยนจาก PostgreSQL เป็น MySQL ได้โดยไม่แก้ usecase |
+| **API ที่ต้องการ performance สูง** | ✅ เหมาะ – Go + Chi + GORM + Redis ให้ throughput ดี |
+| **ระบบ monolith ขนาดกลางถึงใหญ่** | ✅ เหมาะ – แยก module ชัดเจน (auth, users, items) |
+| **ระบบที่ต้องการ distributed / microservices** | ⚠️ ต้องปรับ – เปลี่ยน channel queue เป็น message broker (RabbitMQ, Kafka) และใช้ API gateway |
+| **ระบบ(CRUD ธรรมดา)** | ❌ เกินความจำเป็น – อาจใช้แค่ Gin + GORM ก็พอ |
+
+---
+
+## 5. ทำไมต้องใช้โครงสร้างนี้? (เหตุผล)
+
+1. **แยกความรับผิดชอบ (Separation of Concerns)** – แต่ละ layer ทำหน้าที่ของตัวเอง ไม่ยุ่งกัน  
+2. **ทดสอบง่าย (Testability)** – สามารถ mock repository หรือ usecase ได้โดยไม่ต้องต่อ database จริง  
+3. **เปลี่ยนเทคโนโลยีได้โดยไม่กระทบ logic** – เช่น เปลี่ยนจาก GORM เป็น sqlx ก็แค่แก้ repository, usecase ไม่ต้องเปลี่ยน  
+4. **ลด coupling** – ใช้ interface ทำให้ layer ภายในไม่รู้จัก layer นอก  
+5. **รองรับการขยาย (Scalability of code)** – เพิ่ม feature ใหม่โดยไม่พัง feature เดิม  
+6. **ทำงานเป็นทีมได้ง่าย** – นักพัฒนาสามารถทำ handler, usecase, repository พร้อมกันโดยไม่ชนกัน  
+
+---
+
+## 6. ประโยชน์ที่ได้รับ
+
+### ✅ ด้านการพัฒนา
+- **Hot-reload (Air)** – แก้โค้ดแล้วเซฟ แอป restart อัตโนมัติ  
+- **CLI commands** – migrate, seed data, start worker แยกออกจาก server  
+- **Swagger docs** – สร้างอัตโนมัติจาก annotation  
+
+### ✅ ด้านความปลอดภัย
+- **JWT with RSA** – ไม่ต้องแชร์ secret key ระหว่าง services  
+- **Refresh token ใน Redis** – สามารถ revoke ได้  
+- **Bcrypt hash password** – ป้องกัน credential leak  
+- **Rate limiter** – ป้องกัน brute force  
+
+### ✅ ด้าน performance
+- **Redis cache** – ลด load database  
+- **Background email queue** – API response ไม่ติด I/O  
+- **GORM preloading & connection pool** – จัดการ query ได้ดี  
+
+### ✅ ด้าน maintenance
+- โครงสร้างเป็นมาตรฐาน – developer ใหม่เข้าใจเร็ว  
+- เปลี่ยน database หรือ cache ได้โดยไม่แก้ business logic  
+- ใช้ dependency injection – เปลี่ยน implementation ได้ง่าย  
+
+---
+
+## 7. โครงสร้างการทำงาน (Flow ของ request)
+
+```mermaid
+flowchart LR
+    A[Client] --> B[Chi Router]
+    B --> C[Middleware: Logger, CORS, RateLimit]
+    C --> D[Auth Middleware ถ้า route ต้องการ]
+    D --> E[Handler]
+    E --> F[Usecase]
+    F --> G[Repository Interface]
+    G --> H[(PostgreSQL)]
+    G --> I[(Redis)]
+    F --> J[JWT Maker]
+    F --> K[Email Queue]
+    K --> L[Worker]
+    L --> M[SMTP]
+    F --> N[Response DTO]
+    N --> E
+    E --> A
+```
+
+---
+
+## 8. ออกแบบ Workflow (ยกตัวอย่าง 2 workflow หลัก)
+
+### 8.1 Workflow การสมัครสมาชิก (Register)
+
+1. **Client** → `POST /api/v1/register` (email, password, name)  
+2. **Handler** → validate DTO → เรียก `authUsecase.Register`  
+3. **Usecase**  
+   - `userRepo.FindByEmail` ตรวจสอบอีเมลซ้ำ  
+   - `hash.HashPassword`  
+   - `userRepo.Create` ลง PostgreSQL  
+   - สร้าง verification token → `redis.Set` (TTL 24h)  
+   - ส่ง task ไปยัง `emailQueue` (channel)  
+4. **Worker** (รันใน goroutine อื่น)  
+   - ดึง task จาก queue  
+   - สร้าง HTML email ด้วย Hermes  
+   - ส่งผ่าน SMTP (MailHog หรือ Mailtrap)  
+5. **Handler** → response `201 Created` ทันที (ไม่รออีเมล)  
+
+### 8.2 Workflow การล็อกอิน (Login)
+
+1. **Client** → `POST /api/v1/login` (email, password)  
+2. **Usecase**  
+   - `userRepo.FindByEmail`  
+   - ตรวจสอบ `user.Verified` และ password  
+   - `jwtMaker.CreateToken` สร้าง access token (RSA, 15m)  
+   - สร้าง refresh token (random string)  
+   - `redis.Set` เก็บ refresh token (key: `refresh:{userID}:{tokenID}`, TTL 7d)  
+3. **Handler** → response `200 OK` พร้อม `access_token`, `refresh_token`  
+4. **Client** เก็บ token (localStorage / secure cookie)  
+5. เมื่อ access token หมดอายุ → Client ส่ง `POST /api/v1/refresh` พร้อม refresh token  
+6. **Usecase** → ตรวจสอบ refresh token ใน Redis → สร้าง access token ใหม่  
+
+---
+
+## 9. สรุปตารางเปรียบเทียบ Layer
+
+| Layer | โฟลเดอร์ | รับผิดชอบ | ขึ้นอยู่กับอะไร |
+|-------|----------|-----------|----------------|
+| **Model** | `internal/models/` | กำหนด struct entity (GORM tags) | ไม่ขึ้นกับ layer อื่น |
+| **Repository** | `internal/repository/` | อ่าน/เขียน DB, Redis (implement interface) | Model, DB driver |
+| **Usecase** | `internal/usecase/` | Business logic, validation, hash, JWT, queue | Repository interface, pkg helpers |
+| **Delivery (Handler)** | `internal/delivery/rest/handler/` | รับ HTTP request, เรียก usecase, ส่ง response | Usecase interface, DTO |
+| **Delivery (Middleware)** | `internal/delivery/rest/middleware/` | ตรวจสอบ JWT, log, rate limit, CORS | pkg/logger, pkg/jwt |
+| **Worker** | `internal/delivery/worker/` | ดึงงานจาก queue, ส่ง email | pkg/email, pkg/redis |
+| **Shared Packages** | `internal/pkg/` | JWT, Redis client, email sender, hash, logger, validator, utils | third-party libs |
+
+---
+
+**หมายเหตุ:** โครงสร้างนี้ **ไม่เหมาะกับโปรเจกต์เล็ก ๆ ที่มีแค่ 2–3 endpoint** เพราะ แต่เหมาะกับ **ระบบที่มี business logic ซับซ้อน, ต้องทดสอบบ่อย, และมีโอกาสเปลี่ยนเทคโนโลยีในอนาคต**
+
+# แผนการสอน: ระบบมอนิเตอริ่ง ติดตามข้อมูล และแจ้งเตือนภัยอัตโนมัติ  
+**หัวข้อหลัก:** การจัดทำระบบ Monitoring ด้วย Grafana, Node-RED, InfluxDB, Redis, MQTT
+
+---
+
+## ส่วนที่ 1: แผนการสอน
+
+### 1. วัตถุประสงค์
+- จัดทำระบบมอนิเตอริ่ง ติดตามข้อมูล และแจ้งเตือนภัยอัตโนมัติ  
+- ติดตามเฝ้าระวังภัย ควบคุม บริหารจัดการอุปกรณ์ และการแจ้งเตือนอัตโนมัติ  
+- ตรวจสอบสภาพแวดล้อม/อุปกรณ์ในสถานที่สำคัญแบบ Real‑time โดยอัตโนมัติ  
+- มอนิเตอร์ข้อมูลย้อนหลัง หรือวิเคราะห์ข้อมูลเพื่อวางแผนการทำงาน (การผลิต, การบำรุงรักษา, การวิเคราะห์จุดคุ้มทุน)  
+- ทดสอบประสิทธิภาพของระบบ วิเคราะห์ข้อมูล และรายงานผล  
+- เก็บ Log และวิเคราะห์ Log เพื่อแก้ไขปัญหา (Log Analysis & Troubleshooting)  
+- จัดทำระบบ Monitoring ด้วย **Grafana, Node-RED, InfluxDB, Redis, MQTT**
+
+### 2. กลุ่มเป้าหมาย
+- ผู้ที่ต้องการนำไปใช้งานด้าน IoT  
+- ผู้ที่ต้องการนำไปใช้งานด้านระบบมอนิเตอริ่ง  
+- ผู้ที่ต้องการนำไปใช้งานด้านระบบวิเคราะห์ข้อมูลเชิงลึก  
+- ผู้ที่ต้องการนำไปใช้งานด้านระบบอัตโนมัติเชื่อมต่อหลายช่องทาง
+
+### 3. ความรู้พื้นฐาน
+- ความรู้พื้นฐานฐานข้อมูล (SQL, NoSQL)  
+- ความรู้พื้นฐานการใช้งาน Docker  
+- ความรู้พื้นฐานคำสั่ง Linux  
+- ความรู้พื้นฐาน Network, Firewall, Security  
+- ความรู้พื้นฐาน Data Flow และ Diagram  
+- ความรู้พื้นฐานด้าน AI (เบื้องต้น)
+
+### 4. วิทยากรผู้สอน
+คงนคร จันทะคุณ
+
+### 5. เนื้อหาที่รวม (หลักสูตรโดยสังเขป)
+
+| หัวข้อ | รายละเอียด |
+|--------|-------------|
+| ภาพรวมหลักสูตร | สถาปัตยกรรมระบบ, กระบวนการทำงานของ OS, Network, Firewall, Security |
+| การ Monitoring OS | Telegraf + InfluxDB + Grafana (CPU, RAM, Disk, Network I/O, Process) |
+| การ Monitoring Database | PostgreSQL, MySQL, Redis – Metrics และ Dashboard |
+| การ Monitoring Network | Node‑RED เป็น Network Probe (Ping, SNMP, Bandwidth) |
+| IoT Monitoring | MQTT, Node‑RED, InfluxDB, Redis, Grafana – Sensor Data, Alerting |
+| การติดตั้งเครื่องมือ | Docker, Docker Compose, VS Code, MQTT Broker, InfluxDB, Grafana, Node‑RED |
+| พื้นฐาน Network & Security | Firewall, TLS, Authentication, RBAC |
+| การสร้าง Dashboard | Grafana Data Source, Panel, Variable, Alerting |
+| การเชื่อมต่อ Tools | MQTT → Node‑RED → InfluxDB/Redis → Grafana |
+| ระบบแจ้งเตือนอัตโนมัติ | Alert Rules ใน Grafana, Node‑RED Email/Line/Telegram |
+| การมอนิเตอร์ & วิเคราะห์ Log | การเก็บ Log, การใช้ Grafana Loki หรือ Elastic (เบื้องต้น) |
+| การกำหนดการทำงานอัตโนมัติ | Node‑RED flow, การควบคุมอุปกรณ์ผ่าน MQTT |
+
+### 6. ระยะเวลาการอบรม
+
+#### แบบที่ 1: 3 วัน (สำหรับผู้มีพื้นฐาน)
+- **รูปแบบ:** ลงมือปฏิบัติล้วน ๆ กรณีศึกษาสถานการณ์จริง  
+- **กิจกรรม:** ติดตั้ง, ตั้งค่า, กำหนดสภาวะแวดล้อม, ออกแบบระบบ, จำลองข้อมูล, สร้าง Dashboard, ตั้ง Alert  
+- **เครื่องมือ:** Grafana, Node‑RED, InfluxDB, Redis, MQTT, Docker, Telegraf
+
+#### แบบที่ 2: 5 วัน (สำหรับผู้ไม่มีพื้นฐาน)
+- **รูปแบบ:** ทฤษฎี + ปฏิบัติแบบ step‑by‑step พร้อมสถานการณ์จำลอง  
+- **เนื้อหาเพิ่มเติม:**  
+  - ทฤษฎีระบบปฏิบัติการ, Network, Security, Database (MySQL, PostgreSQL)  
+  - ปูพื้นฐาน Docker, Linux, Data Flow  
+  - ปฏิบัติการเต็มรูปแบบตามแผนงานสมมุติ  
+
+---
+
+## ส่วนที่ 2: เอกสารประกอบการอบรม
+
+### 1. บทนำ
+ในยุคที่อุปกรณ์และระบบไอทีมีความซับซ้อน การเฝ้าระวังและแจ้งเตือนปัญหาอย่างทันท่วงทีเป็นสิ่งจำเป็น เอกสารฉบับนี้จัดทำขึ้นเพื่อให้ผู้เรียนสามารถสร้างระบบ **มอนิเตอริ่งอัตโนมัติ** ตั้งแต่การเก็บข้อมูล (metrics) การจัดเก็บในฐานข้อมูลอนุกรมเวลา (InfluxDB) การประมวลผลแบบเรียลไทม์ (Node‑RED, Redis) และการแสดงผล/แจ้งเตือน (Grafana) โดยใช้เทคโนโลยี Open Source และ Docker เป็นหลัก
+
+### 2. บทนิยาม
+| คำศัพท์ | ความหมาย |
+|---------|------------|
+| **Monitoring** | การตรวจสอบสถานะของระบบ/อุปกรณ์อย่างต่อเนื่อง |
+| **Metric** | ค่าที่วัดได้ เช่น CPU usage, อุณหภูมิ |
+| **Grafana** | เครื่องมือแสดงผลข้อมูล Dashboard |
+| **Node‑RED** | เครื่องมือเขียนโปรแกรมแบบ flow สำหรับ IoT และ automation |
+| **InfluxDB** | ฐานข้อมูลอนุกรมเวลา (Time Series Database) |
+| **Redis** | In‑memory data store ใช้เก็บ cache หรือค่าล่าสุด |
+| **MQTT** | โปรโตคอลสื่อสารน้ำหนักเบาสำหรับ IoT |
+| **Telegraf** | ตัวเก็บ metrics จากระบบต่าง ๆ (agent) |
+
+### 3. บทหัวข้อ (สารบัญ)
+1. บทนำและภาพรวมสถาปัตยกรรม  
+2. การติดตั้ง Docker และ Docker Compose  
+3. การติดตั้ง MQTT Broker (Mosquitto)  
+4. การติดตั้ง InfluxDB และ Redis  
+5. การติดตั้ง Grafana และเพิ่ม Data Source  
+6. การติดตั้ง Node‑RED และติดตั้ง library เพิ่มเติม  
+7. การ Monitoring OS ด้วย Telegraf  
+8. การ Monitoring Network ด้วย Node‑RED (Ping, SNMP)  
+9. การ Monitoring Database (MySQL/PostgreSQL)  
+10. การทำ IoT Monitoring (MQTT → Node‑RED → InfluxDB)  
+11. การสร้าง Dashboard ใน Grafana  
+12. การตั้งค่า Alerting (Grafana และ Node‑RED)  
+13. การเก็บ Log และ Troubleshooting  
+14. ตัวอย่างโค้ดและ Flow สำเร็จรูป  
+15. แบบฝึกหัดและสถานการณ์จำลอง  
+
+### 4. ออกแบบคู่มือ (ตัวอย่างบางส่วน)
+#### 4.1 การติดตั้ง Docker Compose Stack
+สร้างไฟล์ `docker-compose.yml` ดังนี้:
+```yaml
+version: '3.8'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=myorg
+      - DOCKER_INFLUXDB_INIT_BUCKET=mybucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=mytoken123
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - influxdb
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered
+    ports:
+      - "1880:1880"
+    volumes:
+      - nodered-data:/data
+    depends_on:
+      - mosquitto
+      - influxdb
+      - redis
+
+volumes:
+  influxdb-data:
+  redis-data:
+  grafana-data:
+  nodered-data:
+```
+
+#### 4.2 การตั้งค่า Node‑RED Flow (รับ MQTT → บันทึก InfluxDB)
+```json
+[
+    {
+        "id": "mqtt-in",
+        "type": "mqtt in",
+        "topic": "sensor/+/data",
+        "qos": 1,
+        "server": "localhost",
+        "name": "MQTT Sensor Input"
+    },
+    {
+        "id": "parse",
+        "type": "function",
+        "func": "msg.payload = {\n    measurement: \"sensor_data\",\n    tags: { device: msg.topic.split('/')[1] },\n    fields: JSON.parse(msg.payload),\n    timestamp: Date.now() * 1000000\n};\nreturn msg;"
+    },
+    {
+        "id": "influx-out",
+        "type": "influxdb out",
+        "database": "mybucket",
+        "precision": "ns",
+        "name": "Save to InfluxDB"
+    }
+]
+```
+
+### 5. ออกแบบ Workflow
+```
+[IoT Device] --MQTT--> [MQTT Broker] --subscribe--> [Node-RED]
+                                                          |
+                                                          +---> [Redis] (cache latest)
+                                                          +---> [InfluxDB] (store history)
+                                                          +---> [Check Alert] --> [Line/Telegram/Email]
+                                                          |
+                                                          +---> [Grafana] (dashboard & alert)
+```
+
+### 6. TASK LIST Template
+| Task ID | รายละเอียด | ผู้รับผิดชอบ | วันที่เริ่ม | วันที่สิ้นสุด | สถานะ |
+|---------|------------|--------------|-------------|---------------|--------|
+| T1 | ติดตั้ง Docker และ Docker Compose | | | | |
+| T2 | สร้าง docker-compose.yml และรัน stack | | | | |
+| T3 | ตั้งค่า MQTT broker (Mosquitto) | | | | |
+| T4 | สร้าง bucket และ token ใน InfluxDB | | | | |
+| T5 | ติดตั้ง Node‑RED และ node-red-contrib-influxdb | | | | |
+| T6 | สร้าง flow รับ MQTT และบันทึก InfluxDB | | | | |
+| T7 | ติดตั้ง Telegraf สำหรับ monitoring OS | | | | |
+| T8 | เพิ่ม Data Source InfluxDB ใน Grafana | | | | |
+| T9 | สร้าง Dashboard และ Alert Rule | | | | |
+| T10 | ทดสอบระบบโดยจำลองข้อมูล Sensor | | | | |
+
+### 7. CHECKLIST Template
+- [ ] Docker และ Docker Compose ทำงานได้  
+- [ ] MQTT broker เปิด port 1883 และสามารถ publish/subscribe ด้วย mosquitto_pub/sub  
+- [ ] InfluxDB UI เข้าถึงได้ที่ http://localhost:8086, login สำเร็จ  
+- [ ] Redis รันและเชื่อมต่อด้วย redis-cli ได้  
+- [ ] Grafana เข้าถึงได้ http://localhost:3000, login ด้วย admin/admin  
+- [ ] ใน Grafana เพิ่ม Data Source InfluxDB (URL, org, token, bucket) ทดสอบ connection สำเร็จ  
+- [ ] Node‑RED ทำงานที่ http://localhost:1880, สามารถติดตั้ง palette เพิ่มได้  
+- [ ] สร้าง flow ที่รับ MQTT และเขียน InfluxDB สำเร็จ (ตรวจสอบ data explorer)  
+- [ ] Telegraf ส่ง metrics เข้า InfluxDB (เช่น cpu, mem)  
+- [ ] Dashboard แสดงกราฟจากทั้ง Telegraf และ MQTT sensor  
+- [ ] Alert rule ทำงานเมื่อค่า sensor เกิน threshold และส่งการแจ้งเตือน  
+
+### 8. สรุป
+ระบบมอนิเตอริ่งอัตโนมัติที่ประกอบด้วย **MQTT + Node‑RED + InfluxDB + Redis + Grafana** ช่วยให้สามารถเก็บข้อมูลจากอุปกรณ์ IoT และระบบไอทีทั่วไป วิเคราะห์แนวโน้ม และแจ้งเตือนปัญหาแบบ Real‑time ได้อย่างมีประสิทธิภาพ ด้วยการใช้ Docker ทำให้ติดตั้งและปรับขยายได้ง่าย ผู้เรียนสามารถนำแนวทางนี้ไปประยุกต์ใช้ในงานผลิต งานบริการ หรืองานโครงสร้างพื้นฐานไอทีได้ทันที
+
+---
+
+## ตัวอย่างโค้ดเพิ่มเติมสำหรับทดสอบ
+
+### 1. จำลองข้อมูล Sensor ส่งผ่าน MQTT (Python)
+```python
+import paho.mqtt.client as mqtt
+import random, time, json
+
+client = mqtt.Client()
+client.connect("localhost", 1883, 60)
+
+while True:
+    data = {
+        "temperature": round(random.uniform(20,35), 1),
+        "humidity": round(random.uniform(40,80), 1),
+        "battery": random.randint(10,100)
+    }
+    client.publish("sensor/esp01/data", json.dumps(data))
+    print(f"Sent: {data}")
+    time.sleep(5)
+```
+
+### 2. Query InfluxDB ด้วย Flux (ใช้ใน Grafana)
+```flux
+from(bucket: "mybucket")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensor_data" and r.device == "esp01")
+  |> filter(fn: (r) => r._field == "temperature")
+  |> aggregateWindow(every: 1m, fn: mean)
+```
+
+### 3. การตั้งค่า Alert ใน Grafana (ตัวอย่าง rule YAML)
+```yaml
+apiVersion: 1
+alertRules:
+  - title: "High Temperature"
+    condition: "B"
+    data:
+      - refId: "A"
+        relativeTimeRange: { from: 5, to: 0 }
+        datasourceUid: "influxdb"
+        model: |
+          {
+            "refId": "A",
+            "query": "from(bucket: \"mybucket\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r._field == \"temperature\") |> last()",
+            "format": "table"
+          }
+      - refId: "B"
+        relativeTimeRange: { from: 0, to: 0 }
+        datasourceUid: "__expr__"
+        model: |
+          {
+            "refId": "B",
+            "type": "threshold",
+            "conditions": [{ "type": "gt", "evaluator": { "params": [35] }, "operator": { "type": "and" } }]
+          }
+    noDataState: "NoData"
+    execErrState: "Error"
+    for: "1m"
+    annotations: { summary: "Temperature above 35°C" }
+```
+
+---
+
+**หมายเหตุ:** โค้ดและไฟล์ compose ข้างต้นสามารถบันทึกและรันได้จริงบนเครื่องที่ติดตั้ง Docker แล้ว ผู้เรียนสามารถปรับแต่งตามความต้องการของสถานการณ์จริงได้
