@@ -393,7 +393,7 @@ go run cmd/api/main.go serve
 OR  air
 ```
 
-ขออธิบายโครงสร้างโปรเจกต์ **gorestapi** แบบละเอียด โดยอ้างอิงจากต้นแบบ [kongnakornna/gorestapi](https://gorestapi) แต่ตัดส่วนที่ไม่จำเป็นออกไป (`.vscode/`, `/docdev`, `/lession`) โครงสร้างนี้ใช้ **Clean Architecture** พร้อม分层 (layers) ที่แยกหน้าที่ชัดเจน: **Models → Repository → Usecase → Delivery** เหมาะสำหรับ REST API ที่มีความซับซ้อนปานกลางถึงสูง รองรับ JWT, Redis, Email Queue, และ Background Worker
+ขออธิบายโครงสร้างโปรเจกต์ **gorestapi** แบบละเอียด โดยอ้างอิงจากต้นแบบ [kongnakornna/gorestapi](https://gorestapi) แต่ตัดส่วนที่ไม่จำเป็นออกไป (`.vscode/`, `/docdev`, `/lession`) โครงสร้างนี้ใช้ **Clean Architecture** พร้อม (layers) ที่แยกหน้าที่ชัดเจน: **Models → Repository → Usecase → Delivery** เหมาะสำหรับ REST API ที่มีความซับซ้อนปานกลางถึงสูง รองรับ JWT, Redis, Email Queue, และ Background Worker
 
 ---
 ## 📁 โครงสร้างโปรเจค `gorestapi`
