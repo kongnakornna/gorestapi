@@ -93,6 +93,8 @@
 #### ภาคผนวก
 - [GORM CRUD กับฐานข้อมูลหลายประเภท](#gorm-crud-กับฐานข้อมูลหลายประเภท-postgresql-mysql-mongodb-influxdb)
 - [คู่มือภาษา Go ฉบับ นำไปทำงาน](#คู่มือภาษา-Go-ฉบับ-นำไปทำงาน)
+- [Golang Live-reload เมื่อ code เปลี่ยนแปลง](#Golang Live-reload-เมื่อ-code-เปลี่ยนแปลง)
+  
 
 --- 
 # ภาคที่ 1: ปฐมบทกับการเขียนโปรแกรม
@@ -30743,6 +30745,261 @@ func TestUserRepository(t *testing.T) {
     assert.NotZero(t, user.ID)
 }
 ```
+
+
+# Golang Live-reload เมื่อ code เปลี่ยนแปลง
+
+## บทนำ
+
+ในการพัฒนาแอปพลิเคชันด้วย Go (Golang) โดยเฉพาะที่เป็น Web Server หรือ REST API การแก้ไขโค้ดแต่ละครั้งจำเป็นต้องหยุดเซิร์ฟเวอร์, รัน `go build` ใหม่ แล้วเริ่มเซิร์ฟเวอร์อีกครั้ง ซึ่งกระบวนการนี้ซ้ำซากและลดประสิทธิภาพของนักพัฒนา
+
+**Live-reload** คือเทคนิคที่ช่วยให้แอปพลิเคชันสามารถรีสตาร์ทตัวเองโดยอัตโนมัติเมื่อตรวจพบการเปลี่ยนแปลงของไฟล์ต้นฉบับ นักพัฒนาจะเห็นผลลัพธ์ทันทีโดยไม่ต้องกดคำสั่งใด ๆ ทำให้การพัฒนาเร็วขึ้นและสนุกขึ้น
+
+บทความนี้จะอธิบายความหมาย, วิธีการตั้งค่า, และออกแบบเวิร์กโฟลว์สำหรับ Live-reload ใน Go
+
+---
+
+## บทนิยาม
+
+| ศัพท์ | คำอธิบาย |
+|------|----------|
+| **Live-reload** | การที่เซิร์ฟเวอร์หรือแอปพลิเคชันทำการรีสตาร์ทตัวเองเมื่อมีโค้ดเปลี่ยนแปลง โดยไม่ต้องอาศัยผู้ใช้กด restart |
+| **Hot reload** | การอัปเดตโค้ดที่กำลังทำงานอยู่โดยไม่ต้องหยุดกระบวนการ (harder in Go) |
+| **File watcher** | ตัวตรวจสอบการเปลี่ยนแปลงของไฟล์ในระบบ เช่น `fsnotify` |
+| **Process manager** | ตัวควบคุมการรันและรีสตาร์ทแอปพลิเคชัน เช่น `Air`, `Fresh`, `reflex` |
+
+เครื่องมือที่นิยมใช้ใน Go ecosystem:
+- **[Air](https://github.com/air-verse/air)** (แนะนำ) – รองรับ live reload พร้อม config ยืดหยุ่น
+- **Fresh** – เรียบง่าย ใช้ง่าย
+- **reflex** – ใช้กับคำสั่ง shell
+- **CompileDaemon** – ทำงานร่วมกับ `go build`
+
+---
+
+## คู่มือ (Manual)
+
+เราจะใช้ **Air** เป็นหลักเพราะติดตั้งง่ายและมีฟีเจอร์ครบ
+
+### 1. ติดตั้ง Air
+
+```bash
+go install github.com/air-verse/air@latest
+```
+
+ตรวจสอบว่า `$GOPATH/bin` อยู่ใน PATH แล้ว
+
+### 2. สร้างไฟล์ configuration (`.air.toml`)
+
+ในโฟลเดอร์โปรเจกต์ของคุณ ให้รัน:
+
+```bash
+air init
+```
+
+จะได้ไฟล์ `.air.toml` พร้อมค่าเริ่มต้น ปรับแต่งได้ดังนี้
+
+```toml
+# .air.toml
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  args_bin = []
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ."
+  delay = 1000
+  exclude_dir = ["assets", "tmp", "vendor", "log"]
+  exclude_file = []
+  exclude_regex = ["_test.go"]
+  exclude_unchanged = false
+  follow_symlink = false
+  full_bin = ""
+  include_dir = []
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  include_file = []
+  kill_delay = "0s"
+  log = "build-errors.log"
+  send_interrupt = false
+  stop_on_error = true
+
+[color]
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  main_only = false
+  time = false
+
+[misc]
+  clean_on_exit = false
+
+[screen]
+  clear_on_rebuild = true
+```
+
+### 3. รันแอปด้วย Air
+
+ในโปรเจกต์ที่ใช้ `main.go`:
+
+```bash
+air
+```
+
+ตัวอย่าง `main.go` พื้นฐาน:
+
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hello, live reload!")
+    })
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+เมื่อคุณแก้ไข `main.go` หรือไฟล์ `.html` ใด ๆ ที่ระบุไว้ใน `include_ext` Air จะทำการ:
+- Build โปรเจกต์ใหม่
+- หยุดกระบวนการเก่า
+- รันกระบวนการใหม่
+
+### 4. ใช้กับ Web Browser (Frontend Live Reload)
+
+Air จัดการฝั่ง Go backend เท่านั้น ถ้าต้องการให้หน้าเว็บ reload อัตโนมัติเมื่อเทมเพลต HTML หรือไฟล์ CSS เปลี่ยน ให้ใช้เครื่องมือ frontend เช่น **BrowserSync** หรือเพิ่ม WebSocket ใน Go:
+
+**ตัวอย่างแบบง่าย**: ใช้ `air` ร่วมกับ `air` + `browser-sync`
+
+```bash
+# terminal 1
+air
+
+# terminal 2
+browser-sync start --proxy "localhost:8080" --files "templates/*.html"
+```
+
+หรือเพิ่ม middleware ใน Go ที่ inject script สำหรับ WebSocket reload (advanced)
+
+### 5. ทางเลือกอื่น (Fresh, reflex)
+
+**Fresh** (ติดตั้ง: `go install github.com/pilu/fresh@latest`)
+
+```bash
+fresh
+```
+
+**reflex** (ติดตั้งผ่าน brew หรือ binary)
+
+```bash
+reflex -s -r '\.go$' -- sh -c 'go build -o app && ./app'
+```
+
+---
+
+## ออกแบบ Workflow
+
+ด้านล่างคือเวิร์กโฟลว์ของ Live-reload ที่สมบูรณ์สำหรับ Go Web Application
+
+```
++----------------+     +---------------------+     +-------------------+
+|  Developer     |     |   File Watcher      |     |   Process         |
+|  (แก้ไขไฟล์)    | --> |   (Air/fsnotify)    |     |   Manager         |
++----------------+     +---------------------+     +-------------------+
+                              |                               |
+                              | 1. detect change               |
+                              v                               |
+                       +---------------------+                |
+                       |  Build & Compile    |                |
+                       |  (go build ...)     |                |
+                       +---------------------+                |
+                              |                               |
+                              | 2. if success                 |
+                              v                               |
+                       +---------------------+                |
+                       |  Kill old process   | ---------------+
+                       |  (send interrupt)   |
+                       +---------------------+
+                              |
+                              | 3. start new process
+                              v
+                       +---------------------+
+                       |  Run new binary     |
+                       |  (./tmp/main)       |
+                       +---------------------+
+                              |
+                              | 4. server ready
+                              v
+                       +---------------------+
+                       |   Browser Client    |
+                       | (auto-refresh via   |
+                       |  WebSocket or proxy)|
+                       +---------------------+
+```
+
+### คำอธิบายแต่ละขั้น
+
+1. **File Watcher** ตรวจจับการเปลี่ยนแปลงในไฟล์ `.go`, `.html`, `.tmpl` ฯลฯ
+2. เมื่อมีการเปลี่ยนแปลง → ทำงาน `go build` ไปยังไดเรกทอรีชั่วคราว (เช่น `tmp/`)
+3. ถ้า build สำเร็จ → ส่งสัญญาณ `os.Interrupt` หรือ `SIGKILL` ไปยังกระบวนการเก่า
+4. รันไบนารีใหม่จาก `tmp/` พร้อมกับอาร์กิวเมนต์เดิม
+5. **Optional** ส่งสัญญาณไปยัง browser (ผ่าน WebSocket หรือ SSE) ให้รีเฟรชหน้า
+6. นักพัฒนาเห็นผลทันที โดยไม่ต้องกด restart เอง
+
+### การจัดการทรัพยากร (Port binding, connections)
+
+- ต้องแน่ใจว่า process เก่าปล่อย port ก่อนที่ process ใหม่จะ bind (ใช้ `delay` หรือ `kill_delay`)
+- ใช้ `send_interrupt = true` เพื่อให้ Go server จัดการ graceful shutdown
+
+```go
+// graceful shutdown snippet
+srv := &http.Server{Addr: ":8080", Handler: handler}
+go srv.ListenAndServe()
+
+c := make(chan os.Signal, 1)
+signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+<-c
+srv.Shutdown(context.Background())
+```
+
+### ตัวอย่าง workflow จริง (ใช้ Air)
+
+```bash
+$ cd myproject
+$ air
+
+  __    _   ___
+ / /\  | | | |_)
+/_/--\ |_| |_| \_ , built with Go
+
+watching .
+!exclude tmp
+building...
+running...
+listening on :8080
+```
+
+แก้ไข `main.go` → Air จะแสดง:
+
+```
+building...
+running...
+```
+
+เซิร์ฟเวอร์ restart โดยอัตโนมัติ พร้อมให้บริการทันที
+
+---
+
+## สรุป
+
+Live-reload เป็นเครื่องมือสำคัญที่ช่วยเพิ่มความเร็วในการพัฒนา Go โดยเฉพาะกับเว็บแอปพลิเคชัน เราแนะนำให้ใช้ **Air** เพราะตั้งค่าง่าย, config ได้ละเอียด, และมี community แข็งแกร่ง การออกแบบเวิร์กโฟลว์ที่เหมาะสมจะรวมทั้ง file watcher, auto build, process management และ optional browser refresh เพื่อประสบการณ์การพัฒนาที่ลื่นไหล
+ 
 
 ---
 
