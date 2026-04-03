@@ -354,9 +354,9 @@ go build -mod=vendor ./...
 
 ```bash
 go run cmd/api/main.go serve      # เริ่ม HTTP server บน port ที่กำหนดใน config
-go run main.go migrate    # auto migrate (หรือ run raw SQL จาก migrations/)
-go run main.go initdata   # สร้าง root user (email: root@gmail.com, pass: root_password)
-go run main.go worker     # run background worker (ส่ง email แบบ queue)
+go run cmd/api/main.go migrate    # auto migrate (หรือ run raw SQL จาก migrations/)
+go run cmd/api/main.go initdata   # สร้าง root user (email: root@gmail.com, pass: root_password)
+go run cmd/api/main.go worker     # run background worker (ส่ง email แบบ queue)
 ```
 
 ## 🐳 Docker Compose ที่ใช้
@@ -548,8 +548,8 @@ OR  air
 **ตัวอย่างการใช้งาน**  
 ```bash
 go run cmd/api/main.go serve --config config-local.yml
-go run main.go migrate
-go run main.go initdata
+go run cmd/api/main.go migrate
+go run cmd/api/main.go initdata
 ```
 
 ---
