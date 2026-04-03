@@ -1234,6 +1234,10 @@ flowchart TB
 **หมายเหตุ:** ขั้นตอนทั้งหมดยึดตาม Clean Architecture ที่มีอยู่แล้วใน `gorestapi` 
 การเพิ่ม module ใหม่จะไม่ต้องแก้ไข `auth` หรือ `users` module ยกเว้นต้องเพิ่มความสัมพันธ์ (foreign key) เช่น Device มี UserID เป็นต้น
 
+![Icmon6](https://github.com/user-attachments/assets/aeab954d-8b6f-4258-927f-676ca0c2e92b)
+
+![87796](https://github.com/user-attachments/assets/548e4d80-9f48-4293-9b41-e5c3ce1627b9)
+
 # 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `icmongolang`  
 ## ตัวอย่าง: เพิ่ม Module **Monitoring & Auto Control** (ระบบเฝ้าระวังภัย, แจ้งเตือน, ควบคุมอัตโนมัติ, รายงาน)
 
@@ -1241,6 +1245,7 @@ flowchart TB
 เราจะใช้ **ระบบเฝ้าระวังอุณหภูมิ/ความชื้น + แจ้งเตือน + ควบคุมอัตโนมัติ** เป็นกรณีศึกษาในการเพิ่ม Module ใหม่
 
 ---
+![87793](https://github.com/user-attachments/assets/280de9b7-89cf-495b-b189-fc4f2d995ec5)
 
 ## 1. ขั้นตอนการเพิ่ม Module Monitoring (ตามลำดับ)
 
