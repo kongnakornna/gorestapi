@@ -916,10 +916,10 @@ flowchart TB
         B["ฝัง Animal<br>type Dog struct { Animal }"]
         C[เพิ่มฟิลด์ Breed string<br>เพิ่มเมธอด Bark()]
         D{ต้องการเปลี่ยนเมธอด Eat?}
-        E["กำหนด func (d Dog) Eat() {<br>    fmt.Println(d.Name, \"กินกระดูก\")<br>}"]
+        E["กำหนด func (d Dog) Eat() {<br>    fmt.Println(d.Name, 'กินกระดูก')<br>}"]
     end
 
-    F["d := Dog{Animal{Name:\"ทองคำ\"}, \"โกลเด้น\"}<br>d.Eat()"]
+    F["d := Dog{Animal{Name:'ทองคำ'}, 'โกลเด้น'}<br>d.Eat()"]
     G["เรียกเมธอดของ Animal ที่ถูกฝัง<br>d.Animal.Sleep()"]
 
     A -- ฝังเข้า --> B
