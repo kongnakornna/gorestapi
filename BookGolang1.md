@@ -3746,50 +3746,50 @@ fmt.Println(m["key"]) // 0 (ไม่ panic)
 
 ```mermaid
 flowchart TB
-    start[เริ่มต้น] --> declare{ประกาศตัวแปร<br>ประเภท reference types}
+    start([เริ่มต้น]) --> declare{ประกาศตัวแปร<br>ประเภท reference types}
     
-    declare --> |Pointer| ptrNil[var p *int = nil]
-    declare --> |Slice| sliceNil[var s []int = nil]
-    declare --> |Map| mapNil[var m mapK V = nil]
-    declare --> |Channel| chNil[var ch chan int = nil]
-    declare --> |Func| funcNil[var f func = nil]
-    declare --> |Interface| ifaceNil[var i interface = nil]
+    declare --> |Pointer| ptrNil["var p *int = nil"]
+    declare --> |Slice| sliceNil["var s []int = nil"]
+    declare --> |Map| mapNil["var m map[K]V = nil"]
+    declare --> |Channel| chNil["var ch chan int = nil"]
+    declare --> |Func| funcNil["var f func() = nil"]
+    declare --> |Interface| ifaceNil["var i interface{} = nil"]
     
     ptrNil --> ptrUse{ใช้งาน pointer}
-    ptrUse --> | dereference *p | panic1[panic: nil pointer dereference]
-    ptrUse --> | เปรียบเทียบ nil | okPtr[if p != nil → ปลอดภัย]
+    ptrUse --> | dereference *p | panic1["panic: nil pointer dereference"]
+    ptrUse --> | เปรียบเทียบ nil | okPtr["if p != nil → ปลอดภัย"]
     
     sliceNil --> sliceUse{ใช้งาน slice}
-    sliceUse --> | len(s), cap(s) | zeroLen[ได้ 0, 0]
-    sliceUse --> | append(s, x) | newSlice[สร้าง slice ใหม่ ทำงานได้]
-    sliceUse --> | s[index] | panic2[panic: index out of range]
+    sliceUse --> | len(s), cap(s) | zeroLen["ได้ 0, 0"]
+    sliceUse --> | append(s, x) | newSlice["สร้าง slice ใหม่ ทำงานได้"]
+    sliceUse --> | s[index] | panic2["panic: index out of range"]
     
     mapNil --> mapUse{ใช้งาน map}
-    mapUse --> | อ่าน m[key] | zeroVal[ได้ zero value ของ value type]
-    mapUse --> | เขียน m[key]=v | panic3[panic: assignment to nil map]
-    mapUse --> | len(m) | zeroLenMap[ได้ 0]
+    mapUse --> | อ่าน m[key] | zeroVal["ได้ zero value ของ value type"]
+    mapUse --> | เขียน m[key]=v | panic3["panic: assignment to nil map"]
+    mapUse --> | len(m) | zeroLenMap["ได้ 0"]
     
     chNil --> chUse{ใช้งาน channel}
-    chUse --> | ส่ง ch <- v | block1[block ตลอดไป]
-    chUse --> | รับ <-ch | block2[block ตลอดไป]
-    chUse --> | close(ch) | panic4[panic: close of nil channel]
+    chUse --> | ส่ง ch <- v | block1["block ตลอดไป"]
+    chUse --> | รับ <-ch | block2["block ตลอดไป"]
+    chUse --> | close(ch) | panic4["panic: close of nil channel"]
     
     funcNil --> funcUse{เรียกใช้ฟังก์ชัน}
-    funcUse --> | f() | panic5[panic: nil function call]
-    funcUse --> | ตรวจสอบ nil | safeCall[if f != nil → เรียกได้]
+    funcUse --> | f() | panic5["panic: nil function call"]
+    funcUse --> | ตรวจสอบ nil | safeCall["if f != nil → เรียกได้"]
     
     ifaceNil --> ifaceUse{ใช้งาน interface}
-    ifaceUse --> | เปรียบเทียบ i == nil | trueNil[true]
-    ifaceUse --> | type assertion | panic6[panic ถ้า type ไม่ตรง]
-    ifaceUse --> | เก็บค่า non-nil | special[interface ไม่เป็น nil แม้ value เป็น nil]
+    ifaceUse --> | เปรียบเทียบ i == nil | trueNil["true"]
+    ifaceUse --> | type assertion | panic6["panic ถ้า type ไม่ตรง"]
+    ifaceUse --> | เก็บค่า non-nil | special["interface ไม่เป็น nil แม้ value เป็น nil"]
     
-    okPtr --> end1[จบ]
-    newSlice --> end2[จบ]
-    zeroLen --> end3[จบ]
-    zeroVal --> end4[จบ]
-    block1 --> deadlock[deadlock]
-    safeCall --> end5[จบ]
-    trueNil --> end6[จบ]
+    okPtr --> end1([จบ])
+    newSlice --> end2([จบ])
+    zeroLen --> end3([จบ])
+    zeroVal --> end4([จบ])
+    block1 --> deadlock["deadlock"]
+    safeCall --> end5([จบ])
+    trueNil --> end6([จบ])
     
     style panic1 fill:#ffcccc,stroke:#ff0000
     style panic2 fill:#ffcccc,stroke:#ff0000
