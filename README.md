@@ -1956,10 +1956,14 @@ flowchart LR
 
 ### การนำ Template ไปใช้
 
-- **ผู้เริ่มต้น** ควรศึกษาเนื้อหาตามลำดับตั้งแต่ภาคที่ 1 ถึงภาคที่ 3 => **https://github.com/kongnakornna/gorestapi/blob/main/Book/BookGolang1.md**
+- **ผู้เริ่มต้น** ควรศึกษาเนื้อหาตามลำดับตั้งแต่ภาคที่ 1 ถึงภาคที่ 3
+- https://github.com/kongnakornna/gorestapi/blob/main/Book/BookGolang1.md
 - **นักพัฒนาที่มีประสบการณ์** สามารถข้ามไปยังภาคที่ 7-9 เพื่อศึกษา Clean Architecture, DDD และการผสานระบบภายนอก
+- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/sulution
 - **ทีมพัฒนา** สามารถนำ Task List Template และ Checklist Template ไปปรับใช้ในการทำงาน
-
+- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/Template
+- **Design Thinking  & Business Model Canvas (BMC) - Design & Implementation Package **
+- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/DesignThinking
 ---
 **ผู้เขียน:** คงนคร จันทะคุณ  
 **อีเมล:** kongnakornjantakun@gmail.com  
