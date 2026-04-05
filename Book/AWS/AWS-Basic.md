@@ -10,8 +10,6 @@
 
 ---
 
-# 📘 สารบัญ (Table of Contents)
-
 **หนังสือ “AWS จากภาคทฤษฎีไปภาคปฏิบัติ”**  
 *“AWS From Theory to Practice”*
 
