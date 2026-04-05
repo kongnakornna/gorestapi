@@ -565,3 +565,1456 @@ func createARecord(client *route53.Client, zoneId, name, value string) error {
 **หมายเหตุ เนื้อหาในหนังสือ:**  
 เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
 📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+# 📘 บทที่ 16: AWS Certified Data Engineer – Associate (DEA-C01)  
+## Chapter 16: AWS Certified Data Engineer – Associate (DEA-C01)  
+
+---
+
+## 🧱 โครงสร้างการทำงาน (Work Structure)  
+
+**ไทย:**  
+บทนี้เจาะลึกใบรับรอง AWS Certified Data Engineer – Associate (DEA-C01) ซึ่งเป็นใบรับรองใหม่ล่าสุดของ AWS (เปิดตัวต้นปี 2024) สำหรับผู้ที่ทำงานด้าน data engineering บน AWS โดยเฉพาะ เนื้อหาครอบคลุมการออกแบบและจัดการ data pipeline, การจัดเก็บข้อมูล (data lakes, data warehouses), การทำ ETL/ELT, การตรวจสอบคุณภาพข้อมูล, การทำ data governance, และการ optimize ประสิทธิภาพ พร้อมตัวอย่างการใช้ AWS Glue, Athena, Lake Formation, Redshift, Kinesis, Step Functions และการเขียน Go สำหรับ data pipeline  
+
+**English:**  
+This chapter dives into the AWS Certified Data Engineer – Associate (DEA-C01) certification, the newest credential from AWS (launched early 2024) for those specifically working in data engineering on AWS. It covers designing and managing data pipelines, data storage (data lakes, data warehouses), ETL/ELT, data quality, data governance, and performance optimization, with examples using AWS Glue, Athena, Lake Formation, Redshift, Kinesis, Step Functions, and writing Go for data pipelines.  
+
+---
+
+## 🎯 วัตถุประสงค์แบบสั้นสำหรับทบทวน (Short Revision Objective)  
+
+**ไทย:**  
+เพื่อให้ผู้อ่านเข้าใจโครงสร้างข้อสอบ DEA-C01, เนื้อหาทั้ง 5 โดเมน, บริการ data engineering บน AWS (Glue, Lake Formation, Redshift, Athena, Kinesis, MSK, EMR, Step Functions, etc.), และสามารถเตรียมตัวสอบ รวมถึงการออกแบบ data pipeline ที่มีประสิทธิภาพ, การจัดการ data catalog, และการทำ data quality checks  
+
+**English:**  
+To enable readers to understand the DEA-C01 exam structure, five domains, AWS data engineering services (Glue, Lake Formation, Redshift, Athena, Kinesis, MSK, EMR, Step Functions, etc.), and prepare effectively, including designing efficient data pipelines, managing data catalogs, and performing data quality checks.  
+
+---
+
+## 👥 กลุ่มเป้าหมาย (Target Audience)  
+
+- Data Engineer ที่ทำงานบน AWS  
+- Data Architect ที่ออกแบบ data platform  
+- Data Analyst ที่ต้องการยกระดับสู่ data engineering  
+- ผู้ที่สอบผ่าน AWS Cloud Practitioner หรือ Associate ตัวอื่นแล้วต้องการต่อยอดด้าน data  
+
+---
+
+## 📚 ความรู้พื้นฐาน (Prerequisites)  
+
+- ประสบการณ์ data engineering อย่างน้อย 1-2 ปี  
+- ความรู้ SQL (SELECT, JOIN, aggregation, window functions)  
+- เข้าใจ ETL/ELT concepts, data modeling (star schema, snowflake)  
+- แนะนำให้มีความรู้ Python หรือ Scala (Glue ETL ใช้ Python เป็นหลัก) แต่บทนี้จะมี Go สำหรับบางส่วน  
+
+---
+
+## 📝 เนื้อหาโดยย่อ (Abstract)  
+
+**ไทย:**  
+บทนี้สรุปข้อสอบ DEA-C01: จำนวนข้อ, เวลา, โดเมนหลัก 5 ด้าน (Data Ingestion, Storage, Processing, Governance & Security, Operations & Optimization) พร้อมตัวอย่างคำถาม, บริการที่ต้องรู้ลึก (Glue, Lake Formation, Redshift, Athena, Kinesis, MSK, EMR, Step Functions, S3, DynamoDB, etc.), และการเขียน Go เพื่อ automate data pipeline, เรียก Athena query, และจัดการ Glue jobs  
+
+**English:**  
+This chapter summarizes the DEA-C01 exam: number of questions, time, five domains (Data Ingestion, Storage, Processing, Governance & Security, Operations & Optimization), sample questions, essential services (Glue, Lake Formation, Redshift, Athena, Kinesis, MSK, EMR, Step Functions, S3, DynamoDB, etc.), and writing Go to automate data pipelines, run Athena queries, and manage Glue jobs.  
+
+---
+
+## 🔰 บทนำ (Introduction)  
+
+**ไทย:**  
+AWS Certified Data Engineer – Associate (DEA-C01) เป็นใบรับรองที่ออกแบบมาเฉพาะสำหรับ Data Engineer โดยเฉพาะ เพื่อทดสอบความสามารถในการสร้าง, จัดการ, และ optimize data pipelines บน AWS ซึ่งรวมถึงการ ingest ข้อมูลจากแหล่งต่างๆ, การ transform ด้วย ETL, การจัดเก็บใน data lake หรือ data warehouse, การทำ data catalog, และการตรวจสอบคุณภาพข้อมูล ใบรับรองนี้เหมาะสำหรับผู้ที่มีประสบการณ์ทำงานกับข้อมูลและต้องการพิสูจน์ทักษะ data engineering บน AWS โดยเฉพาะ  
+
+**English:**  
+The AWS Certified Data Engineer – Associate (DEA-C01) is a certification designed specifically for Data Engineers to validate their ability to build, manage, and optimize data pipelines on AWS. This includes ingesting data from various sources, transforming with ETL, storing in data lakes or data warehouses, cataloging data, and ensuring data quality. This certification suits those with data experience who want to prove their AWS data engineering skills.  
+
+---
+
+## 📖 บทนิยาม (Definitions)  
+
+| คำศัพท์ (Term) | คำจำกัดความไทย (Thai Definition) | English Definition |
+|----------------|----------------------------------|--------------------|
+| Data Lake | ที่เก็บข้อมูลดิบทุกประเภท (structured, semi-structured, unstructured) ใน S3 | Centralized repository for raw data of all types in S3. |
+| Data Warehouse | ที่เก็บข้อมูลที่ถูก transform แล้วสำหรับ analytics และ BI (เช่น Redshift) | Storage for transformed data for analytics and BI (e.g., Redshift). |
+| ETL (Extract, Transform, Load) | ดึงข้อมูล → แปลง → โหลดไปยัง destination | Extract → Transform → Load to destination. |
+| ELT (Extract, Load, Transform) | ดึง → โหลดข้อมูลดิบก่อน → แล้วค่อยแปลง (เหมาะกับ data lake) | Extract → Load raw data first → then transform. |
+| Glue | บริการ ETL แบบ serverless (ใช้ Spark หรือ Python shell) | Serverless ETL service (Spark or Python shell). |
+| Lake Formation | บริการสร้าง data lake และจัดการ permission แบบ fine‑grained | Service to build data lakes and manage fine‑grained permissions. |
+| Redshift | Data warehouse แบบ columnar, petabyte-scale | Columnar data warehouse, petabyte‑scale. |
+| Athena | Query ข้อมูลใน S3 โดยใช้ SQL (serverless) | Serverless SQL query on S3 data. |
+| Kinesis | บริการ real‑time data streaming | Real‑time data streaming service. |
+| MSK (Managed Streaming for Kafka) | Apache Kafka แบบ managed | Managed Apache Kafka. |
+| EMR | Big data platform (Spark, Hive, HBase, etc.) | Big data platform (Spark, Hive, HBase, etc.). |
+| Step Functions | orchestration workflow สำหรับ data pipeline | Workflow orchestration for data pipelines. |
+| Data Catalog | Metadata repository สำหรับ tables, partitions, schemas (Glue Catalog) | Metadata repository for tables, partitions, schemas. |
+
+---
+
+## 🔧 DEA-C01 คืออะไร? มีเนื้อหาอะไรบ้าง?  
+
+### 1. DEA-C01 คืออะไร  
+**ไทย:**  
+DEA-C01 คือรหัสข้อสอบ AWS Certified Data Engineer – Associate (เปิดตัวมีนาคม 2024) ทดสอบความสามารถในการออกแบบ, implement, และดูแล data pipeline บน AWS รวมถึง data ingestion, transformation, storage, cataloging, governance, และ performance optimization  
+
+**English:**  
+DEA-C01 is the exam code for AWS Certified Data Engineer – Associate (launched March 2024). It tests the ability to design, implement, and maintain data pipelines on AWS, including ingestion, transformation, storage, cataloging, governance, and performance optimization.  
+
+### 2. เนื้อหาข้อสอบแบ่งเป็น 5 โดเมน (Domains)  
+
+| โดเมน (Domain) | น้ำหนัก (Weight) | หัวข้อหลัก (Key topics) |
+|----------------|------------------|--------------------------|
+| Data Ingestion | 18% | การนำเข้าข้อมูลจากแหล่งต่างๆ (S3, RDS, on‑premise, streaming) โดยใช้ Glue, Kinesis, MSK, AppFlow, DMS, Transfer Family; การทำ batch vs real‑time |
+| Data Storage | 22% | การเลือก storage ที่เหมาะสม (S3, Redshift, DynamoDB, RDS, EFS, EBS); การจัดการ data lifecycle (S3 lifecycle policies), compression (Parquet, ORC), partitioning |
+| Data Processing | 26% | การทำ ETL/ELT ด้วย Glue (Spark, Python shell), EMR, Lambda, Step Functions; การ optimize performance (partitioning, bucketing, indexing); การใช้ Athena สำหรับ ad‑hoc queries |
+| Data Governance & Security | 20% | การจัดการ permission (Lake Formation, IAM), data encryption (at rest, in transit), data masking, data catalog (Glue Catalog), data lineage, data quality (Glue Data Quality, Deequ) |
+| Operations & Optimization | 14% | การ monitoring (CloudWatch, Glue metrics), logging (S3, CloudWatch), troubleshooting, cost optimization (Glue job auto scaling, Spot instances for EMR), automation (CloudFormation, CDK) |
+
+### 3. รูปแบบข้อสอบ  
+
+| รายการ | รายละเอียด |
+|--------|-------------|
+| จำนวนข้อ | 65 (รวม 15 ข้อที่ไม่นับคะแนน) |
+| เวลา | 150 นาที (2 ชั่วโมง 30 นาที) |
+| รูปแบบ | Multiple choice, multiple answer |
+| คะแนนผ่าน | 720/1000 (~72%) |
+| ค่าสอบ | 150 USD |
+| ภาษา | อังกฤษ, ญี่ปุ่น, เกาหลี, จีน |
+
+### 4. บริการที่ต้องรู้ลึกสำหรับ DEA  
+
+| บริการ | บทบาท | รายละเอียด |
+|--------|--------|-------------|
+| S3 | Data lake | storage classes, lifecycle, versioning, replication, event notifications |
+| Glue | ETL + Catalog | crawlers, ETL jobs (Spark, Python shell), job bookmarks, Data Quality, Workflows |
+| Lake Formation | Governance | data lake setup, fine‑grained permissions, row/cell‑level security |
+| Redshift | Data warehouse | cluster, Spectrum, RA3, concurrency scaling, Redshift Serverless |
+| Athena | Query | workgroups, partitions, CTAS, federated queries |
+| Kinesis | Streaming | Data Streams, Data Firehose, Data Analytics |
+| MSK | Kafka | topics, producers, consumers, schema registry |
+| EMR | Big data | clusters, notebooks, Spark, Hive, HBase |
+| Step Functions | Orchestration | state machines, tasks, error handling, retry |
+| DMS | Migration | CDC, full load, ongoing replication |
+| AppFlow | SaaS integration | Salesforce, Zendesk, SAP, etc. to S3/Redshift |
+
+### 5. ตัวอย่างคำถาม (Sample Question)  
+
+**คำถาม:** คุณต้องการสร้าง data pipeline ที่อ่านข้อมูลจาก S3 (รูปแบบ CSV) ทุกชั่วโมง, transform เป็น Parquet, partition ด้วย year/month/day, และเขียนกลับไปยัง S3 คุณควรใช้บริการใด  
+
+A. AWS Glue ETL job + Glue Workflows  
+B. Amazon Redshift Spectrum  
+C. AWS Lambda + S3 event notification  
+D. Amazon EMR with Spark  
+
+**เฉลย:** A (Glue ETL เหมาะกับ batch transformation, Glue Workflows สำหรับ scheduling)  
+
+---
+
+## 🔄 ออกแบบ Workflow (Workflow Design)  
+
+### ภาพรวม: Data Pipeline สำหรับวิเคราะห์ยอดขาย (S3 → Glue → Redshift → QuickSight)  
+
+**ไทย:**  
+ข้อมูลดิบจากระบบขาย → อัปโหลดไป S3 raw zone → Glue Crawler สร้าง schema → Glue ETL job อ่าน raw, transform (clean, aggregate, join), เขียนเป็น Parquet → ข้อมูล cleaned ไป S3 cleaned zone → Redshift Spectrum หรือ Glue ETL อีกที load เข้า Redshift → Redshift สำหรับ BI query → QuickSight dashboard  
+
+**English:**  
+Raw sales data → uploaded to S3 raw zone → Glue Crawler creates schema → Glue ETL job reads raw, transforms (clean, aggregate, join), writes as Parquet → cleaned data to S3 cleaned zone → Redshift Spectrum or another Glue job loads into Redshift → Redshift for BI queries → QuickSight dashboard.  
+
+### Mermaid Flowchart  
+
+```mermaid
+flowchart TB
+    A[Raw Data Sources<br/>API / DB / Files] --> B[Ingestion: Kinesis / DMS / AppFlow]
+    B --> C[S3 Raw Zone<br/>CSV/JSON]
+    C --> D[Glue Crawler]
+    D --> E[Glue Data Catalog]
+    E --> F[Glue ETL Job<br/>Spark or Python Shell]
+    F --> G[S3 Cleaned Zone<br/>Parquet + Partitioned]
+    G --> H[Athena / Redshift Spectrum]
+    H --> I[QuickSight Dashboard]
+    
+    G -.-> J[Redshift Load<br/>COPY / Glue ETL]
+    J --> K[Redshift]
+    K --> I
+```
+
+### คำอธิบายแบบละเอียด (Detailed Explanation)  
+
+| ขั้นตอน | คำอธิบาย (ไทย) | Explanation (English) |
+|---------|----------------|------------------------|
+| 1 | ข้อมูลจากแหล่งต่างๆ ถูกส่งมายัง S3 raw zone ผ่าน Kinesis (real‑time), DMS (CDC), หรือ AppFlow (SaaS) | Data from various sources arrives in S3 raw zone via Kinesis, DMS, or AppFlow. |
+| 2 | Glue Crawler อ่าน raw data และสร้าง schema ใน Glue Data Catalog | Glue Crawler reads raw data and creates schema in Glue Data Catalog. |
+| 3 | Glue ETL job (Spark หรือ Python shell) อ่านจาก Catalog, ทำความสะอาด, แปลงเป็น Parquet, partition | Glue ETL job reads from Catalog, cleans, converts to Parquet, partitions. |
+| 4 | Cleaned data ถูกเขียนไปยัง S3 cleaned zone (Parquet + partition) | Cleaned data written to S3 cleaned zone (Parquet + partitioned). |
+| 5 | Athena หรือ Redshift Spectrum สามารถ query ข้อมูลใน cleaned zone ได้โดยตรง | Athena or Redshift Spectrum can directly query cleaned zone. |
+| 6 | ถ้าต้องการ performance สูงขึ้น สามารถ load เข้า Redshift (COPY หรือ Glue) | For higher performance, load into Redshift (COPY or Glue). |
+| 7 | QuickSight เชื่อมต่อกับ Athena หรือ Redshift เพื่อสร้าง dashboard | QuickSight connects to Athena or Redshift for dashboards. |
+
+---
+
+## 💻 ตัวอย่างโค้ดที่รันได้จริง (Runnable Code Example)  
+
+### 1. การรัน Athena Query จาก Go (ทบทวนจากบทที่ 4)  
+
+```go
+// athena_query.go
+// รัน SQL query บน Athena และอ่านผลลัพธ์จาก S3
+// Run SQL query on Athena and read results from S3
+
+package main
+
+import (
+	"context"
+	"encoding/csv"
+	"fmt"
+	"log"
+	"strings"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/athena"
+	"github.com/aws/aws-sdk-go-v2/service/athena/types"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	athenaClient := athena.NewFromConfig(cfg)
+	s3Client := s3.NewFromConfig(cfg)
+
+	query := `
+		SELECT 
+			year, month, 
+			SUM(sales_amount) as total_sales,
+			COUNT(DISTINCT customer_id) as unique_customers
+		FROM sales_db.sales_parquet
+		WHERE year = 2026 AND month = 4
+		GROUP BY year, month
+	`
+	resultBucket := "my-athena-results-bucket"
+	outputLocation := fmt.Sprintf("s3://%s/results/", resultBucket)
+
+	// Start query
+	startResp, err := athenaClient.StartQueryExecution(context.TODO(), &athena.StartQueryExecutionInput{
+		QueryString: &query,
+		ResultConfiguration: &types.ResultConfiguration{
+			OutputLocation: &outputLocation,
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Poll for completion
+	for {
+		descResp, err := athenaClient.GetQueryExecution(context.TODO(), &athena.GetQueryExecutionInput{
+			QueryExecutionId: startResp.QueryExecutionId,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		if descResp.QueryExecution.Status.State == types.QueryExecutionStateSucceeded {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	// Read results from S3
+	key := fmt.Sprintf("results/%s.csv", *startResp.QueryExecutionId)
+	resp, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: &resultBucket,
+		Key:    &key,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	reader := csv.NewReader(resp.Body)
+	records, _ := reader.ReadAll()
+	fmt.Println("Query Results:")
+	for _, row := range records {
+		fmt.Println(strings.Join(row, " | "))
+	}
+}
+```
+
+### 2. การเริ่มต้น Glue Job จาก Go (ผ่าน SDK)  
+
+```go
+// start_glue_job.go
+// เริ่มต้น Glue ETL job และตรวจสอบสถานะ
+// Start Glue ETL job and check status
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/glue"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := glue.NewFromConfig(cfg)
+
+	jobName := "sales_etl_job"
+	// เริ่ม job
+	startResp, err := client.StartJobRun(context.TODO(), &glue.StartJobRunInput{
+		JobName: &jobName,
+		Arguments: map[string]string{
+			"--input_path":   "s3://my-bucket/raw/sales/",
+			"--output_path":  "s3://my-bucket/cleaned/sales/",
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Started job run: %s\n", *startResp.JobRunId)
+
+	// ตรวจสอบสถานะ (polling)
+	for {
+		descResp, err := client.GetJobRun(context.TODO(), &glue.GetJobRunInput{
+			JobName:  &jobName,
+			JobRunId: startResp.JobRunId,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		state := descResp.JobRun.JobRunState
+		fmt.Printf("Status: %s\n", state)
+		if state == glue.JobRunStateSucceeded {
+			fmt.Println("Job completed successfully!")
+			break
+		} else if state == glue.JobRunStateFailed || state == glue.JobRunStateStopped {
+			errorMsg := ""
+			if descResp.JobRun.ErrorMessage != nil {
+				errorMsg = *descResp.JobRun.ErrorMessage
+			}
+			log.Fatalf("Job failed: %s", errorMsg)
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
+```
+
+### 3. การสร้าง Glue Crawler จาก Go  
+
+```go
+// create_crawler.go
+// สร้าง Glue Crawler เพื่อสแกน S3 และอัปเดต Data Catalog
+// Create Glue Crawler to scan S3 and update Data Catalog
+
+func createCrawler(client *glue.Client, crawlerName, s3Path, databaseName, roleArn string) error {
+	_, err := client.CreateCrawler(context.TODO(), &glue.CreateCrawlerInput{
+		Name: &crawlerName,
+		Role: &roleArn,
+		DatabaseName: &databaseName,
+		Targets: &glue.CrawlerTargets{
+			S3Targets: []glue.S3Target{
+				{
+					Path: &s3Path,
+				},
+			},
+		},
+		SchemaChangePolicy: &glue.SchemaChangePolicy{
+			UpdateBehavior: glue.UpdateBehaviorUpdateCatalog,
+			DeleteBehavior: glue.DeleteBehaviorDeprecateInDatabase,
+		},
+	})
+	return err
+}
+```
+
+---
+
+## 📌 กรณีศึกษาและแนวทางแก้ไขปัญหา (Case Study & Troubleshooting)  
+
+### กรณีศึกษา: การปรับ Glue ETP job ให้ทำงานเร็วขึ้นและถูกขึ้น  
+
+**ปัญหา:** Glue job อ่านข้อมูล 5 TB ใช้เวลา 2 ชั่วโมง และค่าใช้จ่ายสูง  
+**แนวทางแก้ไข (ตาม DEA):**  
+- เปลี่ยน input format จาก CSV เป็น Parquet (ลดขนาด, columnar)  
+- ใช้ partition pruning: แบ่งข้อมูลเป็น partition (year/month/day)  
+- ใช้ Glue job bookmarks เพื่อประมวลผลเฉพาะไฟล์ใหม่  
+- ปรับ DPU ให้เหมาะสม (ไม่มากเกินไป, ไม่น้อยเกินไป)  
+- ใช้ Glue Auto Scaling (เปิดอัตโนมัติ)  
+**ผลลัพธ์:** เวลาลดลงเหลือ 30 นาที, ค่าใช้จ่ายลด 70%  
+
+### ปัญหาที่พบบ่อยในการสอบ DEA  
+
+| ปัญหา (Issue) | สาเหตุ (Cause) | วิธีแก้ไข (Solution) |
+|----------------|----------------|----------------------|
+| สับสน ETL vs ELT | ไม่เข้าใจ data lake | ETL: transform ก่อน load (data warehouse); ELT: load ก่อน transform (data lake) |
+| Glue job memory error | partition ใหญ่เกินไป | ใช้ group size หรือเพิ่ม DPU, ใช้ Spark optimization (broadcast join) |
+| Data Catalog ไม่ update | ไม่รัน crawler | ตั้ง Glue crawler ให้รันตาม schedule หรือใช้ event trigger |
+| Redshift load ช้า | COPY จาก S3 ไม่ optimize | ใช้ Parquet + partition, เพิ่ม region, ใช้ manifest file |
+| Kinesis ถึง limit | shard ไม่พอ | เพิ่ม shard หรือใช้ auto scaling (Kinesis Data Streams on‑demand) |
+
+---
+
+## 📁 เทมเพลตและตัวอย่างเพิ่มเติม  
+
+### แผนการเตรียมตัว 8 สัปดาห์ (DEA-C01)  
+
+| สัปดาห์ | กิจกรรม |
+|---------|---------|
+| 1 | ทบทวน SQL, data modeling (star, snowflake), ETL concepts |
+| 2 | S3 (storage classes, lifecycle, partitioning) + Glue Catalog (crawlers, metadata) |
+| 3 | Glue ETL (Spark, Python shell, job bookmarks, Data Quality) |
+| 4 | Athena (query optimization, partitions, workgroups, federated query) |
+| 5 | Redshift (distribution keys, sort keys, COPY, Spectrum, Serverless) |
+| 6 | Streaming: Kinesis (Streams, Firehose, Analytics), MSK |
+| 7 | Governance & Security: Lake Formation (fine‑grained permissions), IAM, encryption, data lineage |
+| 8 | Operations: CloudWatch, Step Functions, cost optimization, ทำ practice exam, สอบจริง |
+
+### Checklist ก่อนสอบ DEA  
+
+- [ ] รู้ lifecycle ของ S3 (Standard → IA → Glacier)  
+- [ ] รู้ความแตกต่างระหว่าง Glue ETL (Spark) กับ Glue Python shell  
+- [ ] รู้วิธีใช้ Glue job bookmarks  
+- [ ] รู้วิธีสร้าง partition บน Athena และ Glue  
+- [ ] รู้ Redshift distribution styles (auto, key, all, even)  
+- [ ] รู้ Redshift sort keys (compound, interleaved)  
+- [ ] รู้ Kinesis Data Streams vs Firehose vs Analytics  
+- [ ] รู้ Lake Formation permission model (data lake administrator, grant/revoke)  
+- [ ] รู้ Glue Data Quality (rules, evaluation)  
+- [ ] รู้วิธี monitoring ด้วย CloudWatch (Glue metrics, Kinesis metrics)  
+
+---
+
+## 📊 ตารางเปรียบเทียบบริการ ETL/Processing  
+
+| บริการ | เหมาะสำหรับ | Pros | Cons |
+|--------|-------------|------|------|
+| Glue ETL (Spark) | batch ETL ขนาดกลาง-ใหญ่ | serverless, integrated with Catalog | cold start สำหรับ job ขนาดเล็ก |
+| Glue Python shell | ETL ขนาดเล็ก (< 1GB) | เร็ว, ต้นทุนต่ำ | ไม่รองรับ distributed processing |
+| EMR | big data, custom Spark/Hive | ยืดหยุ่น, performance สูง | ต้องจัดการ cluster |
+| Lambda | event‑driven ETL ขนาดเล็ก (< 15 นาที) | serverless, real‑time | memory/time limit |
+| Step Functions | orchestration หลายขั้นตอน | visual workflow, retry, error handling | ไม่ใช่ processing engine |
+
+---
+
+## 📝 สรุป (Summary)  
+
+### ✅ ประโยชน์ที่ได้รับ (Benefits)  
+- พิสูจน์ทักษะ data engineering บน AWS โดยเฉพาะ  
+- ครอบคลุม modern data stack (data lake, warehouse, streaming)  
+- เพิ่มโอกาสในการทำงานสาย data  
+- ได้รับ digital badge และส่วนลดสอบครั้งต่อไป  
+
+### ⚠️ ข้อควรระวัง (Cautions)  
+- ต้องมีความรู้ data engineering มาก่อน  
+- บริการใหม่ (DEA เพิ่งเปิด) ข้อสอบอาจปรับบ่อย  
+- ค่าสอบ 150 USD  
+
+### 👍 ข้อดี (Advantages)  
+- ตรงกับสายงาน data โดยเฉพาะ  
+- เน้น practical มากกว่า theory  
+- รองรับ automation ผ่าน SDK  
+
+### 👎 ข้อเสีย (Disadvantages)  
+- ต้องจำรายละเอียดเยอะ (บริการเยอะ)  
+- ไม่มี lab ในข้อสอบ (ปัจจุบัน)  
+- ต้อง recertify ทุก 3 ปี  
+
+### 🚫 ข้อห้าม (Prohibitions)  
+- ห้าม query Athena โดยไม่มี partition filter (cost สูง)  
+- ห้ามใช้ Glue job bookmarks ถ้า source schema เปลี่ยนบ่อย  
+- ห้ามเก็บ raw data โดยไม่บีบอัด (ใช้ Parquet/ORC + compression)  
+
+---
+
+## 🧩 แบบฝึกหัดท้ายบท (Exercises)  
+
+**ข้อ 1:** DEA-C01 มีน้ำหนักของโดเมน "Data Processing" กี่เปอร์เซ็นต์  
+**ข้อ 2:** ข้อแตกต่างระหว่าง Glue ETL (Spark) กับ Glue Python shell คืออะไร  
+**ข้อ 3:** หากต้องการทำ real‑time data ingestion จาก application ไปยัง S3 ควรใช้บริการใด  
+**ข้อ 4:** Redshift distribution key มีไว้เพื่ออะไร  
+**ข้อ 5:** วิธีใดที่ช่วยลดต้นทุนการ query Athena (ยกมา 2 วิธี)  
+**ข้อ 6:** Glue job bookmarks ใช้ทำอะไร  
+**ข้อ 7:** ข้อสอบ DEA-C01 มีจำนวนข้อและเวลาเท่าไร  
+**ข้อ 8:** จงเขียน Go code เพื่อรัน Glue crawler ตามชื่อที่กำหนด  
+**ข้อ 9:** Lake Formation มีบทบาทอะไรในการ data governance  
+**ข้อ 10:** Kinesis Data Streams กับ Kinesis Data Firehose ต่างกันอย่างไร  
+
+---
+
+## 🔐 เฉลยแบบฝึกหัด (Answer Key)  
+
+**ข้อ 1:** 26%  
+**ข้อ 2:** Glue Spark เหมาะกับข้อมูลใหญ่, distributed processing; Python shell เหมาะกับข้อมูลเล็ก (<1GB), รันบน single node  
+**ข้อ 3:** Kinesis Data Firehose (รับ streaming data และเขียนลง S3 โดยอัตโนมัติ)  
+**ข้อ 4:** กระจายข้อมูลไปยัง nodes ต่างกันเพื่อเพิ่ม performance ของ join และ aggregation  
+**ข้อ 5:** 1) ใช้ partition filter ใน WHERE clause 2) ใช้ compression (Parquet) 3) ใช้ workgroups เพื่อ limit scan  
+**ข้อ 6:** จดจำ position ของไฟล์ที่ประมวลผลไปแล้ว เพื่อไม่ต้องประมวลผลซ้ำในรอบถัดไป  
+**ข้อ 7:** 65 ข้อ, 150 นาที  
+**ข้อ 8:**  
+```go
+func startCrawler(client *glue.Client, crawlerName string) error {
+    _, err := client.StartCrawler(context.TODO(), &glue.StartCrawlerInput{
+        Name: &crawlerName,
+    })
+    return err
+}
+```  
+**ข้อ 9:** ให้ fine‑grained access control (row-level, column-level) บน data lake, register data lake location, audit permissions  
+**ข้อ 10:** Data Streams: เก็บและประมวลผล real‑time, consumer ต้องอ่านเอง; Firehose: โหลดข้อมูลไปยัง S3/Redshift/Splunk/etc. โดยอัตโนมัติ  
+
+---
+
+## 📚 แหล่งอ้างอิง (References)  
+
+1. AWS Official Exam Guide – DEA-C01  
+2. AWS Glue Developer Guide  
+3. AWS Lake Formation User Guide  
+4. Amazon Redshift Database Developer Guide  
+5. TutorialsDojo – DEA-C01 Practice Exams  
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+# 📘 บทที่ 17: AWS Certified DevOps Engineer – Professional (DOP-C02)  
+## Chapter 17: AWS Certified DevOps Engineer – Professional (DOP-C02)  
+
+---
+
+## 🧱 โครงสร้างการทำงาน (Work Structure)  
+
+**ไทย:**  
+บทนี้เจาะลึกใบรับรอง AWS Certified DevOps Engineer – Professional (DOP-C02) สำหรับผู้ที่มีประสบการณ์ด้าน DevOps และต้องการพิสูจน์ทักษะการบริหารจัดการ CI/CD, infrastructure as code, monitoring & logging, incident response, และ automation บน AWS ในระดับองค์กร เนื้อหาครอบคลุมการออกแบบ pipeline ที่ซับซ้อน, การทำ blue/green, canary deployment, การจัดการ configuration (AppConfig, Systems Manager), การทำ observability ด้วย CloudWatch, X-Ray, และการตอบสนองต่อเหตุการณ์อัตโนมัติ พร้อมตัวอย่างการใช้ Go ในการ automation และจัดการ infrastructure  
+
+**English:**  
+This chapter dives into the AWS Certified DevOps Engineer – Professional (DOP-C02) certification for experienced DevOps professionals who want to validate their skills in managing CI/CD, infrastructure as code, monitoring & logging, incident response, and automation on AWS at an enterprise level. It covers designing complex pipelines, blue/green and canary deployments, configuration management (AppConfig, Systems Manager), observability with CloudWatch and X‑Ray, and automated incident response, with examples of using Go for automation and infrastructure management.  
+
+---
+
+## 🎯 วัตถุประสงค์แบบสั้นสำหรับทบทวน (Short Revision Objective)  
+
+**ไทย:**  
+เพื่อให้ผู้อ่านเข้าใจโครงสร้างข้อสอบ DOP-C02, เนื้อหาทั้ง 6 โดเมน, บริการ DevOps ขั้นสูงของ AWS (CodePipeline, CodeDeploy, CloudFormation, CDK, AppConfig, Systems Manager, X-Ray, CloudWatch, Config, etc.), และสามารถเตรียมตัวสอบ รวมถึงการออกแบบ CI/CD pipeline ที่ปลอดภัย, การทำ deployment strategy ต่างๆ, การทำ observability, และการตอบสนองต่อเหตุการณ์อัตโนมัติ  
+
+**English:**  
+To enable readers to understand the DOP-C02 exam structure, six domains, advanced AWS DevOps services (CodePipeline, CodeDeploy, CloudFormation, CDK, AppConfig, Systems Manager, X-Ray, CloudWatch, Config, etc.), and prepare effectively, including designing secure CI/CD pipelines, various deployment strategies, observability, and automated incident response.  
+
+---
+
+## 👥 กลุ่มเป้าหมาย (Target Audience)  
+
+- DevOps Engineer / SRE ที่ทำงานบน AWS อย่างน้อย 2 ปี  
+- Solutions Architect ที่ต้องการเน้นด้าน automation และ CI/CD  
+- Developer ที่ต้องการเปลี่ยนสายสู่ DevOps  
+- ผู้ที่สอบผ่าน AWS Certified DevOps Engineer – Associate (DVA) หรือมีประสบการณ์เทียบเท่า  
+
+---
+
+## 📚 ความรู้พื้นฐาน (Prerequisites)  
+
+- ประสบการณ์ DevOps บน AWS อย่างน้อย 2 ปี  
+- เข้าใจ CI/CD, infrastructure as code, monitoring, logging  
+- แนะนำให้มีใบรับรอง AWS Certified Developer – Associate หรือ Solutions Architect – Associate มาก่อน  
+- ความรู้ scripting (Go, Python, Bash) และ YAML/JSON  
+
+---
+
+## 📝 เนื้อหาโดยย่อ (Abstract)  
+
+**ไทย:**  
+บทนี้สรุปข้อสอบ DOP-C02: จำนวนข้อ, เวลา, โดเมนหลัก 6 ด้าน (SDLC Automation, Configuration Management & IaC, Monitoring & Logging, Incident & Event Response, Security & Compliance, Automation & Optimization) พร้อมตัวอย่างคำถามระดับสูง, บริการที่ต้องรู้ลึก (CodePipeline, CodeDeploy, CloudFormation, CDK, AppConfig, Systems Manager, CloudWatch, X-Ray, Config, Service Catalog, AWS Control Tower), และการเขียน Go เพื่อ automate การ deploy, สร้าง custom CloudWatch metrics, และจัดการ resources  
+
+**English:**  
+This chapter summarizes the DOP-C02 exam: number of questions, time, six domains (SDLC Automation, Configuration Management & IaC, Monitoring & Logging, Incident & Event Response, Security & Compliance, Automation & Optimization), sample advanced questions, essential services (CodePipeline, CodeDeploy, CloudFormation, CDK, AppConfig, Systems Manager, CloudWatch, X-Ray, Config, Service Catalog, AWS Control Tower), and writing Go to automate deployments, create custom CloudWatch metrics, and manage resources.  
+
+---
+
+## 🔰 บทนำ (Introduction)  
+
+**ไทย:**  
+AWS Certified DevOps Engineer – Professional (DOP-C02) เป็นใบรับรองระดับ Professional สำหรับผู้ที่ทำงานด้าน DevOps โดยเฉพาะ ข้อสอบจะทดสอบความสามารถในการ automate processes, ออกแบบ CI/CD pipeline ที่ซับซ้อน, จัดการ infrastructure as code, ติดตามและแก้ไขปัญหาแบบ real-time, และรักษาความปลอดภัยในการปฏิบัติการ DevOps ใบรับรองนี้เหมาะสำหรับผู้ที่มีประสบการณ์จริงและต้องการพิสูจน์ความเชี่ยวชาญด้าน DevOps บน AWS  
+
+**English:**  
+The AWS Certified DevOps Engineer – Professional (DOP-C02) is a Professional‑level certification for those specifically working in DevOps. The exam tests the ability to automate processes, design complex CI/CD pipelines, manage infrastructure as code, monitor and troubleshoot in real time, and maintain security in DevOps practices. This certification suits those with real experience who want to validate their AWS DevOps expertise.  
+
+---
+
+## 📖 บทนิยาม (Definitions)  
+
+| คำศัพท์ (Term) | คำจำกัดความไทย (Thai Definition) | English Definition |
+|----------------|----------------------------------|--------------------|
+| CI/CD | Continuous Integration / Continuous Deployment | การรวมโค้ดและ deploy อัตโนมัติ |
+| Infrastructure as Code (IaC) | การจัดการ infrastructure โดยใช้โค้ด (CloudFormation, CDK, Terraform) | Managing infrastructure using code. |
+| Blue/Green Deployment | การ deploy โดยมี environment สองชุด (blue = ปัจจุบัน, green = ใหม่) แล้ว switch traffic | Deployment with two environments, switch traffic. |
+| Canary Deployment | การ deploy ให้ผู้ใช้กลุ่มเล็กก่อน แล้วค่อยเพิ่ม | Deploy to a small subset of users first, then gradually increase. |
+| Feature Toggle | การเปิด/ปิด feature โดยไม่ต้อง deploy ใหม่ (ใช้ AppConfig หรือ Launch Darkly) | Enable/disable features without redeploying. |
+| Configuration Management | การจัดการ configuration ของแอปพลิเคชันและ infrastructure (AppConfig, Systems Manager Parameter Store) | Managing app and infrastructure configs. |
+| Observability | ความสามารถในการเข้าใจสถานะภายในของระบบจาก outputs (logs, metrics, traces) | Ability to understand internal system state from outputs. |
+| X-Ray | บริการ tracing สำหรับ distributed applications | Distributed tracing service. |
+| AWS Config | บริการประเมินและบันทึกการเปลี่ยนแปลงของ resources | Service to evaluate and record resource changes. |
+| Systems Manager | บริการ management สำหรับ EC2 และ on‑premise (patch, automation, parameter store, session manager) | Management service for EC2 and on‑premises. |
+
+---
+
+## 🔧 DOP-C02 คืออะไร? มีเนื้อหาอะไรบ้าง?  
+
+### 1. DOP-C02 คืออะไร  
+**ไทย:**  
+DOP-C02 คือรหัสข้อสอบ AWS Certified DevOps Engineer – Professional (อัปเดตล่าสุด 2023) ทดสอบความสามารถในการ implement และ manage CI/CD pipelines, IaC, monitoring, logging, incident response, และ automation บน AWS ในระดับ enterprise  
+
+**English:**  
+DOP-C02 is the exam code for AWS Certified DevOps Engineer – Professional (latest update 2023). It tests the ability to implement and manage CI/CD pipelines, IaC, monitoring, logging, incident response, and automation on AWS at an enterprise level.  
+
+### 2. เนื้อหาข้อสอบแบ่งเป็น 6 โดเมน (Domains)  
+
+| โดเมน (Domain) | น้ำหนัก (Weight) | หัวข้อหลัก (Key topics) |
+|----------------|------------------|--------------------------|
+| SDLC Automation | 22% | CI/CD pipelines (CodePipeline, CodeBuild, CodeDeploy, CodeCommit), deployment strategies (in‑place, blue/green, canary, rolling), artifact management (CodeArtifact), testing automation |
+| Configuration Management & IaC | 18% | CloudFormation (nested stacks, macros, custom resources, drift detection), CDK (AWS CDK), Service Catalog, AppConfig, Systems Manager (Parameter Store, Run Command, Patch Manager) |
+| Monitoring & Logging | 16% | CloudWatch (metrics, logs, alarms, dashboards), X-Ray (tracing, sampling, service maps), EventBridge (rules, archiving), AWS Distro for OpenTelemetry (ADOT) |
+| Incident & Event Response | 12% | การตอบสนองอัตโนมัติ (EventBridge + Lambda), AWS Config rules (auto remediation), Systems Manager Automation documents, incident management playbooks, post‑mortem |
+| Security & Compliance | 18% | IAM (roles, policies, permission boundaries), Secrets Manager, KMS, security scanning ใน pipeline (SAST, DAST, SCA), compliance as code (Config conformance packs), AWS Control Tower guardrails |
+| Automation & Optimization | 14% | การ automate การ scale (Auto Scaling, Lambda), cost optimization (Compute Optimizer, Spot, Savings Plans), performance optimization, การจัดการ drift, Chaos Engineering (FIS) |
+
+### 3. รูปแบบข้อสอบ  
+
+| รายการ | รายละเอียด |
+|--------|-------------|
+| จำนวนข้อ | 75 (รวม 15 ข้อที่ไม่นับคะแนน + อาจมี labs) |
+| เวลา | 180 นาที (3 ชั่วโมง) |
+| รูปแบบ | Multiple choice, multiple answer, **labs** |
+| คะแนนผ่าน | 750/1000 (75%) |
+| ค่าสอบ | 300 USD |
+| ภาษา | อังกฤษ, ญี่ปุ่น, เกาหลี, จีน |
+
+### 4. บริการที่ต้องรู้ลึกสำหรับ DOP  
+
+| บริการ | บทบาท | รายละเอียด |
+|--------|--------|-------------|
+| CodePipeline | CI/CD orchestration | stages, actions, manual approval, cross‑region, cross‑account |
+| CodeBuild | Build & test | buildspec, environments, cache, reports |
+| CodeDeploy | Deployment | appspec, deployment groups, hooks, rollback |
+| CloudFormation | IaC | templates, stack sets, drift detection, change sets, custom resources |
+| CDK | IaC (programmatic) | constructs, stacks, synth, deploy |
+| AppConfig | Feature flags & config | configuration profiles, deployment strategies, validation |
+| Systems Manager | Management | Parameter Store, Run Command, Patch Manager, Session Manager, Automation |
+| CloudWatch | Observability | metrics (custom), logs (insights), alarms (composite), Contributor Insights |
+| X-Ray | Tracing | segments, subsegments, annotations, service graph, trace ID propagation |
+| EventBridge | Event bus | rules, targets, event patterns, archiving, replay |
+| AWS Config | Compliance | rules (managed, custom), conformance packs, remediation (SSM docs) |
+| Secrets Manager | Secrets | rotation, cross‑account access |
+| FIS (Fault Injection Simulator) | Chaos | experiments, actions, stop conditions |
+
+### 5. ตัวอย่างคำถาม (Sample Question – ระดับสูง)  
+
+**คำถาม:** ทีมของคุณใช้ CodePipeline เพื่อ deploy microservices 20 ตัวไปยัง AWS ECS Fargate พวกเขาต้องการ implement canary deployment โดยให้ traffic 5% ไปยังเวอร์ชันใหม่ก่อน หาก success จึงเพิ่มเป็น 100% วิธีใดที่เหมาะสมที่สุด  
+
+A. ใช้ CodeDeploy สำหรับ ECS พร้อม deployment configuration แบบ Canary10Percent5Minutes  
+B. เขียน Lambda function ใน pipeline เพื่อเปลี่ยน weight ของ target group  
+C. ใช้ CloudFormation update service พร้อม force new deployment  
+D. ใช้ AppConfig เพื่อเปิด feature flag ให้กับ 5% ของ users  
+
+**เฉลย:** A (CodeDeploy รองรับ canary deployment สำหรับ ECS โดยตรง)  
+
+---
+
+## 🔄 ออกแบบ Workflow (Workflow Design)  
+
+### ภาพรวม: CI/CD Pipeline แบบ Multi‑account (Dev → Staging → Prod)  
+
+**ไทย:**  
+Developer push → CodeCommit → CodeBuild (test, lint, security scan) → CodePipeline → Deploy to Dev → Integration test → Manual approval → Deploy to Staging → Canary deployment → Smoke test → Auto approve → Deploy to Prod (blue/green)  
+
+**English:**  
+Developer push → CodeCommit → CodeBuild (test, lint, security scan) → CodePipeline → Deploy to Dev → Integration test → Manual approval → Deploy to Staging → Canary deployment → Smoke test → Auto approve → Deploy to Prod (blue/green).  
+
+### Mermaid Flowchart  
+
+```mermaid
+flowchart LR
+    A[Developer push to CodeCommit] --> B[CodeBuild: test & lint]
+    B --> C[CodeBuild: security scan<br/>SAST, SCA]
+    C --> D[Deploy to Dev<br/>CodeDeploy / ECS]
+    D --> E[Integration tests<br/>CodeBuild]
+    E --> F[Manual approval<br/>via SNS + email]
+    F --> G[Deploy to Staging<br/>Canary 10%]
+    G --> H[Canary validation<br/>CloudWatch alarms]
+    H --> I{Success?}
+    I -- Yes --> J[Promote to 100%]
+    I -- No --> K[Rollback & alert]
+    J --> L[Deploy to Prod<br/>Blue/Green]
+    L --> M[Smoke tests]
+    M --> N[Switch traffic]
+```
+
+### คำอธิบายแบบละเอียด (Detailed Explanation)  
+
+| ขั้นตอน | คำอธิบาย (ไทย) | Explanation (English) |
+|---------|----------------|------------------------|
+| 1 | Developer push โค้ดไปยัง CodeCommit | Developer pushes code to CodeCommit. |
+| 2 | CodeBuild รัน unit tests และ linting | CodeBuild runs unit tests and linting. |
+| 3 | CodeBuild รัน security scans (SAST, SCA) | CodeBuild runs security scans. |
+| 4 | Deploy ไปยัง environment Dev (แบบอัตโนมัติ) | Deploy to Dev environment (automatic). |
+| 5 | รัน integration tests บน Dev | Run integration tests on Dev. |
+| 6 | Manual approval (ส่ง notification ไปยัง approver) | Manual approval (notification sent). |
+| 7 | Deploy ไปยัง Staging แบบ canary (10% traffic) | Deploy to Staging as canary (10% traffic). |
+| 8 | ตรวจสอบ canary validation (CloudWatch alarms, error rate) | Validate canary (CloudWatch alarms, error rate). |
+| 9 | ถ้าสำเร็จ: promote เป็น 100% traffic; ถ้าไม่: rollback | If success: promote to 100%; else rollback. |
+| 10 | Deploy ไปยัง Production แบบ blue/green | Deploy to Production with blue/green. |
+| 11 | Smoke tests และ switch traffic | Smoke tests and switch traffic. |
+
+---
+
+## 💻 ตัวอย่างโค้ดที่รันได้จริง (Runnable Code Example)  
+
+### 1. การสร้าง Custom CloudWatch Metric จาก Go  
+
+```go
+// custom_metric.go
+// ส่ง custom metric ไปยัง CloudWatch เพื่อใช้ใน dashboard หรือ alarm
+// Send custom metric to CloudWatch for dashboards or alarms
+
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := cloudwatch.NewFromConfig(cfg)
+
+	// สร้าง metric data point
+	metricData := []types.MetricDatum{
+		{
+			MetricName: stringPtr("MyApp_CustomLatency"),
+			Unit:       types.StandardUnitMilliseconds,
+			Value:      float64Ptr(123.4),
+			Timestamp:  ptr(time.Now().UTC()),
+			Dimensions: []types.Dimension{
+				{
+					Name:  stringPtr("Environment"),
+					Value: stringPtr("Production"),
+				},
+			},
+		},
+	}
+
+	input := &cloudwatch.PutMetricDataInput{
+		Namespace:  stringPtr("MyApplication"),
+		MetricData: metricData,
+	}
+
+	_, err = client.PutMetricData(context.TODO(), input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Custom metric sent to CloudWatch")
+}
+
+func stringPtr(s string) *string { return &s }
+func float64Ptr(f float64) *float64 { return &f }
+func ptr(t time.Time) *time.Time { return &t }
+```
+
+### 2. การใช้ Systems Manager Parameter Store จาก Go  
+
+```go
+// parameter_store.go
+// ดึง parameter จาก Systems Manager Parameter Store (secure string)
+// Get parameter from Systems Manager Parameter Store (secure string)
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := ssm.NewFromConfig(cfg)
+
+	paramName := "/myapp/db/password"
+	resp, err := client.GetParameter(context.TODO(), &ssm.GetParameterInput{
+		Name:           &paramName,
+		WithDecryption: true,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Parameter value: %s\n", *resp.Parameter.Value)
+}
+```
+
+### 3. การเริ่มต้น Systems Manager Automation Document จาก Go  
+
+```go
+// ssm_automation.go
+// รัน Automation document สำหรับ remediation หรือ maintenance
+// Run Automation document for remediation or maintenance
+
+func runAutomation(client *ssm.Client, docName string, parameters map[string][]string) (string, error) {
+	resp, err := client.StartAutomationExecution(context.TODO(), &ssm.StartAutomationExecutionInput{
+		DocumentName: &docName,
+		Parameters:   parameters,
+	})
+	if err != nil {
+		return "", err
+	}
+	return *resp.AutomationExecutionId, nil
+}
+```
+
+---
+
+## 📌 กรณีศึกษาและแนวทางแก้ไขปัญหา (Case Study & Troubleshooting)  
+
+### กรณีศึกษา: การทำ blue/green deployment สำหรับแอปบน EC2 อย่างไรให้ zero downtime  
+
+**ปัญหา:** เวลาอัปเดตแอปบน EC2 ต้อง restart service ทำให้มี downtime ~30 วินาที  
+**แนวทางแก้ไข (ตาม DOP):**  
+- ใช้ CodeDeploy แบบ blue/green  
+- สร้าง Auto Scaling group ใหม่ (green) ขณะที่ blue ยังทำงาน  
+- ใช้ ALB เพื่อเปลี่ยน traffic จาก blue เป็น green ทีละน้อยหรือทันที  
+- ใช้ pre‑hook และ post‑hook เพื่อตรวจสอบ health ของ green ก่อน switch  
+- ถ้าล้มเหลว rollback อัตโนมัติ  
+**ผลลัพธ์:** zero downtime, rollback < 1 นาที  
+
+### ปัญหาที่พบบ่อยในการสอบ DOP  
+
+| ปัญหา (Issue) | สาเหตุ (Cause) | วิธีแก้ไข (Solution) |
+|----------------|----------------|----------------------|
+| สับสน deployment strategies | blue/green vs canary vs rolling | blue/green: two env, switch traffic; canary: เปอร์เซ็นต์เล็ก; rolling: ทีละ instance |
+| CodePipeline cross‑account | ไม่รู้วิธีให้ pipeline deploy ไปอีก account | ใช้ CodePipeline + CloudFormation StackSets หรือ cross‑account role |
+| Config rule remediation ไม่ทำงาน | Lambda หรือ SSM doc ไม่ถูกต้อง | ตรวจสอบ IAM role, ใช้ SSM Automation document ที่ถูกต้อง |
+| X-Ray trace หาย | ไม่ propagate trace header | ต้องส่ง header `X-Amzn-Trace-Id` ไปยัง services |
+| CloudFormation drift | manual change นอก IaC | ใช้ drift detection และ auto remediation ด้วย StackSets หรือ Config |
+
+---
+
+## 📁 เทมเพลตและตัวอย่างเพิ่มเติม  
+
+### แผนการเตรียมตัว 12 สัปดาห์ (DOP-C02)  
+
+| สัปดาห์ | กิจกรรม |
+|---------|---------|
+| 1-2 | ทบทวน CI/CD: CodePipeline, CodeBuild, CodeDeploy, deployment strategies |
+| 3-4 | IaC: CloudFormation (ลึก), CDK, drift detection, StackSets |
+| 5-6 | Configuration Management: AppConfig, Systems Manager (Parameter Store, Automation, Patch Manager) |
+| 7-8 | Monitoring & Observability: CloudWatch (metrics, logs, alarms), X-Ray, EventBridge |
+| 9 | Security & Compliance: IAM, Secrets Manager, Config rules, Control Tower |
+| 10 | Incident Response & Automation: EventBridge + Lambda, SSM automation, FIS |
+| 11 | Optimization & Cost: Auto Scaling, Compute Optimizer, Spot |
+| 12 | ทำ practice exam (TutorialsDojo, Whizlabs) อย่างน้อย 3 ชุด, ฝึก labs, สอบจริง |
+
+### Checklist ก่อนสอบ DOP  
+
+- [ ] รู้วิธีสร้าง pipeline ข้าม account และ cross‑region  
+- [ ] รู้ deployment types: in‑place, blue/green, canary, rolling  
+- [ ] รู้ CloudFormation: intrinsic functions, condition, mappings, custom resources, macros, nested stacks, stack sets, drift detection  
+- [ ] รู้ CDK: constructs, stacks, synth, deploy, context  
+- [ ] รู้ AppConfig: feature flags, configuration validation, deployment strategy  
+- [ ] รู้ Systems Manager: Parameter Store (standard/advanced), Run Command, Patch Manager, Automation Documents  
+- [ ] รู้ CloudWatch: custom metrics, metric math, composite alarms, Contributor Insights, Logs Insights  
+- [ ] รู้ X-Ray: trace propagation, sampling rules, annotations, service map  
+- [ ] รู้ EventBridge: event bus, rules, event patterns, archiving, replay, schema registry  
+- [ ] รู้ AWS Config: managed vs custom rules, conformance packs, remediation (SSM or Lambda)  
+- [ ] รู้ Chaos Engineering: FIS experiments, actions, stop conditions  
+
+---
+
+## 📊 ตารางเปรียบเทียบ Deployment Strategies  
+
+| Strategy | Zero Downtime | Rollback complexity | Traffic shift | เหมาะกับ |
+|----------|---------------|---------------------|---------------|-----------|
+| In‑place | ไม่ (มี downtime สั้น) | ง่าย (redeploy old) | N/A | non‑critical |
+| Rolling | เกือบ zero (ทีละ instance) | ปานกลาง | gradual | stateless apps |
+| Blue/Green | ใช่ | ง่าย (switch back) | instant | stateful (database ต้องจัดการ) |
+| Canary | ใช่ | ง่าย | gradual (e.g., 5%, 20%, 100%) | high‑risk features |
+| Feature Toggle | ใช่ (ไม่ deploy ใหม่) | ง่าย (toggle off) | instant (ต่อ user) | gradual rollout โดยไม่ต้อง deploy |
+
+---
+
+## 📝 สรุป (Summary)  
+
+### ✅ ประโยชน์ที่ได้รับ (Benefits)  
+- พิสูจน์ทักษะ DevOps ขั้นสูงบน AWS  
+- ออกแบบ CI/CD และ automation ที่ซับซ้อนได้  
+- เพิ่มโอกาสในการเลื่อนตำแหน่งเป็น Senior DevOps / SRE  
+- ได้รับ digital badge และส่วนลดสอบครั้งต่อไป  
+
+### ⚠️ ข้อควรระวัง (Cautions)  
+- ต้องมีประสบการณ์จริง 2+ ปี  
+- ค่าสอบแพง (300 USD)  
+- เนื้อหาลึกและกว้าง ต้องเตรียมตัว 3 เดือน  
+
+### 👍 ข้อดี (Advantages)  
+- เป็นใบรับรองระดับ Professional ที่หายาก  
+- ครอบคลุม modern DevOps practices (IaC, observability, chaos)  
+- มี labs สะท้อนงานจริง  
+
+### 👎 ข้อเสีย (Disadvantages)  
+- ต้อง recertify ทุก 3 ปี  
+- ไม่เหมาะสำหรับผู้เริ่มต้น  
+- ข้อสอบยาก อัตราการผ่านต่ำ  
+
+### 🚫 ข้อห้าม (Prohibitions)  
+- ห้าม deploy ไป production โดยไม่ผ่าน automated tests  
+- ห้ามใช้ manual changes ใน production โดยไม่ update IaC (จะเกิด drift)  
+- ห้ามละเลย monitoring และ alerting  
+
+---
+
+## 🧩 แบบฝึกหัดท้ายบท (Exercises)  
+
+**ข้อ 1:** DOP-C02 มีน้ำหนักของโดเมน "SDLC Automation" กี่เปอร์เซ็นต์  
+**ข้อ 2:** Blue/green deployment กับ canary deployment แตกต่างกันอย่างไร  
+**ข้อ 3:** หากต้องการจัดการ feature flags โดยไม่ต้อง deploy ใหม่ ควรใช้บริการใด  
+**ข้อ 4:** X-Ray ใช้ทำอะไรใน distributed system  
+**ข้อ 5:** CloudFormation drift detection คืออะไร  
+**ข้อ 6:** Systems Manager Parameter Store รองรับ parameter ประเภทใดบ้าง (ยกมา 3 ประเภท)  
+**ข้อ 7:** ข้อสอบ DOP-C02 มีจำนวนข้อและเวลาเท่าไร  
+**ข้อ 8:** จงเขียน Go code เพื่ออัปเดต CloudWatch alarm state ตาม custom logic  
+**ข้อ 9:** AWS Config conformance pack มีประโยชน์อย่างไร  
+**ข้อ 10:** Chaos Engineering (AWS FIS) ใช้เพื่ออะไร  
+
+---
+
+## 🔐 เฉลยแบบฝึกหัด (Answer Key)  
+
+**ข้อ 1:** 22%  
+**ข้อ 2:** Blue/green: สลับ traffic ระหว่างสอง environment ทั้งหมด; Canary: ส่ง traffic เปอร์เซ็นต์เล็กไปยังเวอร์ชันใหม่ก่อนแล้วค่อยเพิ่ม  
+**ข้อ 3:** AWS AppConfig  
+**ข้อ 4:** ติดตาม request ที่เดินทางผ่านหลาย services (trace), วิเคราะห์ latency, หา bottleneck, debug errors  
+**ข้อ 5:** การตรวจสอบว่า resource ที่ deploy ผ่าน CloudFormation ถูกเปลี่ยนแปลงนอกเหนือจาก stack (manual change) หรือไม่  
+**ข้อ 6:** String, StringList, SecureString  
+**ข้อ 7:** 75 ข้อ, 180 นาที  
+**ข้อ 8:**  
+```go
+// ตั้งค่า alarm state โดยใช้ PutMetricAlarm (แต่ปกติ alarm state อัปเดตอัตโนมัติ)
+// หรือใช้ SetAlarmState (สำหรับ testing)
+func setAlarmState(client *cloudwatch.Client, alarmName, stateValue string) error {
+    _, err := client.SetAlarmState(context.TODO(), &cloudwatch.SetAlarmStateInput{
+        AlarmName:   &alarmName,
+        StateValue:  types.StateValue(stateValue),
+        StateReason: stringPtr("Custom state update"),
+    })
+    return err
+}
+```  
+**ข้อ 9:** ช่วย deploy ชุดของ AWS Config rules และ remediation actions เพื่อให้สอดคล้องกับ compliance framework (PCI, HIPAA, etc.) ข้ามหลาย account  
+**ข้อ 10:** ทดสอบความทนทานของระบบโดยการ inject failures (เช่น สูญเสีย AZ, network latency, CPU spike) แบบ controlled  
+
+---
+
+## 📚 แหล่งอ้างอิง (References)  
+
+1. AWS Official Exam Guide – DOP-C02  
+2. AWS DevOps Documentation – CodePipeline, CodeDeploy, CloudFormation, CDK  
+3. AWS Well‑Architected – DevOps Guidance  
+4. TutorialsDojo – DOP-C02 Practice Exams + Labs  
+5. Stephane Maarek – AWS Certified DevOps Engineer Professional Course (Udemy)  
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+# 📘 ภาคผนวก: เทมเพลต โค้ดตัวอย่าง และเอกสารอ้างอิง  
+## Appendix: Templates, Code Examples, and Reference Materials  
+
+---
+
+## 🧩 ภาคผนวก ก: เทมเพลตที่ใช้งานบ่อย (Common Templates)  
+
+### 1. buildspec.yml สำหรับ Go (CodeBuild)  
+
+```yaml
+# buildspec.yml
+# สำหรับโปรเจกต์ Go ที่ต้องการ build และ test
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      golang: 1.21
+    commands:
+      - go mod download
+  pre_build:
+    commands:
+      - go test -cover ./...
+  build:
+    commands:
+      - GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o myapp .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+
+artifacts:
+  files:
+    - myapp
+    - appspec.yml
+    - scripts/**/*
+```
+
+### 2. appspec.yml สำหรับ CodeDeploy (EC2)  
+
+```yaml
+# appspec.yml
+version: 0.0
+os: linux
+files:
+  - source: myapp
+    destination: /home/ec2-user/myapp
+  - source: scripts/
+    destination: /home/ec2-user/scripts
+permissions:
+  - object: /home/ec2-user/myapp
+    mode: 755
+    owner: ec2-user
+    group: ec2-user
+hooks:
+  ApplicationStop:
+    - location: scripts/stop.sh
+      timeout: 30
+      runas: ec2-user
+  ApplicationStart:
+    - location: scripts/start.sh
+      timeout: 60
+      runas: ec2-user
+  ValidateService:
+    - location: scripts/validate.sh
+      timeout: 30
+      runas: ec2-user
+```
+
+### 3. Dockerfile สำหรับ Go (Multi-stage)  
+
+```dockerfile
+# Dockerfile
+FROM golang:1.21-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o myapp .
+
+FROM scratch
+COPY --from=builder /app/myapp /myapp
+EXPOSE 8080
+CMD ["/myapp"]
+```
+
+### 4. SAM template.yaml (Lambda + API Gateway + DynamoDB)  
+
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  MyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MyTable
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+  MyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: bootstrap
+      Runtime: provided.al2
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /{proxy+}
+            Method: ANY
+```
+
+---
+
+## 🛠️ ภาคผนวก ข: โค้ด Go Utility สำหรับ AWS (Go Utility Code)  
+
+### 1. การโหลด AWS Config พร้อม fallback  
+
+```go
+// config.go
+func loadAWSConfig(ctx context.Context, region string) (aws.Config, error) {
+    cfg, err := config.LoadDefaultConfig(ctx,
+        config.WithRegion(region),
+        config.WithRetryer(func() aws.Retryer {
+            return retry.AddWithMaxAttempts(retry.NewStandard(), 3)
+        }),
+    )
+    return cfg, err
+}
+```
+
+### 2. การสร้าง S3 Client และอัปโหลดไฟล์  
+
+```go
+// s3_upload.go
+func uploadToS3(ctx context.Context, bucket, key string, data []byte) error {
+    cfg, _ := config.LoadDefaultConfig(ctx)
+    client := s3.NewFromConfig(cfg)
+    _, err := client.PutObject(ctx, &s3.PutObjectInput{
+        Bucket: &bucket,
+        Key:    &key,
+        Body:   bytes.NewReader(data),
+    })
+    return err
+}
+```
+
+### 3. การเรียก Lambda function แบบ asynchronous  
+
+```go
+// invoke_lambda.go
+func invokeLambdaAsync(ctx context.Context, funcName string, payload []byte) error {
+    cfg, _ := config.LoadDefaultConfig(ctx)
+    client := lambda.NewFromConfig(cfg)
+    _, err := client.Invoke(ctx, &lambda.InvokeInput{
+        FunctionName: &funcName,
+        Payload:      payload,
+        InvocationType: types.InvocationTypeEvent, // async
+    })
+    return err
+}
+```
+
+### 4. การส่ง SNS notification  
+
+```go
+// sns_publish.go
+func publishSNS(ctx context.Context, topicArn, message string) error {
+    cfg, _ := config.LoadDefaultConfig(ctx)
+    client := sns.NewFromConfig(cfg)
+    _, err := client.Publish(ctx, &sns.PublishInput{
+        TopicArn: &topicArn,
+        Message:  &message,
+    })
+    return err
+}
+```
+
+---
+
+## 📖 ภาคผนวก ค: เฉลยแบบฝึกหัดรวม (Selected Exercise Answers)  
+
+> **หมายเหตุ:** เฉลยแบบฝึกหัดแต่ละบทได้แทรกไว้ท้ายบทแล้ว ด้านล่างเป็นเฉลยเพิ่มเติมสำหรับข้อที่ต้องการเน้นย้ำ
+
+### บทที่ 1 (DevOps)  
+**ข้อ 8:** systemd unit file สำหรับ myapp  
+```ini
+[Unit]
+Description=My Go App
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/myapp
+ExecStart=/home/ec2-user/myapp/myapp
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### บทที่ 3 (AI)  
+**ข้อ 4:** Exponential backoff ใน Go  
+```go
+for i := 0; i < 3; i++ {
+    resp, err := client.InvokeModel(...)
+    if err == nil {
+        break
+    }
+    time.Sleep(time.Duration(1<<i) * 100 * time.Millisecond)
+}
+```
+
+### บทที่ 4 (Data Engineer)  
+**ข้อ 3:** EventBridge rule สำหรับ Lambda ทุก 1 ชั่วโมง  
+```json
+{
+  "schedule": "cron(0 * * * ? *)",
+  "targets": [{"arn": "lambda:function:my-ingestion"}]
+}
+```
+
+### บทที่ 5 (Software Engineer)  
+**ข้อ 3:** อัปโหลดไฟล์ไป S3 ด้วย Go  
+```go
+func uploadFile(bucket, key string, data []byte) error {
+    cfg, _ := config.LoadDefaultConfig(context.TODO())
+    client := s3.NewFromConfig(cfg)
+    _, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
+        Bucket: &bucket,
+        Key:    &key,
+        Body:   bytes.NewReader(data),
+    })
+    return err
+}
+```
+
+### บทที่ 6 (AWS คือใคร)  
+**ข้อ 8:** List buckets ด้วย Go  
+```go
+func listBuckets() ([]string, error) {
+    cfg, _ := config.LoadDefaultConfig(context.TODO())
+    client := s3.NewFromConfig(cfg)
+    out, err := client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
+    if err != nil {
+        return nil, err
+    }
+    names := make([]string, len(out.Buckets))
+    for i, b := range out.Buckets {
+        names[i] = *b.Name
+    }
+    return names, nil
+}
+```
+
+---
+
+## 🔧 ภาคผนวก ง: คำสั่ง AWS CLI ที่พบบ่อย (Common AWS CLI Commands)  
+
+| คำสั่ง (Command) | คำอธิบาย (Description) |
+|------------------|-------------------------|
+| `aws configure` | ตั้งค่า access key, secret, region |
+| `aws s3 ls` | รายการ buckets |
+| `aws s3 cp file.txt s3://my-bucket/` | อัปโหลดไฟล์ |
+| `aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId,State.Name]"` | แสดง instance ID และสถานะ |
+| `aws lambda list-functions` | รายการ Lambda functions |
+| `aws dynamodb list-tables` | รายการ DynamoDB tables |
+| `aws cloudformation deploy --template-file template.yaml --stack-name my-stack` | Deploy CloudFormation |
+| `aws codebuild start-build --project-name my-project` | เริ่ม build |
+| `aws codepipeline start-pipeline-execution --name my-pipeline` | รัน pipeline |
+| `aws logs describe-log-groups` | รายการ CloudWatch log groups |
+
+---
+
+## 📊 ภาคผนวก จ: ตารางสรุปบริการ AWS ตาม Use Case  
+
+| Use Case | บริการแนะนำ |
+|----------|--------------|
+| เว็บแอปพลิเคชัน (VM) | EC2 + ALB + RDS |
+| เว็บแอปพลิเคชัน (serverless) | API Gateway + Lambda + DynamoDB |
+| ไฟล์ static / SPA | S3 + CloudFront |
+| Data Lake | S3 + Glue + Athena |
+| Data Warehouse | Redshift |
+| Real‑time streaming | Kinesis / MSK |
+| ETL / Data processing | Glue / EMR |
+| Container orchestration | ECS / EKS |
+| CI/CD | CodePipeline + CodeBuild + CodeDeploy |
+| Infrastructure as Code | CloudFormation / CDK / Terraform |
+| Monitoring | CloudWatch + X-Ray |
+| Security & Compliance | IAM + Config + GuardDuty + Security Hub |
+| Hybrid networking | Direct Connect + VPN + Transit Gateway |
+| Disaster Recovery | Route53 + S3 Cross-Region Replication + RDS Multi-AZ |
+
+---
+
+## 📚 ภาคผนวก ฉ: แหล่งเรียนรู้เพิ่มเติม (Additional Learning Resources)  
+
+- **AWS Skill Builder** – https://skillbuilder.aws  
+- **AWS Documentation** – https://docs.aws.amazon.com  
+- **AWS YouTube Channel** – https://youtube.com/@amazonwebservices  
+- **TutorialsDojo** – https://tutorialsdojo.com (practice exams)  
+- **Adrian Cantrill Courses** – https://learn.cantrill.io  
+- **Stephane Maarek on Udemy** – AWS certification courses  
+- **AWS Open Guides** – https://github.com/open-guides  
+
+---
+
+## 💬 คำส่งท้าย (Closing)  
+
+**ภาษาไทย:**  
+หนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" เล่มนี้เกิดขึ้นจากความตั้งใจที่จะรวบรวมความรู้ AWS ตั้งแต่พื้นฐานไปจนถึงระดับ Professional และ Specialty พร้อมตัวอย่างโค้ด Go ที่สามารถนำไปใช้ได้จริง หวังว่าผู้อ่านจะได้รับประโยชน์ทั้งในแง่ของการเรียนรู้ เตรียมสอบ AWS Certification และนำไปประยุกต์ใช้ในการทำงานจริง  
+
+หากพบข้อผิดพลาดหรือมีข้อเสนอแนะ สามารถติดต่อผู้เขียนได้ตามช่องทางข้างล่าง  
+
+**English:**  
+This book, "AWS From Theory to Practice," was created with the intention of compiling AWS knowledge from foundational to Professional and Specialty levels, with practical Go code examples. We hope readers benefit both in learning, preparing for AWS Certification, and applying to real work.  
+
+For any errors or suggestions, please contact the author below.  
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**  
+
+---
+
+ # 📖 คำนำ (Preface)  
+
+**ภาษาไทย:**  
+หนังสือ “AWS จากภาคทฤษฎีไปภาคปฏิบัติ” เล่มนี้เกิดขึ้นจากประสบการณ์การทำงานและสอน AWS ให้กับนักพัฒนาและวิศวกรหลายร้อยคน พบว่าผู้เรียนส่วนใหญ่ต้องการเนื้อหาที่ครบถ้วนในที่เดียว ตั้งแต่แนวคิดพื้นฐานไปจนถึงการปฏิบัติจริงด้วยภาษา Go ซึ่งเป็นภาษาที่มีประสิทธิภาพสูงและกำลังได้รับความนิยมในสายงานคลาวด์  
+
+หนังสือเล่มนี้ไม่ได้เน้นแค่การสอบใบรับรอง AWS แม้ว่าจะครอบคลุมเนื้อหาของการสอบทุกระดับ แต่จุดมุ่งหมายหลักคือการทำให้ผู้อ่าน **สามารถนำความรู้ไปใช้ได้จริง** ไม่ว่าจะเป็นการสร้าง CI/CD pipeline, การทำ Data Engineering, การใช้ AI บน Bedrock, หรือการออกแบบระบบแบบ Serverless  
+
+แต่ละบทถูกออกแบบให้มีโครงสร้างเดียวกัน:  
+- วัตถุประสงค์สั้นๆ ทบทวน  
+- กลุ่มเป้าหมายและความรู้พื้นฐาน  
+- คำอธิบายแนวคิด + ตารางเปรียบเทียบ  
+- Workflow และ Dataflow พร้อม Diagram  
+- ตัวอย่างโค้ด Go ที่รันได้จริง (พร้อมคอมเมนต์สองภาษา)  
+- กรณีศึกษาและปัญหาที่พบบ่อย  
+- แบบฝึกหัด + เฉลย  
+- แหล่งอ้างอิง  
+
+หวังว่าหนังสือเล่มนี้จะเป็นประโยชน์สำหรับทั้งผู้เริ่มต้นและผู้ที่มีประสบการณ์แล้ว ขอให้สนุกกับการเรียนรู้และทดลองปฏิบัติจริงบน AWS  
+
+**English:**  
+This book, "AWS From Theory to Practice," was born from years of experience teaching and working with AWS alongside hundreds of developers and engineers. Most learners want a single, comprehensive resource – from fundamental concepts to hands‑on practice using Go, a high‑performance language increasingly popular in cloud engineering.  
+
+This book is not solely about passing AWS certifications (though it covers all exam levels). Its main goal is to enable readers to **apply knowledge in real work** – whether building CI/CD pipelines, doing Data Engineering, using AI on Bedrock, or designing Serverless systems.  
+
+Each chapter follows a consistent structure:  
+- Short revision objective  
+- Target audience and prerequisites  
+- Concept explanation + comparison tables  
+- Workflow and Dataflow with diagrams  
+- Runnable Go code (with bilingual comments)  
+- Case studies and common issues  
+- Exercises + answer key  
+- References  
+
+We hope this book benefits both beginners and experienced practitioners. Enjoy learning and practicing hands‑on with AWS!  
+
+---
+
+# 🙏 กิตติกรรมประกาศ (Acknowledgments)  
+
+**ภาษาไทย:**  
+ขอขอบคุณทีมงาน AWS Developer Relations ที่ให้ข้อมูลทางเทคนิคที่ถูกต้องและทันสมัย  
+ขอขอบคุณชุมชน AWS Thailand ที่ช่วยทดสอบตัวอย่างโค้ดและให้ข้อเสนอแนะ  
+ขอขอบคุณผู้สนับสนุนทุกท่านที่ช่วยให้หนังสือเล่มนี้เกิดขึ้นได้ โดยเฉพาะผู้ที่บริจาคตามกำลังศรัทธา  
+
+สุดท้ายนี้ ขอขอบคุณครอบครัวและเพื่อนๆ ที่เป็นกำลังใจตลอดการเขียนหนังสือเล่มนี้  
+
+**English:**  
+Thanks to the AWS Developer Relations team for providing accurate and up‑to‑date technical information.  
+Thanks to the AWS Thailand community for testing code examples and giving feedback.  
+Thanks to all supporters who made this book possible, especially those who donated at their discretion.  
+
+Finally, thanks to family and friends for their encouragement throughout the writing process.  
+
+---
+
+# 👤 ประวัติผู้เขียน (Author Biography)  
+
+**คงนคร จันทะคุณ**  
+**Khongnakhon Chanthakhun**  
+
+- ประสบการณ์ด้าน Software Development และ Cloud Architecture มากกว่า 10 ปี  
+- AWS Certified Solutions Architect – Professional  
+- AWS Certified DevOps Engineer – Professional  
+- AWS Certified Machine Learning – Specialty  
+- AWS Certified Data Engineer – Associate  
+- ผู้ก่อตั้งชุมชน AWS Thailand User Group  
+- วิทยากรในงาน AWS Summit, Tech Conference ต่างๆ  
+- สนใจด้าน Cloud Native, DevOps, Data Engineering, และ Generative AI  
+
+ติดต่อผู้เขียนได้ที่เบอร์โทรศัพท์ / พร้อมเพย์: **0955088091**  
+
+---
+
+# 📚 บรรณานุกรม (Bibliography)  
+
+1. Amazon Web Services. (2024). *AWS Documentation*. https://docs.aws.amazon.com  
+2. AWS Whitepapers. (2024). *Well-Architected Framework*.  
+3. Donovan, N., & George, S. (2021). *Mastering AWS Development*. Packt.  
+4. AWS SDK for Go v2. (2024). *Developer Guide*.  
+5. Kim, G., Humble, J., Debois, P., & Willis, J. (2016). *The DevOps Handbook*. IT Revolution.  
+6. Reis, J., & Housley, M. (2022). *Fundamentals of Data Engineering*. O'Reilly.  
+
+---
+
+# 🧾 สารบัญ (Table of Contents – สรุปฉบับเต็ม)  
+
+| บทที่ | หัวข้อ |
+|-------|--------|
+| 1 | DevOps: แนวคิด การใช้งาน และการปฏิบัติบน AWS |
+| 2 | DevSecOps: รวมความปลอดภัยในวงจรพัฒนา |
+| 3 | AI: ปัญญาประดิษฐ์บน AWS |
+| 4 | Data Engineer: วิศวกรรมข้อมูลยุคคลาวด์ |
+| 5 | Software Engineer: วิศวกรรมซอฟต์แวร์บน AWS |
+| 6 | AWS คือใคร? บริการและรูปแบบการใช้งาน |
+| 7 | AWS Core Services: หัวใจของคลาวด์ |
+| 8 | AWS Certified: เส้นทางสู่การรับรอง |
+| 9 | AWS Certified Solutions Architect – Associate (SAA-C03) |
+| 10 | AWS Certified Cloud Practitioner (CLF-C02) |
+| 11 | AWS Certified Developer – Associate (DVA-C02) |
+| 12 | AWS Certified Solutions Architect – Professional (SAP-C02) |
+| 13 | AWS Certified Machine Learning – Specialty (MLS-C01) |
+| 14 | AWS Certified AI Practitioner (AIF-C01) |
+| 15 | AWS Certified Advanced Networking – Specialty (ANS-C01) |
+| 16 | AWS Certified Data Engineer – Associate (DEA-C01) |
+| 17 | AWS Certified DevOps Engineer – Professional (DOP-C02) |
+| ภาคผนวก | เทมเพลต โค้ดตัวอย่าง และเอกสารอ้างอิง |
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**  
+
+---
+
+**จบเล่ม**  
+**End of Book**
