@@ -5543,6 +5543,563 @@ aws lambda invoke --function-name my-function output.txt
 **หมายเหตุ เนื้อหาในหนังสือ:**  
 เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
 📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+
+# 📘 บทที่ 11: AWS Certified Developer – Associate (DVA-C02)  
+## Chapter 11: AWS Certified Developer – Associate (DVA-C02)  
+
+---
+
+## 🧱 โครงสร้างการทำงาน (Work Structure)  
+
+**ไทย:**  
+บทนี้เจาะลึกใบรับรอง AWS Certified Developer – Associate (DVA-C02) ซึ่งออกแบบมาสำหรับนักพัฒนาที่เขียนแอปพลิเคชันบน AWS เนื้อหาครอบคลุมการเขียนโค้ดที่เรียกใช้ AWS SDK, การทำ serverless ด้วย Lambda และ API Gateway, การจัดการฐานข้อมูล (DynamoDB, RDS), การทำ CI/CD บน AWS, และความปลอดภัยสำหรับนักพัฒนา  
+
+**English:**  
+This chapter dives into the AWS Certified Developer – Associate (DVA-C02) certification, designed for developers building applications on AWS. It covers coding with AWS SDK, serverless with Lambda and API Gateway, databases (DynamoDB, RDS), CI/CD on AWS, and security for developers.  
+
+---
+
+## 🎯 วัตถุประสงค์แบบสั้นสำหรับทบทวน (Short Revision Objective)  
+
+**ไทย:**  
+เพื่อให้ผู้อ่านเข้าใจโครงสร้างข้อสอบ DVA-C02, เนื้อหาทั้ง 6 โดเมน, และสามารถเตรียมตัวสอบได้ รวมถึงสามารถเขียนโปรแกรม Go ที่ใช้ AWS SDK, สร้าง Lambda function, ทำงานกับ DynamoDB, API Gateway, SQS/SNS, และทำ CI/CD ด้วย CodePipeline และ CodeBuild  
+
+**English:**  
+To enable readers to understand the DVA-C02 exam structure, six domains, and prepare effectively, as well as write Go programs using AWS SDK, create Lambda functions, work with DynamoDB, API Gateway, SQS/SNS, and implement CI/CD with CodePipeline and CodeBuild.  
+
+---
+
+## 👥 กลุ่มเป้าหมาย (Target Audience)  
+
+- นักพัฒนาซอฟต์แวร์ที่ทำงานกับ AWS (โดยเฉพาะ Go, Python, Java, Node.js)  
+- ผู้ที่สอบผ่าน Cloud Practitioner แล้วต้องการพัฒนาทักษะการเขียนโค้ดบน AWS  
+- DevOps Engineer ที่ต้องเขียน automation script  
+- ผู้ที่ต้องการพิสูจน์ทักษะการพัฒนาแอปบน AWS  
+
+---
+
+## 📚 ความรู้พื้นฐาน (Prerequisites)  
+
+- ประสบการณ์เขียนโปรแกรมภาษาใดภาษาหนึ่ง (แนะนำ Go, Python หรือ JavaScript)  
+- เข้าใจพื้นฐาน AWS (EC2, S3, IAM) หรือผ่าน CLF-C02 มาก่อน  
+- แนะนำให้มีประสบการณ์ AWS อย่างน้อย 6-12 เดือน  
+
+---
+
+## 📝 เนื้อหาโดยย่อ (Abstract)  
+
+**ไทย:**  
+บทนี้สรุปข้อสอบ DVA-C02: จำนวนข้อ, เวลา, โดเมนหลัก 6 ด้าน (Development with AWS Services, Security, Deployment, Troubleshooting, Performance, Refactoring) พร้อมตัวอย่างคำถาม, โค้ด Go ตัวอย่างที่ใช้ AWS SDK (S3, DynamoDB, Lambda), และแผนการเตรียมตัว 6 สัปดาห์  
+
+**English:**  
+This chapter summarizes the DVA-C02 exam: number of questions, time, six domains (Development with AWS Services, Security, Deployment, Troubleshooting, Performance, Refactoring), sample questions, example Go code using AWS SDK (S3, DynamoDB, Lambda), and a 6‑week study plan.  
+
+---
+
+## 🔰 บทนำ (Introduction)  
+
+**ไทย:**  
+AWS Certified Developer – Associate (DVA-C02) เป็นใบรับรองสำหรับนักพัฒนาที่ต้องการยืนยันความสามารถในการเขียนแอปพลิเคชันบน AWS โดยใช้ SDK, CLI, และบริการต่างๆ เช่น Lambda, API Gateway, DynamoDB, SQS, SNS, และ CodeSuite ข้อสอบเน้นการเขียนโค้ดที่ปลอดภัย, มีประสิทธิภาพ, และสามารถ deploy ได้อัตโนมัติ แตกต่างจาก SAA ที่เน้นการออกแบบสถาปัตยกรรม DVA จะเน้นการ implement จริงด้วยโค้ด  
+
+**English:**  
+The AWS Certified Developer – Associate (DVA-C02) is a certification for developers who want to validate their ability to build applications on AWS using the SDK, CLI, and services such as Lambda, API Gateway, DynamoDB, SQS, SNS, and CodeSuite. The exam focuses on writing secure, efficient, and automatically deployable code. Unlike SAA which focuses on architecture design, DVA focuses on actual implementation with code.  
+
+---
+
+## 📖 บทนิยาม (Definitions)  
+
+| คำศัพท์ (Term) | คำจำกัดความไทย (Thai Definition) | English Definition |
+|----------------|----------------------------------|--------------------|
+| AWS SDK | Software Development Kit สำหรับเรียก AWS API จากภาษาโปรแกรมต่างๆ | Library to call AWS APIs from programming languages. |
+| Lambda | บริการ run code แบบ serverless ตาม event (สูงสุด 15 นาที) | Serverless compute service triggered by events (max 15 min). |
+| API Gateway | บริการสร้าง, เผยแพร่, และจัดการ REST/WebSocket APIs | Service to create, publish, and manage REST/WebSocket APIs. |
+| DynamoDB | NoSQL database แบบ fully managed (key-value/document) | Fully managed NoSQL database. |
+| SQS | Message queue แบบ distributed | Distributed message queue. |
+| SNS | Pub/sub messaging service | Publish/subscribe messaging. |
+| X-Ray | บริการ tracing สำหรับแอป distributed | Distributed tracing service. |
+| CodeCommit | Git repository แบบ managed | Managed Git repository. |
+| CodeBuild | บริการ build และทดสอบโค้ดแบบ fully managed | Fully managed build and test service. |
+| CodeDeploy | บริการ automate deployment | Automated deployment service. |
+| CodePipeline | CI/CD orchestration | Continuous delivery orchestration. |
+
+---
+
+## 🔧 DVA-C02 คืออะไร? มีเนื้อหาอะไรบ้าง?  
+
+### 1. DVA-C02 คืออะไร  
+**ไทย:**  
+DVA-C02 คือรหัสข้อสอบ AWS Certified Developer – Associate (อัปเดตล่าสุด 2023) ทดสอบความสามารถในการพัฒนา, deploy, และ debug แอปพลิเคชันบน AWS โดยใช้ SDK, Lambda, API Gateway, DynamoDB, และเครื่องมือ CI/CD  
+
+**English:**  
+DVA-C02 is the exam code for AWS Certified Developer – Associate (latest update 2023). It tests the ability to develop, deploy, and debug applications on AWS using the SDK, Lambda, API Gateway, DynamoDB, and CI/CD tools.  
+
+### 2. เนื้อหาข้อสอบแบ่งเป็น 6 โดเมน (Domains)  
+
+| โดเมน (Domain) | น้ำหนัก (Weight) | หัวข้อหลัก (Key topics) |
+|----------------|------------------|--------------------------|
+| Development with AWS Services | 32% | SDK (การเรียก service), Lambda (เขียน, test, invoke), API Gateway (REST, WebSocket), DynamoDB (CRUD, queries, scans, indexes), SQS, SNS, Kinesis, Step Functions |
+| Security | 26% | IAM roles/policies สำหรับ Lambda และ SDK, authentication (Cognito), API Gateway authorizers, encryption (KMS), secrets management (Secrets Manager, Parameter Store), การป้องกันการ leak credentials |
+| Deployment | 24% | CI/CD (CodeCommit, CodeBuild, CodeDeploy, CodePipeline), Elastic Beanstalk, CloudFormation, SAM (Serverless Application Model), deployment strategies (in‑place, blue/green, canary) |
+| Troubleshooting and Optimization | 10% | Lambda troubleshooting (timeout, memory, cold start), X-Ray tracing, CloudWatch Logs, debugging permission errors, performance optimization (DynamoDB DAX, ElastiCache) |
+| Refactoring | 4% | การเปลี่ยนจาก monolith เป็น microservices, การย้าย workload ไป serverless (Lambda), การใช้ managed services แทน self‑managed |
+| Monitoring and Logging | 4% | CloudWatch (metrics, alarms, logs), X-Ray, EventBridge |
+
+### 3. รูปแบบข้อสอบ  
+
+| รายการ | รายละเอียด |
+|--------|-------------|
+| จำนวนข้อ | 65 (รวม 15 ข้อที่ไม่นับคะแนน) |
+| เวลา | 130 นาที |
+| รูปแบบ | Multiple choice, multiple answer (บางข้ออาจมี 3 ข้อถูก) |
+| คะแนนผ่าน | 720/1000 (~72%) |
+| ค่าสอบ | 150 USD |
+| ภาษา | อังกฤษ, ญี่ปุ่น, เกาหลี, จีน |
+
+### 4. บริการที่ออกสอบบ่อยสำหรับ DVA  
+
+| บริการ | ความสำคัญ | หัวข้อที่ต้องรู้ |
+|--------|------------|----------------|
+| Lambda | สูงมาก | runtime, memory/timeout, environment variables, IAM role, versions/aliases, reserved concurrency, dead‑letter queue, X-Ray |
+| API Gateway | สูงมาก | integration type (Lambda proxy, HTTP, mock), stages, deployment, custom domain, throttling, usage plans, API keys, CORS |
+| DynamoDB | สูงมาก | read/write consistency, capacity modes (provisioned, on‑demand), indexes (LSI, GSI), query vs scan, DAX, transaction, TTL, streams |
+| SQS | สูง | standard vs FIFO, visibility timeout, dead‑letter queue, long polling, batch processing |
+| SNS | ปานกลาง | topic, subscription (SQS, Lambda, email, SMS), filtering, fan‑out pattern |
+| S3 | ปานกลาง | presigned URLs, event notifications (trigger Lambda), bucket policies, encryption (SSE‑S3, SSE‑KMS) |
+| IAM | สูง | policy evaluation, least privilege, instance profile (สำหรับ EC2) และ execution role (สำหรับ Lambda) |
+| CodeSuite | สูง | CodeCommit (git), CodeBuild (buildspec), CodeDeploy (appspec), CodePipeline (orchestration) |
+| CloudWatch | ปานกลาง | metrics, logs (log groups, streams), alarms, dashboards |
+| X-Ray | ปานกลาง | tracing, segments, subsegments, sampling rules, service graph |
+
+### 5. ตัวอย่างคำถาม (Sample Question)  
+
+**คำถาม:** นักพัฒนาสร้าง Lambda function เพื่อประมวลผลข้อความที่ส่งมาจาก API Gateway แต่พบว่า Lambda ทำงานช้าในช่วงแรก (cold start) และต้องการลด latency วิธีใดที่ดีที่สุด  
+
+A. เพิ่ม memory ของ Lambda  
+B. ใช้ Provisioned Concurrency  
+C. ใช้ Lambda@Edge  
+D. เปลี่ยน runtime เป็นภาษา Python  
+
+**เฉลย:** B (Provisioned Concurrency จะทำให้มี instance พร้อมทำงานล่วงหน้า ไม่มี cold start)  
+
+---
+
+## 🔄 ออกแบบ Workflow (Workflow Design)  
+
+### ภาพรวม: การพัฒนาแอป Go แบบ serverless บน AWS (Lambda + API Gateway + DynamoDB)  
+
+**ไทย:**  
+นักพัฒนาเขียน Go handler → สร้างโปรเจกต์ด้วย SAM → ทดสอบ本地 → deploy ผ่าน SAM หรือ CodePipeline → API Gateway สร้าง endpoint → Lambda ทำงาน → DynamoDB เก็บข้อมูล  
+
+**English:**  
+Developer writes Go handler → creates SAM project → tests locally → deploys via SAM or CodePipeline → API Gateway creates endpoint → Lambda executes → DynamoDB stores data.  
+
+### Mermaid Flowchart  
+
+```mermaid
+flowchart LR
+    A[เขียน Go handler] --> B[สร้าง template.yaml (SAM)]
+    B --> C[ทดสอบ local ด้วย sam local start-api]
+    C --> D{ผ่าน?}
+    D -- No --> A
+    D -- Yes --> E[deploy ด้วย sam deploy]
+    E --> F[API Gateway endpoint]
+    F --> G[Lambda function]
+    G --> H[DynamoDB table]
+    H --> I[Client เรียกใช้]
+    I --> J[CloudWatch logs / X-Ray]
+```
+
+### คำอธิบายแบบละเอียด (Detailed Explanation)  
+
+| ขั้นตอน | คำอธิบาย (ไทย) | Explanation (English) |
+|---------|----------------|------------------------|
+| 1 | เขียนโค้ด Go สำหรับ Lambda handler (ใช้ aws-lambda-go) | Write Go code for Lambda handler. |
+| 2 | สร้าง SAM template ระบุ Lambda, API Gateway, DynamoDB | Create SAM template specifying resources. |
+| 3 | ทดสอบ local โดย `sam local start-api` จำลอง API Gateway | Test locally with `sam local start-api`. |
+| 4 | ถ้าผ่าน, deploy ไป AWS ด้วย `sam deploy` | If OK, deploy to AWS with `sam deploy`. |
+| 5 | API Gateway สร้าง URL ให้ client เรียก | API Gateway provides URL for clients. |
+| 6 | Lambda ประมวลผลและเชื่อมต่อ DynamoDB | Lambda processes and connects to DynamoDB. |
+| 7 | CloudWatch เก็บ logs, X-Ray เก็บ traces | CloudWatch stores logs, X-Ray stores traces. |
+
+---
+
+## 💻 ตัวอย่างโค้ด Go ที่รันได้จริง (Runnable Code Example)  
+
+### 1. Lambda handler (Go) สำหรับ CRUD บน DynamoDB  
+
+```go
+// main.go
+// Lambda handler สำหรับ API Gateway + DynamoDB
+// Lambda handler for API Gateway + DynamoDB
+
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+)
+
+type Item struct {
+	ID        string `json:"id" dynamodbav:"id"`
+	Name      string `json:"name" dynamodbav:"name"`
+	CreatedAt string `json:"createdAt" dynamodbav:"createdAt"`
+}
+
+var dbClient *dynamodb.Client
+var tableName string
+
+func init() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+	dbClient = dynamodb.NewFromConfig(cfg)
+	tableName = os.Getenv("TABLE_NAME")
+	if tableName == "" {
+		tableName = "Items"
+	}
+}
+
+func handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// รับ HTTP method จาก API Gateway
+	// Get HTTP method from API Gateway
+	switch req.HTTPMethod {
+	case "POST":
+		return createItem(ctx, req)
+	case "GET":
+		id := req.QueryStringParameters["id"]
+		if id == "" {
+			return listItems(ctx)
+		}
+		return getItem(ctx, id)
+	default:
+		return events.APIGatewayProxyResponse{
+			StatusCode: 405,
+			Body:       `{"error":"Method not allowed"}`,
+		}, nil
+	}
+}
+
+func createItem(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	var item Item
+	err := json.Unmarshal([]byte(req.Body), &item)
+	if err != nil {
+		return errorResponse(400, "Invalid JSON")
+	}
+	if item.ID == "" {
+		item.ID = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	item.CreatedAt = time.Now().UTC().Format(time.RFC3339)
+
+	av, err := attributevalue.MarshalMap(item)
+	if err != nil {
+		return errorResponse(500, "Marshal error")
+	}
+	_, err = dbClient.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: &tableName,
+		Item:      av,
+	})
+	if err != nil {
+		return errorResponse(500, "DynamoDB put error")
+	}
+	body, _ := json.Marshal(item)
+	return events.APIGatewayProxyResponse{
+		StatusCode: 201,
+		Body:       string(body),
+		Headers:    map[string]string{"Content-Type": "application/json"},
+	}, nil
+}
+
+func getItem(ctx context.Context, id string) (events.APIGatewayProxyResponse, error) {
+	out, err := dbClient.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: &tableName,
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
+	if err != nil {
+		return errorResponse(500, "GetItem error")
+	}
+	if out.Item == nil {
+		return errorResponse(404, "Not found")
+	}
+	var item Item
+	attributevalue.UnmarshalMap(out.Item, &item)
+	body, _ := json.Marshal(item)
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Body:       string(body),
+	}, nil
+}
+
+func listItems(ctx context.Context) (events.APIGatewayProxyResponse, error) {
+	out, err := dbClient.Scan(ctx, &dynamodb.ScanInput{
+		TableName: &tableName,
+	})
+	if err != nil {
+		return errorResponse(500, "Scan error")
+	}
+	var items []Item
+	attributevalue.UnmarshalListOfMaps(out.Items, &items)
+	body, _ := json.Marshal(items)
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Body:       string(body),
+	}, nil
+}
+
+func errorResponse(status int, msg string) (events.APIGatewayProxyResponse, error) {
+	body, _ := json.Marshal(map[string]string{"error": msg})
+	return events.APIGatewayProxyResponse{
+		StatusCode: status,
+		Body:       string(body),
+	}, nil
+}
+
+func main() {
+	lambda.Start(handler)
+}
+```
+
+### 2. SAM template.yaml สำหรับ deploy  
+
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  ItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Items
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+  ItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: main
+      Runtime: provided.al2
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemsTable
+      Events:
+        CreateItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /items
+            Method: POST
+        GetItem:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /items
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemsTable
+```
+
+### 3. buildspec.yml สำหรับ CodeBuild (CI/CD)  
+
+```yaml
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      golang: 1.21
+    commands:
+      - go mod download
+  build:
+    commands:
+      - GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bootstrap main.go
+  post_build:
+    commands:
+      - zip function.zip bootstrap
+artifacts:
+  files:
+    - function.zip
+    - template.yaml
+```
+
+---
+
+## 📌 กรณีศึกษาและแนวทางแก้ไขปัญหา (Case Study & Troubleshooting)  
+
+### กรณีศึกษา: การ optimize Lambda cold start สำหรับแอป Go  
+
+**ปัญหา:** Lambda function Go มี cold start ~200ms ซึ่งช้าเกินไปสำหรับ API ที่ต้องการ latency <100ms  
+**แนวทางแก้ไข:**  
+- ใช้ Provisioned Concurrency (จ่ายเพิ่ม)  
+- ลดขนาด binary ด้วย `-ldflags="-s -w"`  
+- เปลี่ยน runtime เป็น `provided.al2` (ARM64) ซึ่งถูกกว่าและบางครั้งเร็วกว่า  
+- ใช้ SnapStart (เฉพาะ Java, ยังไม่รองรับ Go)  
+**ผลลัพธ์:** Cold start ลดลงเหลือ ~50ms หลังใช้ Provisioned Concurrency  
+
+### ปัญห�ี่พบบ่อยในการสอบ DVA  
+
+| ปัญหา (Issue) | สาเหตุ (Cause) | วิธีแก้ไข (Solution) |
+|----------------|----------------|----------------------|
+| สับสนระหว่าง SQS และ SNS | ไม่เข้าใจ fan-out vs queue | SQS: หนึ่ง message ต่อหนึ่ง consumer; SNS: หนึ่ง message ไปหลาย subscriber |
+| Lambda เรียก RDS timeout | RDS อยู่ใน VPC, Lambda ต้องอยู่ใน VPC เดียวกัน และมี NAT gateway | แนบ Lambda กับ VPC และตั้ง security group ให้ถูกต้อง |
+| API Gateway 403 | ขาด authorizer หรือ API key | ตรวจสอบ usage plan และ API key หรือ authorizer configuration |
+| DynamoDB scan ช้า | ไม่ใช้ index | ใช้ GSI หรือ LSI และใช้ Query แทน Scan เมื่อเป็นไปได้ |
+| deployment ล้มเหลว | CodeDeploy appspec.yml path ผิด | ตรวจสอบ source/destination และ permission |
+
+---
+
+## 📁 เทมเพลตและตัวอย่างเพิ่มเติม  
+
+### แผนการเตรียมตัว 6 สัปดาห์ (DVA-C02)  
+
+| สัปดาห์ | กิจกรรม |
+|---------|---------|
+| 1 | ดู exam guide, pretest, ทบทวน Lambda + API Gateway + DynamoDB |
+| 2 | ฝึกเขียน Lambda (Go) + API Gateway + DynamoDB (ทำ workshop) |
+| 3 | เรียนรู้ SQS, SNS, Step Functions, Kinesis |
+| 4 | เรียนรู้ Security: IAM roles, Cognito, KMS, Secrets Manager |
+| 5 | เรียนรู้ CI/CD: CodeCommit, CodeBuild, CodeDeploy, CodePipeline, SAM |
+| 6 | ทำ practice exam, ทบทวนจุดอ่อน, สอบจริง |
+
+### Checklist ก่อนสอบ DVA  
+
+- [ ] รู้วิธีสร้าง Lambda function (Go) และทดสอบ local  
+- [ ] รู้วิธีสร้าง API Gateway (REST, HTTP) และเชื่อมกับ Lambda  
+- [ ] รู้ DynamoDB: Query vs Scan, GSI, DAX, consistency models  
+- [ ] รู้ SQS: standard vs FIFO, visibility timeout, DLQ  
+- [ ] รู้ SNS: topic, subscription, filtering  
+- [ ] รู้ IAM: least privilege, execution role, policy evaluation logic  
+- [ ] รู้ CI/CD: buildspec.yml, appspec.yml, pipeline structure  
+- [ ] รู้ X-Ray: segment, subsegment, annotation, metadata  
+- [ ] รู้ CloudWatch: logs, metrics, alarms  
+- [ ] รู้ deployment strategies: in‑place, blue/green, canary  
+
+---
+
+## 📊 ตารางเปรียบเทียบสำหรับ DVA  
+
+| หัวข้อ | Option A | Option B | เมื่อใช้ A | เมื่อใช้ B |
+|--------|----------|----------|------------|------------|
+| API integration | Lambda proxy | HTTP proxy | ต้องการ custom logic | เรียก HTTP endpoint ภายนอก |
+| DynamoDB read | Eventually consistent | Strongly consistent | อ่านได้ไม่ต้องล่าสุด (ถูกกว่า) | ต้องการข้อมูลล่าสุด (แพงกว่า) |
+| Lambda invocation | Sync (RequestResponse) | Async (Event) | ต้องการ response ทันที | งาน background, ไม่รอผล |
+| SQS queue | Standard | FIFO | ไม่สนลำดับ, throughput สูง | ต้องการลำดับแน่นอน, ไม่ซ้ำ |
+| Deployment | In‑place | Blue/green | ต้องการ simplicity | ต้องการ zero downtime, rollback ง่าย |
+
+---
+
+## 📝 สรุป (Summary)  
+
+### ✅ ประโยชน์ที่ได้รับ (Benefits)  
+- ยืนยันทักษะการเขียนแอปบน AWS ด้วย SDK  
+- เพิ่มโอกาสในการได้งาน Developer สายคลาวด์  
+- เรียนรู้การทำ serverless และ CI/CD  
+- ได้ digital badge และส่วนลดสอบครั้งต่อไป  
+
+### ⚠️ ข้อควรระวัง (Cautions)  
+- ต้องเขียนโค้ดจริง (ไม่ใช่แค่อ่าน theory)  
+- ข้อสอบมี scenario ที่ซับซ้อน ต้องเข้าใจ service integration  
+- ต้องรู้ SDK API (ไม่ต้องจำทุก method แต่ต้องรู้ concept)  
+
+### 👍 ข้อดี (Advantages)  
+- เนื้อหาตรงกับงานพัฒนาจริง  
+- มี labs ให้ฝึกปฏิบัติ  
+- ใช้ Go, Python, Node.js ได้ทุกภาษา  
+
+### 👎 ข้อเสีย (Disadvantages)  
+- ไม่มี lab ในข้อสอบ (ต่างจาก Professional)  
+- ต้องจำ service integration หลายอย่าง  
+- ต้อง recertify ทุก 3 ปี  
+
+### 🚫 ข้อห้าม (Prohibitions)  
+- ห้ามเก็บ credentials ในโค้ด (ใช้ Secrets Manager หรือ Parameter Store)  
+- ห้ามเปิด Lambda ใน VPC โดยไม่มี NAT gateway ถ้าต้องการ internet  
+- ห้ามใช้ DynamoDB Scan โดยไม่มี filter บ่อย ๆ  
+
+---
+
+## 🧩 แบบฝึกหัดท้ายบท (Exercises)  
+
+**ข้อ 1:** DVA-C02 มีน้ำหนักของโดเมน "Development with AWS Services" กี่เปอร์เซ็นต์  
+**ข้อ 2:** หากต้องการให้ Lambda function สามารถเขียนลง DynamoDB ได้ ต้องทำอย่างไร  
+**ข้อ 3:** API Gateway ประเภทใดที่ใช้สำหรับ WebSocket  
+**ข้อ 4:** SQS visibility timeout คืออะไร  
+**ข้อ 5:** เครื่องมือใดใน AWS ที่ใช้สำหรับ distributed tracing  
+**ข้อ 6:** buildspec.yml ใช้กับบริการใด  
+**ข้อ 7:** ข้อแตกต่างระหว่าง DynamoDB Query และ Scan  
+**ข้อ 8:** หากต้องการ deploy Lambda ใหม่โดยไม่มี downtime และสามารถ rollback ได้ง่าย ควรใช้ deployment strategy แบบใด  
+**ข้อ 9:** เขียน Go code snippet เพื่อส่ง message ไปยัง SQS queue  
+**ข้อ 10:** Lambda function จะถูก timeout เมื่อรันนานเกินกี่วินาที  
+
+---
+
+## 🔐 เฉลยแบบฝึกหัด (Answer Key)  
+
+**ข้อ 1:** 32%  
+**ข้อ 2:** แนบ IAM role ที่มี policy `DynamoDBFullAccess` หรือ `DynamoDBCrudPolicy` กับ Lambda (execution role)  
+**ข้อ 3:** WebSocket API (API Gateway รองรับ REST, HTTP, WebSocket)  
+**ข้อ 4:** ระยะเวลาที่ message จะถูกซ่อนไม่ให้ consumer อื่นเห็นหลังจากถูกรับไปแล้ว (ถ้า process ไม่เสร็จภายใน timeout, message จะกลับมา queue)  
+**ข้อ 5:** AWS X-Ray  
+**ข้อ 6:** AWS CodeBuild  
+**ข้อ 7:** Query ต้องมี partition key และสามารถใช้ sort key, Scan อ่านทั้ง table (ช้าและแพง)  
+**ข้อ 8:** Blue/Green deployment (หรือ Canary)  
+**ข้อ 9:**  
+```go
+func sendSQS(queueURL, msg string) error {
+    cfg, _ := config.LoadDefaultConfig(context.TODO())
+    client := sqs.NewFromConfig(cfg)
+    _, err := client.SendMessage(context.TODO(), &sqs.SendMessageInput{
+        QueueUrl:    &queueURL,
+        MessageBody: &msg,
+    })
+    return err
+}
+```  
+**ข้อ 10:** 900 วินาที (15 นาที)  
+
+---
+
+## 📚 แหล่งอ้างอิง (References)  
+
+1. AWS Official Exam Guide – DVA-C02  
+2. AWS SDK for Go v2 Documentation  
+3. AWS Lambda Developer Guide (Go)  
+4. TutorialsDojo – DVA-C02 Practice Exams  
+5. Stephane Maarek – AWS Certified Developer Associate Course (Udemy)  
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+
 # 📘 บทที่ 12: AWS Certified Solutions Architect – Professional (SAP-C02)  
 ## Chapter 12: AWS Certified Solutions Architect – Professional (SAP-C02)  
 
@@ -5910,3 +6467,1033 @@ aws cloudformation create-stack-instances \
 **หมายเหตุ เนื้อหาในหนังสือ:**  
 เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
 📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+# 📘 บทที่ 13: AWS Certified Machine Learning – Specialty (MLS-C01)  
+## Chapter 13: AWS Certified Machine Learning – Specialty (MLS-C01)  
+
+---
+
+## 🧱 โครงสร้างการทำงาน (Work Structure)  
+
+**ไทย:**  
+บทนี้เจาะลึกใบรับรอง AWS Certified Machine Learning – Specialty (MLS-C01) สำหรับผู้ที่มีประสบการณ์ด้าน Machine Learning และต้องการพิสูจน์ทักษะการออกแบบ, implement, และ deploy โมเดล ML บน AWS เนื้อหาครอบคลุม Data Engineering, Exploratory Data Analysis (EDA), Modeling, และ Machine Learning Implementation & Operations พร้อมตัวอย่างการใช้ SageMaker, และการเรียกโมเดลจาก Go  
+
+**English:**  
+This chapter dives into the AWS Certified Machine Learning – Specialty (MLS-C01) certification for those with ML experience who want to validate their skills in designing, implementing, and deploying ML models on AWS. It covers Data Engineering, EDA, Modeling, and ML Implementation & Operations, with examples using SageMaker and invoking models from Go.  
+
+---
+
+## 🎯 วัตถุประสงค์แบบสั้นสำหรับทบทวน (Short Revision Objective)  
+
+**ไทย:**  
+เพื่อให้ผู้อ่านเข้าใจโครงสร้างข้อสอบ MLS-C01, เนื้อหาทั้ง 4 โดเมน, บริการ ML บน AWS (SageMaker, Comprehend, Rekognition, Forecast, etc.), และสามารถเตรียมตัวสอบ รวมถึงการสร้าง, train, deploy โมเดลบน SageMaker และการเรียกใช้โมเดลจากแอป Go  
+
+**English:**  
+To enable readers to understand the MLS-C01 exam structure, four domains, AWS ML services (SageMaker, Comprehend, Rekognition, Forecast, etc.), and prepare effectively, including building, training, deploying models on SageMaker and invoking them from a Go application.  
+
+---
+
+## 👥 กลุ่มเป้าหมาย (Target Audience)  
+
+- Data Scientist / ML Engineer ที่ทำงานบน AWS  
+- Developer ที่ต้องการนำ ML มาใช้ในแอปพลิเคชัน  
+- ผู้ที่สอบผ่าน Associate ระดับใดระดับหนึ่งแล้วต้องการต่อยอดด้าน ML  
+- ผู้ที่ต้องการพิสูจน์ทักษะ ML บน AWS  
+
+---
+
+## 📚 ความรู้พื้นฐาน (Prerequisites)  
+
+- ความรู้พื้นฐานด้าน Machine Learning (algorithm, training, evaluation)  
+- ประสบการณ์กับ AWS อย่างน้อย 1-2 ปี (โดยเฉพาะ SageMaker, S3, IAM)  
+- แนะนำให้มีความรู้ Python และ Jupyter Notebook (เพราะ SageMaker ใช้ Python เป็นหลัก)  
+- แต่ในบทนี้จะมีตัวอย่าง Go สำหรับ inference  
+
+---
+
+## 📝 เนื้อหาโดยย่อ (Abstract)  
+
+**ไทย:**  
+บทนี้สรุปข้อสอบ MLS-C01: จำนวนข้อ, เวลา, โดเมนหลัก 4 ด้าน (Data Engineering, EDA, Modeling, ML Implementation & Operations) พร้อมตัวอย่างคำถาม, บริการ ML บน AWS (SageMaker, Comprehend, Rekognition, Forecast, Lex, Personalize, etc.), และการเขียน Go เพื่อเรียก SageMaker endpoint สำหรับทำ inference รวมถึงการเตรียมข้อมูลด้วย AWS Glue และ Athena  
+
+**English:**  
+This chapter summarizes the MLS-C01 exam: number of questions, time, four domains (Data Engineering, EDA, Modeling, ML Implementation & Operations), sample questions, AWS ML services (SageMaker, Comprehend, Rekognition, Forecast, Lex, Personalize, etc.), and writing Go to invoke SageMaker endpoints for inference, plus data preparation with AWS Glue and Athena.  
+
+---
+
+## 🔰 บทนำ (Introduction)  
+
+**ไทย:**  
+AWS Certified Machine Learning – Specialty (MLS-C01) เป็นใบรับรองสำหรับผู้ที่ทำงานด้าน ML บน AWS โดยเฉพาะ ข้อสอบจะเน้นการเลือกและปรับแต่งโมเดล, การเตรียมข้อมูล, การประเมินผล, และการนำโมเดลไปใช้ใน production (MLOps) รวมถึงการใช้บริการ ML แบบ managed ต่างๆ ของ AWS เช่น SageMaker, Comprehend, Rekognition การสอบนี้เหมาะสำหรับ Data Scientist และ ML Engineer ที่มีประสบการณ์จริง  
+
+**English:**  
+The AWS Certified Machine Learning – Specialty (MLS-C01) is a certification for those working specifically with ML on AWS. The exam focuses on selecting and tuning models, data preparation, evaluation, and putting models into production (MLOps), including using various AWS managed ML services like SageMaker, Comprehend, and Rekognition. This exam is suitable for experienced Data Scientists and ML Engineers.  
+
+---
+
+## 📖 บทนิยาม (Definitions)  
+
+| คำศัพท์ (Term) | คำจำกัดความไทย (Thai Definition) | English Definition |
+|----------------|----------------------------------|--------------------|
+| SageMaker | บริการ ML แบบ fully managed สำหรับ building, training, deployment | Fully managed ML service for building, training, and deployment. |
+| Endpoint | REST endpoint สำหรับเรียกใช้โมเดลที่ deploy แล้ว (real‑time inference) | REST endpoint to invoke a deployed model (real‑time inference). |
+| Batch Transform | การทำ inference เป็นชุดกับข้อมูลจำนวนมาก (ไม่ real‑time) | Batch inference on large datasets (not real‑time). |
+| Hyperparameter Tuning | การปรับค่า hyperparameter อัตโนมัติเพื่อหาโมเดลที่ดีที่สุด | Automatic hyperparameter optimization. |
+| Ground Truth | บริการสร้าง labeled dataset โดยใช้มนุษย์หรือ machine assisted | Service for building labeled datasets using human or machine assistance. |
+| Comprehend | NLP service สำหรับ text analysis (sentiment, entities, language) | NLP service for text analysis. |
+| Rekognition | บริการ image/video analysis (object detection, face recognition, content moderation) | Image/video analysis service. |
+| Forecast | บริการ time‑series forecasting (ไม่ต้องเขียนโมเดลเอง) | Time‑series forecasting service (no custom model needed). |
+| Personalize | บริการ recommendation system (เหมือน Amazon.com) | Recommendation system service (like Amazon.com). |
+| Lex | บริการ chatbot (ASR + NLU) – เหมือน Alexa | Chatbot service (ASR + NLU) – like Alexa. |
+
+---
+
+## 🔧 MLS-C01 คืออะไร? มีเนื้อหาอะไรบ้าง?  
+
+### 1. MLS-C01 คืออะไร  
+**ไทย:**  
+MLS-C01 คือรหัสข้อสอบ AWS Certified Machine Learning – Specialty (อัปเดตล่าสุด 2021-2022) ทดสอบความสามารถในการสร้าง, train, tune, deploy, และบำรุงรักษาโมเดล ML บน AWS รวมถึงการใช้บริการ ML แบบ managed และการทำ MLOps  
+
+**English:**  
+MLS-C01 is the exam code for AWS Certified Machine Learning – Specialty (latest update 2021-2022). It tests the ability to build, train, tune, deploy, and maintain ML models on AWS, including using managed ML services and MLOps.  
+
+### 2. เนื้อหาข้อสอบแบ่งเป็น 4 โดเมน (Domains)  
+
+| โดเมน (Domain) | น้ำหนัก (Weight) | หัวข้อหลัก (Key topics) |
+|----------------|------------------|--------------------------|
+| Data Engineering | 20% | การสร้าง data repositories (S3, Glue, RDS, Redshift), การจัดเตรียมข้อมูล (ETL ด้วย Glue, Athena), การตรวจสอบคุณภาพข้อมูล, การแบ่ง train/validation/test |
+| Exploratory Data Analysis (EDA) | 24% | การวิเคราะห์ข้อมูลเบื้องต้น (สถิติ, visualization), การจัดการ missing values, outliers, feature engineering, การลด dimensionality (PCA), การตรวจสอบความสัมพันธ์ (correlation) |
+| Modeling | 36% | การเลือก algorithm (linear, tree, neural net, etc.), การ train บน SageMaker, hyperparameter tuning (SageMaker Automatic Model Tuning), model evaluation metrics (accuracy, precision, recall, F1, AUC, MSE, MAE, etc.), การป้องกัน overfitting |
+| Machine Learning Implementation and Operations | 20% | การ deploy โมเดล (endpoint, batch transform), การทำ inference (real-time, async, batch), การ monitor model drift (SageMaker Model Monitor), การ automate retraining (SageMaker Pipelines, Lambda, Step Functions), การ security (IAM, VPC, encryption) |
+
+### 3. รูปแบบข้อสอบ  
+
+| รายการ | รายละเอียด |
+|--------|-------------|
+| จำนวนข้อ | 65 (รวม 15 ข้อที่ไม่นับคะแนน) |
+| เวลา | 180 นาที (3 ชั่วโมง) |
+| รูปแบบ | Multiple choice, multiple answer |
+| คะแนนผ่าน | 750/1000 (75%) |
+| ค่าสอบ | 300 USD |
+| ภาษา | อังกฤษ, ญี่ปุ่น, เกาหลี, จีน |
+
+### 4. บริการ AWS ที่สำคัญสำหรับ MLS  
+
+| บริการ | บทบาท | รายละเอียด |
+|--------|--------|-------------|
+| SageMaker | Modeling, deployment | training jobs, endpoints, notebooks, pipelines, hyperparameter tuning, model monitor |
+| S3 | Data storage | เก็บ raw data, processed data, model artifacts |
+| Glue | Data engineering | ETL, data catalog, crawlers, Spark jobs |
+| Athena | Query บน S3 | SQL query ข้อมูลใน S3 สำหรับ EDA |
+| Comprehend | NLP | text analysis (ไม่ต้อง train เอง) |
+| Rekognition | Image/Video | object, face, content moderation |
+| Forecast | Time series | forecasting (retail, demand) |
+| Personalize | Recommendation | personalized product/content |
+| Lex | Conversational AI | chatbot |
+| Kinesis | Streaming | real‑time data ingestion สำหรับ ML |
+| Lambda | Serverless inference | เรียกโมเดลแบบ serverless |
+| Step Functions | Orchestration | สร้าง ML pipeline |
+| CloudWatch | Monitoring | metrics, logs, model drift |
+
+### 5. ตัวอย่างคำถาม (Sample Question)  
+
+**คำถาม:** คุณต้องการทำ binary classification บน dataset ที่ไม่สมดุล (imbalanced) โดย positive class มีแค่ 5% ควรใช้ metric ใดในการประเมินโมเดล  
+
+A. Accuracy  
+B. Precision  
+C. Recall  
+D. F1-score  
+
+**เฉลย:** D (F1‑score เพราะ balance ระหว่าง precision กับ recall เหมาะกับ imbalanced data)  
+
+---
+
+## 🔄 ออกแบบ Workflow (Workflow Design)  
+
+### ภาพรวม: ML Pipeline บน AWS (จากข้อมูลสู่การ inference ด้วย Go)  
+
+**ไทย:**  
+ข้อมูลดิบใน S3 → Glue ETL → ข้อมูล clean ใน S3 → SageMaker training job → model artifact ใน S3 → deploy endpoint → แอป Go เรียก endpoint ผ่าน SDK → ได้ผลลัพธ์  
+
+**English:**  
+Raw data in S3 → Glue ETL → clean data in S3 → SageMaker training job → model artifact in S3 → deploy endpoint → Go app calls endpoint via SDK → get result.  
+
+### Mermaid Flowchart  
+
+```mermaid
+flowchart LR
+    A[Raw Data in S3] --> B[Glue ETL / Athena]
+    B --> C[Clean Data in S3]
+    C --> D[SageMaker Training Job]
+    D --> E[Hyperparameter Tuning]
+    E --> F[Best Model Artifact]
+    F --> G[SageMaker Endpoint]
+    G --> H[Go App Invokes Endpoint]
+    H --> I[Prediction Result]
+    
+    J[CloudWatch] -.-> G
+    K[SageMaker Model Monitor] -.-> G
+```
+
+### คำอธิบายแบบละเอียด (Detailed Explanation)  
+
+| ขั้นตอน | คำอธิบาย (ไทย) | Explanation (English) |
+|---------|----------------|------------------------|
+| 1 | ข้อมูลดิบถูกอัปโหลดไปยัง S3 (อาจมาจาก IoT, Kinesis, หรือ manual upload) | Raw data uploaded to S3. |
+| 2 | ใช้ AWS Glue ETL (Spark) หรือ Athena query เพื่อทำความสะอาดและแปลงข้อมูล | Use AWS Glue ETL or Athena to clean and transform data. |
+| 3 | ข้อมูลที่ clean แล้วถูกเก็บใน S3 (มักเป็น Parquet) | Cleaned data stored in S3 (often Parquet). |
+| 4 | SageMaker training job อ่านข้อมูลจาก S3, train โมเดล (built‑in algorithm หรือ custom container) | SageMaker training job reads from S3, trains model. |
+| 5 | ใช้ SageMaker Automatic Model Tuning เพื่อหา hyperparameters ที่ดีที่สุด | Use SageMaker Automatic Model Tuning for best hyperparameters. |
+| 6 | โมเดลที่ดีที่สุดถูกบันทึกเป็น model artifact ใน S3 | Best model saved as model artifact in S3. |
+| 7 | Deploy โมเดลเป็น real‑time endpoint (หรือ batch transform) | Deploy model as real‑time endpoint (or batch transform). |
+| 8 | แอป Go ใช้ SageMaker Runtime client ส่ง request พร้อม input features | Go app uses SageMaker Runtime client to send request with input features. |
+| 9 | Endpoint คืนค่า prediction (probability, class, etc.) | Endpoint returns prediction. |
+
+---
+
+## 💻 ตัวอย่างโค้ดที่รันได้จริง (Runnable Code Example)  
+
+### 1. การเรียก SageMaker endpoint จาก Go  
+
+```go
+// invoke_sagemaker.go
+// เรียก SageMaker endpoint เพื่อทำ prediction (classification หรือ regression)
+// Invoke SageMaker endpoint for prediction (classification or regression)
+
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sagemakerruntime"
+)
+
+type PredictionRequest struct {
+	Features []float64 `json:"features"`  // input features สำหรับโมเดล
+}
+
+type PredictionResponse struct {
+	PredictedLabel  string    `json:"predicted_label"`
+	Probabilities   []float64 `json:"probabilities,omitempty"`
+	PredictedValue  float64   `json:"predicted_value,omitempty"` // สำหรับ regression
+}
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	if err != nil {
+		log.Fatalf("config error: %v", err)
+	}
+
+	client := sagemakerruntime.NewFromConfig(cfg)
+
+	endpointName := "my-xgboost-endpoint"  // ชื่อ endpoint ที่ deploy แล้ว
+
+	// ตัวอย่าง input features (ต้องตรงกับโมเดล)
+	features := []float64{5.1, 3.5, 1.4, 0.2}  // Iris dataset example
+	reqBody := PredictionRequest{Features: features}
+	payload, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Fatalf("marshal error: %v", err)
+	}
+
+	// เรียก endpoint
+	resp, err := client.InvokeEndpoint(context.TODO(), &sagemakerruntime.InvokeEndpointInput{
+		EndpointName: &endpointName,
+		ContentType:  stringPtr("application/json"),
+		Body:         bytes.NewReader(payload),
+	})
+	if err != nil {
+		log.Fatalf("invoke error: %v", err)
+	}
+
+	// อ่าน response
+	var result PredictionResponse
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		log.Fatalf("decode error: %v", err)
+	}
+
+	fmt.Printf("Prediction: %+v\n", result)
+}
+
+func stringPtr(s string) *string { return &s }
+```
+
+### 2. การสร้าง SageMaker training job ด้วย AWS SDK for Go (เริ่มต้น training)  
+
+```go
+// start_training.go
+// เริ่มต้น SageMaker training job โดยใช้ built‑in algorithm (XGBoost)
+// Start SageMaker training job using built‑in algorithm (XGBoost)
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go-v2/service/sagemaker/types"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := sagemaker.NewFromConfig(cfg)
+
+	trainingJobName := "my-xgboost-job-" + "timestamp"
+	roleArn := "arn:aws:iam::ACCOUNT:role/SageMakerExecutionRole"
+	inputData := "s3://my-bucket/train/data.csv"
+	outputPath := "s3://my-bucket/models"
+
+	_, err = client.CreateTrainingJob(context.TODO(), &sagemaker.CreateTrainingJobInput{
+		TrainingJobName: &trainingJobName,
+		RoleArn:         &roleArn,
+		AlgorithmSpecification: &types.AlgorithmSpecification{
+			TrainingImage: stringPtr("811284229777.dkr.ecr.us-east-1.amazonaws.com/xgboost:latest"),
+			TrainingInputMode: types.TrainingInputModeFile,
+		},
+		InputDataConfig: []types.Channel{
+			{
+				ChannelName: stringPtr("train"),
+				DataSource: &types.DataSource{
+					S3DataSource: &types.S3DataSource{
+						S3DataType: types.S3DataTypeS3Prefix,
+						S3Uri:      &inputData,
+					},
+				},
+			},
+		},
+		OutputDataConfig: &types.OutputDataConfig{
+			S3OutputPath: &outputPath,
+		},
+		ResourceConfig: &types.ResourceConfig{
+			InstanceCount: 1,
+			InstanceType:  types.TrainingInstanceTypeMlM4Xlarge,
+			VolumeSizeInGB: 30,
+		},
+		StoppingCondition: &types.StoppingCondition{
+			MaxRuntimeInSeconds: 3600,
+		},
+		HyperParameters: map[string]string{
+			"objective": "binary:logistic",
+			"num_round": "100",
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Training job started: %s\n", trainingJobName)
+}
+
+func stringPtr(s string) *string { return &s }
+```
+
+### 3. การใช้ SageMaker Batch Transform จาก Go (เรียกใช้แบบ asynchronous)  
+
+```go
+// batch_transform.go
+// เรียก SageMaker batch transform job สำหรับข้อมูลจำนวนมาก
+// Invoke SageMaker batch transform job for large datasets
+
+func createBatchTransform(client *sagemaker.Client, modelName, inputS3, outputS3 string) error {
+	_, err := client.CreateTransformJob(context.TODO(), &sagemaker.CreateTransformJobInput{
+		TransformJobName: stringPtr("batch-" + time.Now().Format("20060102150405")),
+		ModelName:        &modelName,
+		TransformInput: &types.TransformInput{
+			DataSource: &types.TransformDataSource{
+				S3DataSource: &types.TransformS3DataSource{
+					S3DataType: types.S3DataTypeS3Prefix,
+					S3Uri:      &inputS3,
+				},
+			},
+			ContentType: stringPtr("text/csv"),
+		},
+		TransformOutput: &types.TransformOutput{
+			S3OutputPath: &outputS3,
+		},
+		TransformResources: &types.TransformResources{
+			InstanceCount: 1,
+			InstanceType:  types.TransformInstanceTypeMlM4Xlarge,
+		},
+	})
+	return err
+}
+```
+
+---
+
+## 📌 กรณีศึกษาและแนวทางแก้ไขปัญหา (Case Study & Troubleshooting)  
+
+### กรณีศึกษา: การ detect model drift สำหรับโมเดล classification  
+
+**ปัญหา:** โมเดลที่ deploy ไปแล้ว 6 เดือน ความแม่นยำลดลง เพราะข้อมูลเปลี่ยน  
+**แนวทางแก้ไข (ตาม MLS):**  
+- ใช้ SageMaker Model Monitor เพื่อตรวจสอบ data drift และ model drift อัตโนมัติ  
+- ตั้งค่า CloudWatch Alarm เมื่อ drift เกิน threshold  
+- ใช้ SageMaker Pipelines เพื่อ automate retraining ทุกเดือน หรือเมื่อ drift เกิดขึ้น  
+- ใช้ A/B testing ระหว่างโมเดลเก่าและใหม่ก่อน swap  
+**ผลลัพธ์:** จับ drift ได้เร็ว, retrain อัตโนมัติ, ความแม่นยำกลับมาสูง  
+
+### ปัญหาที่พบบ่อยในการสอบ MLS  
+
+| ปัญหา (Issue) | สาเหตุ (Cause) | วิธีแก้ไข (Solution) |
+|----------------|----------------|----------------------|
+| เลือก metric ไม่ถูก | ไม่เข้าใจ imbalanced data หรือ regression | จำแนก: classification imbalanced → F1, precision, recall; regression → MSE, MAE, RMSE |
+| สับสนบริการ ML managed | Personalize vs Forecast vs Lex | Personalize = recommendation; Forecast = time series; Lex = chatbot |
+| งบประมาณสำหรับ training | ใช้ instance แพงเกิน | ใช้ spot instances สำหรับ training jobs, ใช้ managed spot training |
+| model deployment ช้า | endpoint ขนาดเล็ก | ใช้ multi‑model endpoints หรือเพิ่ม instance count |
+| data leakage | รวมข้อมูล future ไว้ใน train | ใช้ time‑based split อย่า random split สำหรับ time series |
+
+---
+
+## 📁 เทมเพลตและตัวอย่างเพิ่มเติม  
+
+### แผนการเตรียมตัว 10 สัปดาห์ (MLS-C01)  
+
+| สัปดาห์ | กิจกรรม |
+|---------|---------|
+| 1 | ทบทวน ML fundamentals (linear regression, tree, SVM, neural net, evaluation metrics) |
+| 2 | Data Engineering: Glue, Athena, S3, ETL |
+| 3 | EDA: การ visualize ด้วย QuickSight หรือ Athena, feature engineering |
+| 4 | SageMaker basics: notebooks, training, deployment, batch transform |
+| 5 | Hyperparameter tuning, Automatic Model Tuning, model evaluation |
+| 6 | ML Implementation: endpoints, monitoring, pipelines |
+| 7 | Managed AI services: Comprehend, Rekognition, Forecast, Personalize, Lex |
+| 8 | Security & MLOps: IAM, VPC, encryption, retraining automation |
+| 9 | ทำ practice exam (TutorialsDojo, Whizlabs) อย่างน้อย 3 ชุด |
+| 10 | ทบทวนจุดอ่อน, สอบจริง |
+
+### Checklist ก่อนสอบ MLS  
+
+- [ ] รู้วิธีแยก train/validation/test และ cross‑validation  
+- [ ] รู้ metrics สำหรับ classification (accuracy, precision, recall, F1, AUC, confusion matrix)  
+- [ ] รู้ metrics สำหรับ regression (MSE, MAE, RMSE, R²)  
+- [ ] รู้วิธีจัดการ imbalanced data (resampling, class weight, SMOTE)  
+- [ ] รู้ SageMaker built‑in algorithms: XGBoost, Linear Learner, KNN, Random Cut Forest (anomaly detection), BlazingText (NLP), DeepAR (forecasting)  
+- [ ] รู้วิธี deploy endpoint และทำ batch transform  
+- [ ] รู้วิธีใช้ SageMaker Pipelines  
+- [ ] รู้วิธีใช้ SageMaker Model Monitor  
+- [ ] รู้วิธีใช้ AWS Glue และ Athena สำหรับ data prep  
+- [ ] รู้บริการ AI แบบ managed (Comprehend, Rekognition, Forecast, Personalize, Lex, Textract, Transcribe, Translate)  
+
+---
+
+## 📊 ตารางเปรียบเทียบบริการ AI/ML แบบ managed  
+
+| บริการ | Use case | Input | Output | ต้อง train หรือไม่ |
+|--------|----------|-------|--------|---------------------|
+| Comprehend | NLP (sentiment, entities, key phrases) | Text | sentiment, entities | ไม่ (pretrained) |
+| Rekognition | Image/video analysis | Image, video | labels, faces, text | ไม่ (pretrained) |
+| Forecast | Time series forecasting | historical time series | future predictions | ไม่ (autoML) |
+| Personalize | Recommendation | user interactions | recommendations | ไม่ (autoML) |
+| Lex | Chatbot | text/voice | intent, response | ต้อง train (แต่ managed) |
+| Textract | OCR + form extraction | document (PDF, image) | text, tables, key-value | ไม่ |
+| Transcribe | Speech‑to‑text | audio | text | ไม่ |
+| Translate | Language translation | text | translated text | ไม่ |
+| SageMaker | Custom ML | any data | model + predictions | ต้อง train เอง |
+
+---
+
+## 📝 สรุป (Summary)  
+
+### ✅ ประโยชน์ที่ได้รับ (Benefits)  
+- พิสูจน์ทักษะ ML บน AWS  
+- ครอบคลุมทั้ง data engineering, modeling, และ MLOps  
+- ได้รับความเชื่อถือในสายงาน Data Science/ML  
+- สามารถออกแบบ ML pipeline ที่ production‑ready  
+
+### ⚠️ ข้อควรระวัง (Cautions)  
+- ต้องมีความรู้ ML ล่วงหน้า (ไม่ใช่สอบเพื่อเรียนรู้ ML ใหม่)  
+- ค่าสอบแพง (300 USD)  
+- เนื้อหาเยอะมาก (ทั้ง custom modeling และ managed services)  
+
+### 👍 ข้อดี (Advantages)  
+- เน้น practical มากกว่า theory  
+- มีบริการ managed ให้เลือกใช้ ลดงานเขียนโมเดลเอง  
+- ใช้ร่วมกับ Go สำหรับ inference ได้  
+
+### 👎 ข้อเสีย (Disadvantages)  
+- ไม่มี labs ในข้อสอบ (ต่างจาก SAP)  
+- ต้องจำ metric และ use case ของหลายบริการ  
+- recertification ทุก 3 ปี  
+
+### 🚫 ข้อห้าม (Prohibitions)  
+- ห้ามใช้ข้อมูลที่ leak จาก future ในการ train  
+- ห้าม deploy โมเดลโดยไม่ monitor drift  
+- ห้ามใช้ instance ที่แพงเกินความจำเป็น (ต้องรู้ cost optimization)  
+
+---
+
+## 🧩 แบบฝึกหัดท้ายบท (Exercises)  
+
+**ข้อ 1:** MLS-C01 มีน้ำหนักของโดเมน "Modeling" กี่เปอร์เซ็นต์  
+**ข้อ 2:** หาก dataset มี class imbalance อย่างรุนแรง (99% negative, 1% positive) metric ใดที่ไม่เหมาะสม  
+**ข้อ 3:** บริการ AWS ใดที่ใช้สำหรับสร้างระบบ recommendation แบบ personalization  
+**ข้อ 4:** SageMaker Model Monitor ใช้ตรวจจับอะไรบ้าง  
+**ข้อ 5:** หากต้องการทำ time series forecasting โดยไม่ต้องเขียนโมเดล ควรใช้บริการใด  
+**ข้อ 6:** ข้อสอบ MLS-C01 มีจำนวนข้อและเวลาเท่าไร  
+**ข้อ 7:** จงบอกความแตกต่างระหว่าง SageMaker endpoint กับ batch transform  
+**ข้อ 8:** วิธีใดที่ช่วยลด overfitting ในโมเดล tree-based (เช่น XGBoost)  
+**ข้อ 9:** หากต้องการ OCR เอกสารสแกน ควรใช้บริการใด  
+**ข้อ 10:** เขียน Go code snippet เพื่อเรียกใช้ Amazon Comprehend สำหรับ sentiment analysis  
+
+---
+
+## 🔐 เฉลยแบบฝึกหัด (Answer Key)  
+
+**ข้อ 1:** 36%  
+**ข้อ 2:** Accuracy (เพราะถ้าทายเป็น negative ทั้งหมดก็ได้ accuracy 99% แต่ไม่ดี)  
+**ข้อ 3:** Amazon Personalize  
+**ข้อ 4:** Data drift (input data เปลี่ยน), model drift (model quality ลดลง), และ feature attribution drift  
+**ข้อ 5:** Amazon Forecast  
+**ข้อ 6:** 65 ข้อ, 180 นาที  
+**ข้อ 7:** Endpoint: real‑time, เรียกทีละ record, มี latency ต่ำ; Batch transform: asynchronous, เหมาะกับข้อมูลปริมาณมาก, ไม่ต้องมี endpoint ตลอดเวลา  
+**ข้อ 8:** ลด max_depth, เพิ่ม min_child_weight, เพิ่ม subsample, เพิ่ม eta (learning rate), ใช้ early stopping  
+**ข้อ 9:** Amazon Textract  
+**ข้อ 10:**  
+```go
+func detectSentiment(text string) (string, error) {
+    cfg, _ := config.LoadDefaultConfig(context.TODO())
+    client := comprehend.NewFromConfig(cfg)
+    resp, err := client.DetectSentiment(context.TODO(), &comprehend.DetectSentimentInput{
+        Text: &text,
+        LanguageCode: types.LanguageCodeEn,
+    })
+    if err != nil { return "", err }
+    return string(resp.Sentiment), nil
+}
+```  
+
+---
+
+## 📚 แหล่งอ้างอิง (References)  
+
+1. AWS Official Exam Guide – MLS-C01  
+2. SageMaker Developer Guide  
+3. AWS ML Blog – Model Monitor, Pipelines  
+4. TutorialsDojo – MLS-C01 Practice Exams  
+5. Frank Kane – AWS Certified Machine Learning Specialty Course (Udemy)  
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+# 📘 บทที่ 14: AWS Certified AI Practitioner (AIF-C01)  
+## Chapter 14: AWS Certified AI Practitioner (AIF-C01)  
+
+---
+
+## 🧱 โครงสร้างการทำงาน (Work Structure)  
+
+**ไทย:**  
+บทนี้แนะนำใบรับรอง AWS Certified AI Practitioner (AIF-C01) ซึ่งเป็นใบรับรองระดับ Foundational ที่เพิ่มขึ้นใหม่สำหรับผู้ที่ต้องการพิสูจน์ความรู้พื้นฐานเกี่ยวกับ AI, Machine Learning, และ Generative AI บน AWS โดยไม่ต้องมีประสบการณ์ด้าน Data Science มาก่อน เนื้อหาครอบคลุมแนวคิด AI, บริการ AI/ML ของ AWS, จริยธรรมและความรับผิดชอบของ AI (Responsible AI) และการนำ Generative AI ไปประยุกต์ใช้ โดยเฉพาะกับ Amazon Bedrock  
+
+**English:**  
+This chapter introduces the AWS Certified AI Practitioner (AIF-C01) certification, a new foundational‑level credential for those who want to validate basic knowledge of AI, ML, and Generative AI on AWS without requiring prior data science experience. It covers AI concepts, AWS AI/ML services, responsible AI, and applying Generative AI – especially with Amazon Bedrock.  
+
+---
+
+## 🎯 วัตถุประสงค์แบบสั้นสำหรับทบทวน (Short Revision Objective)  
+
+**ไทย:**  
+เพื่อให้ผู้อ่านเข้าใจโครงสร้างข้อสอบ AIF-C01, เนื้อหาทั้ง 4 โดเมน, บริการ AI/ML หลักของ AWS (SageMaker, Bedrock, Rekognition, Comprehend, etc.), แนวคิดของ Generative AI, การใช้งาน prompt engineering, และการพิจารณาด้านจริยธรรม รวมถึงสามารถเขียนโปรแกรม Go เพื่อเรียกใช้ Bedrock และบริการ AI อื่นๆ ได้  
+
+**English:**  
+To enable readers to understand the AIF-C01 exam structure, four domains, core AWS AI/ML services (SageMaker, Bedrock, Rekognition, Comprehend, etc.), Generative AI concepts, prompt engineering, ethical considerations, and to write Go programs to invoke Bedrock and other AI services.  
+
+---
+
+## 👥 กลุ่มเป้าหมาย (Target Audience)  
+
+- ผู้บริหาร, Product Manager, หรือนักขายที่ต้องทำงานกับทีม AI  
+- นักพัฒนาที่ต้องการเข้าใจพื้นฐาน AI/ML บน AWS โดยไม่ต้องเป็น Data Scientist  
+- ผู้ที่สนใจ Generative AI และ Amazon Bedrock  
+- ผู้เริ่มต้นในสาย AI ที่ต้องการใบรับรองใบแรก  
+
+---
+
+## 📚 ความรู้พื้นฐาน (Prerequisites)  
+
+- ไม่จำเป็นต้องมีประสบการณ์ AI/ML มาก่อน  
+- เข้าใจพื้นฐาน AWS (หรือผ่าน Cloud Practitioner) เป็นประโยชน์  
+- อ่านภาษาอังกฤษระดับเข้าใจข้อสอบได้  
+
+---
+
+## 📝 เนื้อหาโดยย่อ (Abstract)  
+
+**ไทย:**  
+บทนี้สรุปข้อสอบ AIF-C01: จำนวนข้อ, เวลา, โดเมนหลัก 4 ด้าน (AI/ML Fundamentals, AI/ML Services, Generative AI, Responsible AI & Ethics) พร้อมตัวอย่างคำถาม, บริการที่ต้องรู้ (Bedrock, SageMaker, Rekognition, Comprehend, Polly, Transcribe, Lex, Forecast, Personalize), และการเขียน Go เพื่อใช้บริการ AI เหล่านี้ รวมถึงเทคนิค prompt engineering และการประเมินความเสี่ยงของ AI  
+
+**English:**  
+This chapter summarizes the AIF-C01 exam: number of questions, time, four domains (AI/ML Fundamentals, AI/ML Services, Generative AI, Responsible AI & Ethics), sample questions, essential services (Bedrock, SageMaker, Rekognition, Comprehend, Polly, Transcribe, Lex, Forecast, Personalize), and writing Go to use these AI services, plus prompt engineering techniques and AI risk assessment.  
+
+---
+
+## 🔰 บทนำ (Introduction)  
+
+**ไทย:**  
+AWS Certified AI Practitioner (AIF-C01) เป็นใบรับรองระดับ Foundational ใหม่ล่าสุดของ AWS เปิดตัวในปี 2024 เพื่อตอบสนองความต้องการด้าน AI และ Generative AI ที่เพิ่มสูงขึ้น ใบรับรองนี้เหมาะสำหรับทุกบทบาทที่ต้องเข้าใจ AI ในระดับ “ผู้ใช้” (practitioner) ไม่ใช่ผู้สร้างโมเดล ข้อสอบจะเน้นการเลือกบริการ AI ที่เหมาะสม, การใช้ Generative AI อย่างปลอดภัย, การเขียน prompt ที่ดี, และการเข้าใจข้อจำกัดและความเสี่ยงของ AI  
+
+**English:**  
+The AWS Certified AI Practitioner (AIF-C01) is the newest foundational certification from AWS, launched in 2024 to meet the growing demand for AI and Generative AI. This certification suits any role that needs to understand AI at the “practitioner” level, not model building. The exam focuses on choosing the right AI service, using Generative AI safely, writing good prompts, and understanding AI limitations and risks.  
+
+---
+
+## 📖 บทนิยาม (Definitions)  
+
+| คำศัพท์ (Term) | คำจำกัดความไทย (Thai Definition) | English Definition |
+|----------------|----------------------------------|--------------------|
+| AI (Artificial Intelligence) | การทำให้เครื่องจักรมีความสามารถเหมือนมนุษย์ | Machines mimicking human capabilities. |
+| Machine Learning (ML) | สาขาย่อยของ AI ที่คอมพิวเตอร์เรียนรู้จากข้อมูล | Subset of AI where computers learn from data. |
+| Generative AI | AI ที่สร้างเนื้อหาใหม่ (ข้อความ, รูปภาพ, เสียง, วิดีโอ) | AI that creates new content (text, images, audio, video). |
+| Foundation Model (FM) | โมเดล AI ขนาดใหญ่ที่ฝึกบนข้อมูลมหาศาล ใช้เป็นฐานสำหรับงานต่างๆ | Large AI model pre‑trained on massive data, used as a base for many tasks. |
+| Large Language Model (LLM) | Foundation Model ที่เชี่ยวชาญด้านภาษา | Foundation Model specialized in language. |
+| Prompt | ข้อความที่ใช้สั่งหรือถาม Generative AI | Input text used to instruct or ask Generative AI. |
+| Prompt Engineering | การออกแบบ prompt ให้ได้ผลลัพธ์ที่ดีและถูกต้อง | Designing prompts to get good and accurate results. |
+| Hallucination | การที่ AI สร้างข้อมูลที่ผิดหรือไม่มีอยู่จริง | AI generating false or non‑existent information. |
+| Responsible AI | แนวทางการพัฒนา AI ที่คำนึงถึงความเป็นธรรม, โปร่งใส, ปลอดภัย, และเคารพความเป็นส่วนตัว | Framework for developing AI that is fair, transparent, safe, and respects privacy. |
+| Bias | อคติที่เกิดจากข้อมูลฝึกหรือการออกแบบโมเดล ทำให้ผลลัพธ์ไม่เป็นธรรม | Prejudice from training data or model design causing unfair outcomes. |
+
+---
+
+## 🔧 AIF-C01 คืออะไร? มีเนื้อหาอะไรบ้าง?  
+
+### 1. AIF-C01 คืออะไร  
+**ไทย:**  
+AIF-C01 คือรหัสข้อสอบ AWS Certified AI Practitioner (เปิดตัวพฤศจิกายน 2024) ทดสอบความรู้พื้นฐานเกี่ยวกับ AI, ML, Generative AI และบริการ AI/ML ของAWS ในระดับที่ทุกบทบาทสามารถเข้าใจและนำไปใช้ได้  
+
+**English:**  
+AIF-C01 is the exam code for AWS Certified AI Practitioner (launched November 2024). It tests basic knowledge of AI, ML, Generative AI, and AWS AI/ML services at a level accessible to all roles.  
+
+### 2. เนื้อหาข้อสอบแบ่งเป็น 4 โดเมน (Domains)  
+
+| โดเมน (Domain) | น้ำหนัก (Weight) | หัวข้อหลัก (Key topics) |
+|----------------|------------------|--------------------------|
+| AI/ML Fundamentals | 30% | ความหมายของ AI, ML, Deep Learning, Generative AI, ความแตกต่างระหว่าง supervised/unsupervised/reinforcement learning, การประเมินโมเดล (accuracy, precision, recall, F1), overfitting/underfitting, ขั้นตอนของ ML project |
+| AI/ML Services on AWS | 32% | บริการ AI แบบ managed: Rekognition (image/video), Comprehend (NLP), Polly (text‑to‑speech), Transcribe (speech‑to‑text), Translate, Lex (chatbot), Forecast (time series), Personalize (recommendation), Textract (OCR); บริการ ML: SageMaker (overview, ไม่ต้องลึก); บริการ Generative AI: Amazon Bedrock (Foundation Models, playground, knowledge bases, agents) |
+| Generative AI | 24% | แนวคิดของ Foundation Models (FM), การเลือก FM ที่เหมาะสม (Claude, Titan, Llama, etc.), prompt engineering (zero‑shot, few‑shot, chain‑of‑thought), การปรับแต่งโมเดล (fine‑tuning, RAG), การประเมินผลลัพธ์, การจัดการ hallucination |
+| Responsible AI & Ethics | 14% | ความเป็นธรรม (fairness), ความโปร่งใส (explainability), ความเป็นส่วนตัว (privacy), ความปลอดภัย (safety), การตรวจสอบ bias, การปฏิบัติตามกฎหมาย (GDPR, etc.), AI governance |
+
+### 3. รูปแบบข้อสอบ  
+
+| รายการ | รายละเอียด |
+|--------|-------------|
+| จำนวนข้อ | 65 (รวม 15 ข้อที่ไม่นับคะแนน) |
+| เวลา | 100 นาที (1 ชั่วโมง 40 นาที) |
+| รูปแบบ | Multiple choice, multiple answer |
+| คะแนนผ่าน | 700/1000 (70%) |
+| ค่าสอบ | 100 USD (ราคาเดียวกับ Cloud Practitioner) |
+| ภาษา | อังกฤษ, ญี่ปุ่น, เกาหลี, จีน, (อาจมีภาษาไทยในอนาคต) |
+
+### 4. บริการที่ต้องรู้สำหรับ AIF  
+
+| บริการ | หมวดหมู่ | สิ่งที่ต้องรู้ |
+|--------|----------|----------------|
+| Amazon Bedrock | Generative AI | Foundation models, playground, knowledge base, agents, fine‑tuning, RAG |
+| Amazon Rekognition | Computer Vision | object detection, face recognition, content moderation, celebrity recognition |
+| Amazon Comprehend | NLP | sentiment analysis, entity extraction, key phrases, language detection, PII detection |
+| Amazon Polly | Text‑to‑Speech | สังเคราะห์เสียง, SSML, neural voices |
+| Amazon Transcribe | Speech‑to‑Text | automatic speech recognition (ASR), speaker diarization, custom vocabulary |
+| Amazon Translate | Language Translation | แปลภาษาระหว่างหลายภาษา |
+| Amazon Lex | Conversational AI | chatbot, intent, slot, fulfillment |
+| Amazon Forecast | Time Series | demand forecasting (ไม่ต้องเขียนโมเดล) |
+| Amazon Personalize | Recommendation | real‑time personalization |
+| Amazon Textract | Document OCR | extract text, tables, forms from documents |
+| Amazon SageMaker | ML Platform | สร้าง, train, deploy โมเดล (รู้ concept ไม่ต้องลงรายละเอียด) |
+
+### 5. ตัวอย่างคำถาม (Sample Question)  
+
+**คำถาม:** บริษัทต้องการสร้างแชทบอทสำหรับลูกค้าที่สามารถตอบคำถามจากเอกสารคู่มือสินค้าได้ โดยไม่ต้อง train โมเดลเอง ควรใช้บริการใดของ AWS  
+
+A. Amazon Lex + Amazon Bedrock Knowledge Base  
+B. Amazon Comprehend + Amazon Polly  
+C. Amazon SageMaker + Amazon Rekognition  
+D. Amazon Forecast + Amazon Personalize  
+
+**เฉลย:** A (Lex สำหรับ conversational, Bedrock Knowledge Base สำหรับ RAG จากเอกสาร)  
+
+---
+
+## 🔄 ออกแบบ Workflow (Workflow Design)  
+
+### ภาพรวม: การใช้ Generative AI บน AWS ผ่าน Bedrock (RAG)  
+
+**ไทย:**  
+ผู้ใช้ถามคำถาม → แอป Go เรียก Bedrock หรือ API Gateway → Bedrock Runtime → ถ้าใช้ RAG: query ไปยัง Knowledge Base (vector database) → retrieve documents → ส่ง prompt พร้อมเอกสารไปยัง Foundation Model → สร้างคำตอบ → คืนกลับไปยังผู้ใช้  
+
+**English:**  
+User asks question → Go app calls Bedrock or API Gateway → Bedrock Runtime → if using RAG: query Knowledge Base (vector DB) → retrieve documents → send prompt + documents to Foundation Model → generate answer → return to user.  
+
+### Mermaid Flowchart  
+
+```mermaid
+flowchart LR
+    A[User] --> B[Go App / API Gateway]
+    B --> C[Amazon Bedrock Runtime]
+    C --> D{Need RAG?}
+    D -- Yes --> E[Bedrock Knowledge Base]
+    E --> F[Vector DB<br/>(OpenSearch / Aurora)]
+    F --> G[Retrieve relevant docs]
+    G --> H[FM: Claude / Titan / Llama]
+    D -- No --> H
+    H --> I[Generated answer]
+    I --> B
+    B --> A
+```
+
+### คำอธิบายแบบละเอียด (Detailed Explanation)  
+
+| ขั้นตอน | คำอธิบาย (ไทย) | Explanation (English) |
+|---------|----------------|------------------------|
+| 1 | ผู้ใช้ป้อนคำถามผ่านแอปพลิเคชัน (เว็บหรือมือถือ) | User inputs a question through an application. |
+| 2 | แอป Go ส่ง request ไปยัง Bedrock Runtime API (หรือ API Gateway ข้างหน้า) | Go app sends request to Bedrock Runtime API. |
+| 3 | ถ้าต้องการ RAG (Retrieval Augmented Generation), Bedrock Knowledge Base จะค้นเอกสารที่เกี่ยวข้องจาก vector DB | If RAG is needed, Bedrock Knowledge Base searches relevant documents from vector DB. |
+| 4 | เอกสารที่เกี่ยวข้องจะถูกนำมารวมกับ prompt | Retrieved documents are added to the prompt. |
+| 5 | Foundation Model (Claude, Titan, Llama) สร้างคำตอบ | Foundation Model generates an answer. |
+| 6 | คำตอบถูกส่งกลับไปยังแอปและแสดงแก่ผู้ใช้ | Answer returned to app and displayed to user. |
+
+---
+
+## 💻 ตัวอย่างโค้ดที่รันได้จริง (Runnable Code Example)  
+
+### 1. การเรียก Amazon Bedrock จาก Go (Claude 3) – ทบทวนจากบทที่ 3  
+
+```go
+// bedrock_genai.go
+// เรียก Bedrock เพื่อถามคำถามทั่วไป (ไม่ใช้ RAG)
+// Invoke Bedrock for general question answering (without RAG)
+
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+)
+
+type ClaudeRequest struct {
+	AnthropicVersion string     `json:"anthropic_version"`
+	MaxTokens        int        `json:"max_tokens"`
+	Messages         []Message  `json:"messages"`
+	System           string     `json:"system,omitempty"`
+}
+
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type ClaudeResponse struct {
+	Content []struct {
+		Text string `json:"text"`
+	} `json:"content"`
+}
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := bedrockruntime.NewFromConfig(cfg)
+
+	modelId := "anthropic.claude-3-sonnet-20240229-v1:0"
+	prompt := "อธิบายประโยชน์ของ Generative AI สำหรับธุรกิจขนาดเล็กใน 3 ข้อ"
+
+	reqBody := ClaudeRequest{
+		AnthropicVersion: "bedrock-2023-05-31",
+		MaxTokens:        300,
+		Messages: []Message{
+			{Role: "user", Content: prompt},
+		},
+	}
+	payload, _ := json.Marshal(reqBody)
+
+	resp, err := client.InvokeModel(context.TODO(), &bedrockruntime.InvokeModelInput{
+		ModelId:     &modelId,
+		ContentType: stringPtr("application/json"),
+		Body:        payload,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	var claudeResp ClaudeResponse
+	json.Unmarshal(resp.Body, &claudeResp)
+	fmt.Println("Answer:", claudeResp.Content[0].Text)
+}
+
+func stringPtr(s string) *string { return &s }
+```
+
+### 2. การใช้ Amazon Rekognition จาก Go (ตรวจจับวัตถุในภาพ)  
+
+```go
+// rekognition_detect.go
+// ตรวจจับวัตถุในภาพด้วย Amazon Rekognition
+// Detect objects in an image using Amazon Rekognition
+
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := rekognition.NewFromConfig(cfg)
+
+	// อ่านไฟล์รูปภาพ
+	imagePath := "test.jpg"
+	imageBytes, err := os.ReadFile(imagePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	input := &rekognition.DetectLabelsInput{
+		Image: &types.Image{
+			Bytes: imageBytes,
+		},
+		MaxLabels:     int32Ptr(10),
+		MinConfidence: float32Ptr(70.0),
+	}
+
+	resp, err := client.DetectLabels(context.TODO(), input)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Detected labels:")
+	for _, label := range resp.Labels {
+		fmt.Printf("  %s (confidence: %.2f%%)\n", *label.Name, *label.Confidence)
+	}
+}
+
+func int32Ptr(i int32) *int32 { return &i }
+func float32Ptr(f float32) *float32 { return &f }
+```
+
+### 3. การใช้ Amazon Comprehend จาก Go (วิเคราะห์ sentiment)  
+
+```go
+// comprehend_sentiment.go
+// วิเคราะห์ sentiment ของข้อความด้วย Amazon Comprehend
+// Analyze sentiment of text using Amazon Comprehend
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/comprehend"
+	"github.com/aws/aws-sdk-go-v2/service/comprehend/types"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := comprehend.NewFromConfig(cfg)
+
+	text := "AWS Certified AI Practitioner is a great certification for beginners!"
+	input := &comprehend.DetectSentimentInput{
+		Text:         &text,
+		LanguageCode: types.LanguageCodeEn,
+	}
+
+	resp, err := client.DetectSentiment(context.TODO(), input)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Sentiment: %s\n", resp.Sentiment)
+	fmt.Printf("Confidence: Positive=%.2f, Negative=%.2f, Neutral=%.2f, Mixed=%.2f\n",
+		*resp.SentimentScore.Positive, *resp.SentimentScore.Negative,
+		*resp.SentimentScore.Neutral, *resp.SentimentScore.Mixed)
+}
+```
+
+---
+
+## 📌 กรณีศึกษาและแนวทางแก้ไขปัญหา (Case Study & Troubleshooting)  
+
+### กรณีศึกษา: บริษัทต้องการสรุปบทวิจารณ์สินค้าอัตโนมัติ  
+
+**ปัญหา:** มีรีวิวลูกค้าเป็นแสนรายการ ต้องการสรุป sentiment และ key phrases  
+**แนวทางแก้ไข (ตาม AIF):**  
+- ใช้ Amazon Comprehend (sentiment, key phrases) แทนการทำโมเดลเอง  
+- ถ้าต้องการสรุปแบบ generative: ใช้ Amazon Bedrock (Claude หรือ Titan) + prompt ที่ดี  
+- เก็บผลลัพธ์ใน S3 และแสดง dashboard ด้วย QuickSight  
+**ผลลัพธ์:** ประหยัดเวลา manual review 90%  
+
+### ปัญหาที่พบบ่อยในการสอบ AIF  
+
+| ปัญหา (Issue) | สาเหตุ (Cause) | วิธีแก้ไข (Solution) |
+|----------------|----------------|----------------------|
+| สับสนบริการ AI | บริการคล้ายกัน (Transcribe vs Polly) | Transcribe = speech→text; Polly = text→speech |
+| ไม่เข้าใจ Responsible AI | ไม่รู้จัก bias, hallucination | จำหลัก 5 ด้าน: fairness, explainability, privacy, safety, robustness |
+| เลือก Foundation Model ไม่ถูก | ไม่รู้จุดเด่นของแต่ละรุ่น | Claude (dialog, reasoning), Titan (multilingual, cost‑effective), Llama (open, customizable) |
+| งง prompt engineering terms | zero‑shot vs few‑shot | zero‑shot = ไม่มีตัวอย่าง; few‑shot = มีตัวอย่าง 2-3 ตัวอย่างใน prompt |
+| RAG คืออะไร | Retrieval Augmented Generation | ดึงข้อมูลจาก external knowledge base มาเพิ่มใน prompt เพื่อเพิ่มความถูกต้อง |
+
+---
+
+## 📁 เทมเพลตและตัวอย่างเพิ่มเติม  
+
+### แผนการเตรียมตัว 4 สัปดาห์ (AIF-C01)  
+
+| สัปดาห์ | กิจกรรม |
+|---------|---------|
+| 1 | เรียน AI/ML fundamentals (supervised, unsupervised, evaluation metrics) |
+| 2 | เรียนรู้บริการ AI/ML ของ AWS (Rekognition, Comprehend, Polly, Transcribe, Translate, Lex, Forecast, Personalize, Textract) |
+| 3 | เรียนรู้ Generative AI: Bedrock, Foundation Models, prompt engineering, RAG, fine‑tuning |
+| 4 | เรียนรู้ Responsible AI, ethics, bias, ทำ practice exam, สอบจริง |
+
+### Prompt Engineering Cheat Sheet  
+
+| เทคนิค | คำอธิบาย | ตัวอย่าง |
+|--------|----------|----------|
+| Zero‑shot | ไม่มีตัวอย่าง | "จงสรุปบทความนี้" |
+| Few‑shot | มีตัวอย่าง 2-3 ตัวอย่างใน prompt | "ข้อความ: 'ร้านอาหารนี้ดี' → sentiment: positive; ข้อความ: 'บริการแย่มาก' → sentiment: negative; ข้อความ: 'สินค้าคุณภาพดี' → sentiment:" |
+| Chain‑of‑Thought | ให้ AI แสดงเหตุผลทีละขั้น | "คิดทีละขั้น: สินค้าราคา 100 บาท ลด 20% แล้วบวก VAT 7% ราคาสุทธิเท่าไร" |
+| System prompt | กำหนดบทบาทหรือโทน | "คุณเป็นผู้ช่วยการเงินที่ตอบสั้นและเป็นทางการ" |
+
+---
+
+## 📊 ตารางเปรียบเทียบบริการ AI ตามประเภทข้อมูล  
+
+| ประเภทข้อมูล | บริการ AWS |
+|--------------|-------------|
+| ข้อความ (Text) | Comprehend (NLP), Translate, Bedrock (LLM), Lex |
+| รูปภาพ (Image) | Rekognition (analysis), Textract (OCR), Bedrock (multimodal) |
+| เสียง (Audio) | Transcribe (speech‑to‑text), Polly (text‑to‑speech) |
+| วิดีโอ (Video) | Rekognition (label detection, face, content moderation) |
+| เอกสาร (Document) | Textract (form, table extraction) |
+| อนุกรมเวลา (Time Series) | Forecast |
+| พฤติกรรมผู้ใช้ (User behavior) | Personalize |
+| บทสนทนา (Conversation) | Lex + Bedrock |
+
+---
+
+## 📝 สรุป (Summary)  
+
+### ✅ ประโยชน์ที่ได้รับ (Benefits)  
+- เข้าใจพื้นฐาน AI/ML และ Generative AI  
+- เลือกใช้บริการ AI ของ AWS ได้ถูกต้อง  
+- รู้จัก Responsible AI และการใช้งานอย่างมีจริยธรรม  
+- ใบรับรองราคาไม่แพง (100 USD) เหมาะสำหรับผู้เริ่มต้น  
+
+### ⚠️ ข้อควรระวัง (Cautions)  
+- ไม่ต้องเขียนโค้ดมาก แต่ต้องจำ use case ของแต่ละ service  
+- เนื้อหาใหม่มาก (Generative AI, Bedrock) ต้องอัปเดต  
+- ข้อสอบอาจมี scenario ที่ซับซ้อนสำหรับระดับ foundational  
+
+### 👍 ข้อดี (Advantages)  
+- เป็นใบรับรองใบแรกที่ดีสำหรับสาย AI  
+- ไม่ต้องมีประสบการณ์ ML มาก่อน  
+- ใช้เป็นพื้นฐานก่อนสอบ MLS หรือ AI Specialty อื่น  
+
+### 👎 ข้อเสีย (Disadvantages)  
+- มูลค่าในตลาดงานน้อยกว่า Specialty  
+- เนื้อหาเปลี่ยนเร็วตามเทคโนโลยี AI  
+- ต้อง recertify ทุก 3 ปี  
+
+### 🚫 ข้อห้าม (Prohibitions)  
+- ห้ามใช้ Generative AI สร้างเนื้อหาที่ผิดกฎหมายหรือละเมิดลิขสิทธิ์  
+- ห้ามนำข้อมูลส่วนตัวไปใช้กับ Foundation Model โดยไม่ได้รับ consent  
+- ห้าม deploy AI ที่มี bias โดยไม่ตรวจสอบ  
+
+---
+
+## 🧩 แบบฝึกหัดท้ายบท (Exercises)  
+
+**ข้อ 1:** AIF-C01 มีน้ำหนักของโดเมน "Generative AI" กี่เปอร์เซ็นต์  
+**ข้อ 2:** บริการ AWS ใดที่ใช้สำหรับ text‑to‑speech  
+**ข้อ 3:** Prompt engineering แบบ few‑shot คืออะไร  
+**ข้อ 4:** ข้อใดเป็นหลักการของ Responsible AI (ยกมา 2 ข้อ)  
+**ข้อ 5:** หากต้องการสร้างระบบแนะนำสินค้าแบบ real‑time ควรใช้บริการใด  
+**ข้อ 6:** Foundation Model ของ AWS ที่รองรับหลายภาษาและคุ้มค่าคือรุ่นใด  
+**ข้อ 7:** RAG ย่อมาจากอะไร และช่วยแก้ปัญหาอะไรของ Generative AI  
+**ข้อ 8:** ข้อสอบ AIF-C01 มีจำนวนข้อและเวลาเท่าไร  
+**ข้อ 9:** จงเขียน Go code snippet เพื่อแปลงข้อความเป็นเสียงด้วย Amazon Polly  
+**ข้อ 10:** Hallucination ใน Generative AI คืออะไร และมีวิธีลดได้อย่างไร  
+
+---
+
+## 🔐 เฉลยแบบฝึกหัด (Answer Key)  
+
+**ข้อ 1:** 24%  
+**ข้อ 2:** Amazon Polly  
+**ข้อ 3:** การใส่ตัวอย่าง 2-3 ตัวอย่างใน prompt เพื่อให้ AI เข้าใจรูปแบบที่ต้องการ  
+**ข้อ 4:** Fairness (ความเป็นธรรม), Explainability (อธิบายได้), Privacy (ความเป็นส่วนตัว), Safety (ปลอดภัย), Robustness (ทนทาน) – ข้อใด 2 ข้อ  
+**ข้อ 5:** Amazon Personalize  
+**ข้อ 6:** Amazon Titan (หรือ Titan Text)  
+**ข้อ 7:** Retrieval Augmented Generation – ช่วยลด hallucination และเพิ่มความถูกต้องโดยการดึงข้อมูลจาก external knowledge base  
+**ข้อ 8:** 65 ข้อ, 100 นาที  
+**ข้อ 9:**  
+```go
+func textToSpeech(text string) ([]byte, error) {
+    cfg, _ := config.LoadDefaultConfig(context.TODO())
+    client := polly.NewFromConfig(cfg)
+    resp, err := client.SynthesizeSpeech(context.TODO(), &polly.SynthesizeSpeechInput{
+        Text: &text,
+        OutputFormat: types.OutputFormatMp3,
+        VoiceId: types.VoiceIdJoanna,
+    })
+    if err != nil { return nil, err }
+    return resp.AudioStream, nil
+}
+```  
+**ข้อ 10:** Hallucination คือการที่ AI สร้างข้อมูลที่ผิดหรือไม่มีอยู่จริง วิธีลด: ใช้ RAG, ปรับ prompt ให้เจาะจง, ใช้ temperature ต่ำ, ตรวจสอบกับแหล่งข้อมูลจริง  
+
+---
+
+## 📚 แหล่งอ้างอิง (References)  
+
+1. AWS Official Exam Guide – AIF-C01  
+2. Amazon Bedrock Documentation  
+3. AWS AI Services Overview  
+4. Responsible AI – AWS Whitepaper  
+5. Prompt Engineering Guide – Anthropic / AWS  
+
+---
+
+**✍️ ผู้เขียน:** คงนคร จันทะคุณ  
+**📅 อัปเดตล่าสุด:** เมษายน 2026  
+
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "AWS จากภาคทฤษฎีไปภาคปฏิบัติ" ใช้ AI ช่วยเขียน เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา  
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**
+
+#  ต่อ เล่ม 2
