@@ -110,47 +110,5 @@ createQueryBuilder("user")
 
 * **ESLint Plugin:** `eslint-plugin-security` (ช่วยเตือนเมื่อมีการต่อ String ใน SQL)
 * **SonarQube:** แจ้งเตือนช่องโหว่ "Security Hotspot" อัตโนมัติใน CI Pipeline
-<span style="display:none">[^1][^10][^11][^12][^13][^14][^15][^16][^17][^18][^19][^2][^20][^3][^4][^5][^6][^7][^8][^9]</span>
-
-<div align="center">⁂</div>
-
-[^1]: https://portswigger.net/web-security/sql-injection
-
-[^2]: https://letsdefend.io/blog/how-to-detect-sql-injection
-
-[^3]: https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection
-
-[^4]: https://www.w3schools.com/sql/sql_injection.asp
-
-[^5]: https://onenine.com/5-steps-to-secure-legacy-code-from-sql-injection/
-
-[^6]: https://www.thesmartscanner.com/vulnerability-list/sql-injection-in-typeorm
-
-[^7]: https://www.stackhawk.com/blog/node-js-sql-injection-guide-examples-and-prevention/
-
-[^8]: https://learn.microsoft.com/en-us/sql/relational-databases/security/sql-injection?view=sql-server-ver17
-
-[^9]: https://www.wiz.io/vulnerability-database/cve/cve-2022-33171
-
-[^10]: https://www.w3schools.com/nodejs/nodejs_security.asp
-
-[^11]: https://documentation.wazuh.com/current/proof-of-concept-guide/detect-web-attack-sql-injection.html
-
-[^12]: https://dev.to/yoshi_yoshi/typeorm-prevent-sql-injection-with-node-js-react-typescript-in-2021-1go4
-
-[^13]: https://zerothreat.ai/blog/securing-nodejs-web-app-from-sql-injection-attacks
-
-[^14]: https://www.cobalt.io/learning-center/pentester-guide-to-sql-injection-sqli
-
-[^15]: https://hackerone.com/reports/319458
-
-[^16]: https://alexlaer.hashnode.dev/nodejs-security-unleashed-nosql-injection-attack
-
-[^17]: https://arxiv.org/html/2506.17245v1
-
-[^18]: https://security.snyk.io/vuln/SNYK-JS-TYPEORM-13746469
-
-[^19]: https://stackoverflow.com/questions/15778572/preventing-sql-injection-in-node-js
-
-[^20]: https://exchange.xforce.ibmcloud.com/vulnerabilities/159093
+ 
 
