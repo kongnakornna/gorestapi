@@ -1963,6 +1963,9 @@ flowchart LR
 ---
 **ผู้เขียน:** คงนคร จันทะคุณ  
 **อีเมล:** kongnakornjantakun@gmail.com  
+**Line:** kongnakornna
+![88278](https://github.com/user-attachments/assets/ad5dc390-9ac2-4402-972c-437c8d700bf8)
+
 **วันที่:** เมษายน 2026
 ---
 ** ประวัติของผู้เขียน:**
@@ -2010,7 +2013,6 @@ flowchart LR
 - **การเรียนรู้เร็วและปรับตัวเก่ง** ติดตามเทคโนโลยีใหม่อย่างสม่ำเสมอ และพร้อมนำมาประยุกต์ใช้เมื่อเห็นว่าจะเกิดประโยชน์
 - **ภาวะผู้นำและการทำงานเป็นทีม** ให้คำปรึกษา สนับสนุนสมาชิก และสร้างบรรยากาศที่ทุกคนเติบโตไปด้วยกัน
 
-### สายธารแห่งการเรียนรู้ที่ไม่สิ้นสุด
 
 ความมุ่งมั่นในการพัฒนาตนเองสะท้อนผ่านการเรียนคอร์สออนไลน์มากมาย ตั้งแต่ Data Science, Machine Learning, Docker & Kubernetes ไปจนถึง DevOps และการพัฒนา Full Stack ด้วย Angular & Nest JS รวมถึงการอบรม Business Model Canvas, Design Thinking, Agile & Scrum จาก True Digital Academy และ General Assembly
 
