@@ -1996,6 +1996,7 @@ flowchart LR
 - https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/sulution
 - **ทีมพัฒนา** สามารถนำ Task List Template และ Checklist Template ไปปรับใช้ในการทำงาน
 - https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/Template
+- https://github.com/kongnakornna/gorestapi/blob/main/project_manamet/%E0%B8%84%E0%B8%B9%E0%B9%88%E0%B8%A1%E0%B8%B7-Git-Flow.md
 - **Design Thinking  & Business Model Canvas (BMC) - Design & Implementation Package **
 - https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/DesignThinking
 ---
