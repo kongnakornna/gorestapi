@@ -3,7 +3,7 @@
 
 แผนภาพด้านล่างแสดงกระบวนการทำงานแบบละเอียดของ NestJS API ตั้งแต่รับ HTTP Request จนถึงส่ง Response กลับไปยัง Client โดยผ่าน Middleware, Guards, Interceptors, Pipes, Controller, Service และ Database[^1][^2]
 
-![แผนภาพ Flow Chart แสดงกระบวนการ Request ถึง Response ของ NestJS API - ตั้งแต่การรับ HTTP Request ผ่าน Middleware, Guards, Interceptors, Validation, Controller, Service, Database จนถึงการส่ง Response กลับไปยัง Client](https://ppl-ai-code-interpreter-files.s3.amazonaws.com/web/direct-files/2b884aa2db3bb486bc4cace0ac04c358/23f6364f-b7b1-451a-ae9f-56440b708bc2/70421ecb.png)
+ 
 
 แผนภาพ Flow Chart แสดงกระบวนการ Request ถึง Response ของ NestJS API - ตั้งแต่การรับ HTTP Request ผ่าน Middleware, Guards, Interceptors, Validation, Controller, Service, Database จนถึงการส่ง Response กลับไปยัง Client
 
