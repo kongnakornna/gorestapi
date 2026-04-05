@@ -124,30 +124,36 @@ go mod download
 go mod verify
 go run cmd/api/main.go serve
 
+ ```
 # Auto Run 
+
 air
 
-- for windows 11
-```text
-root = "."
-tmp_dir = "tmp"
-env_files = [".env.dev"]   # โหลด env โดยอัตโนมัติ
+```bash
 
-[build]
-  # ใช้ array: [binary, argument1, argument2, ...]
-  entrypoint = ["./tmp/main.exe", "serve"]
-  cmd = "go build -o ./tmp/main.exe ./cmd/api"
-  env = ["GOOS=windows", "GOARCH=amd64"]
-  clean_on_exit = true
 
-[log]
-  time = true
+- for windows 10
+ 
+ - .air.toml
+ 
+    root = "."
+    tmp_dir = "tmp"
+    env_files = [".env.dev"]   # โหลด env โดยอัตโนมัติ
 
-[misc]
-  clean_on_exit = true
+    [build]
+    # ใช้ array: [binary, argument1, argument2, ...]
+    entrypoint = ["./tmp/main.exe", "serve"]
+    cmd = "go build -o ./tmp/main.exe ./cmd/api"
+    env = ["GOOS=windows", "GOARCH=amd64"]
+    clean_on_exit = true
 
-``` 
+    [log]
+    time = true
 
+    [misc]
+    clean_on_exit = true
+
+ ```
 
 
 ![Icmon5](https://github.com/user-attachments/assets/fa802d05-f4f7-4f60-bab0-897a95cea541)
