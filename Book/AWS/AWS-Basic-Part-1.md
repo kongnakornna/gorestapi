@@ -31,7 +31,7 @@
 | 12 | AWS Certified Solutions Architect – Professional (SAP) | 375 |
 | 13 | AWS Certified Machine Learning – Specialty (MLS) | 405 |
 | 14 | AWS Certified AI Practitioner (AIF) | 435 |
-#  ต่อ เล่ม 2 15 | AWS Certified Advanced Networking – Specialty (ANS) | 460 |
+| ดูต่อ เล่ม 2 15 | AWS Certified Advanced Networking – Specialty (ANS) | 460 |
 | 16 | AWS Certified Data Engineer – Associate (DEA) | 490 |
 | 17 | AWS Certified DevOps Engineer – Professional (DOP) | 520 |
 | ภาคผนวก | เทมเพลต โค้ดตัวอย่าง และเฉลยแบบฝึกหัด | 550 |
