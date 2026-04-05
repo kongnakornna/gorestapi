@@ -1,4 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
+ 
 
 ## วิธีทดสอบ Unit Test สำหรับ Custom Hooks และ Services
 
@@ -854,47 +854,4 @@ await waitFor(() => {
 | **Complexity** | Simple | More complex |
 
 การทดสอบ Services ง่ายกว่าเพราะเป็น pure functions ไม่มี React dependencies  ส่วน Custom Hooks ต้องใช้ `renderHook()` และ `act()` เพื่อจำลอง React environment[^3][^1][^2]
-<span style="display:none">[^10][^11][^12][^13][^14][^15][^16][^17][^18][^19][^20][^4][^5][^6][^7][^8][^9]</span>
-
-<div align="center">⁂</div>
-
-[^1]: https://www.builder.io/blog/test-custom-hooks-react-testing-library
-
-[^2]: https://kentcdodds.com/blog/how-to-test-custom-react-hooks
-
-[^3]: https://www.dhiwise.com/blog/design-converter/testing-library-renderhook-a-quick-start-guide
-
-[^4]: https://dev.to/manuartero/testing-a-custom-hook-like-a-pro-1b19
-
-[^5]: https://stackoverflow.com/questions/67173251/testing-component-with-custom-hook
-
-[^6]: https://tillitsdone.com/blogs/test-custom-hooks-in-react-apps/
-
-[^7]: https://semaphore.io/blog/unit-tests-nodejs-jest
-
-[^8]: https://www.youtube.com/watch?v=Ru4V8yCR6jQ
-
-[^9]: https://blog.appsignal.com/2024/11/27/unit-testing-in-nodejs-with-jest.html
-
-[^10]: https://stackoverflow.com/questions/64287448/react-hook-testing-with-renderhook
-
-[^11]: https://www.csrhymes.com/2022/03/09/mocking-axios-with-jest-and-typescript.html
-
-[^12]: https://stackoverflow.com/questions/45016033/how-do-i-test-axios-in-jest
-
-[^13]: https://jestjs.io/docs/mock-functions
-
-[^14]: https://github.com/axios/axios/issues/6112
-
-[^15]: https://www.browserstack.com/guide/mock-api-calls-in-jest
-
-[^16]: https://www.testim.io/blog/react-testing-library-waitfor/
-
-[^17]: https://github.com/jestjs/jest/issues/2098
-
-[^18]: https://www.maxpou.fr/blog/jest-mock-axios-calls/
-
-[^19]: https://stackoverflow.com/questions/65725591/react-testing-library-how-to-use-waitfor
-
-[^20]: https://stackoverflow.com/questions/32911630/how-do-i-deal-with-localstorage-in-jest-tests
-
+ 
