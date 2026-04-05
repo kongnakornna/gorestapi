@@ -515,28 +515,4 @@ Merge to Main → Tag Version → Deploy to Production
 Merge Release back to Develop → Continue Development
 ```
 
-Git Flow นี้ให้ความสมดุลระหว่าง structure และ flexibility เหมาะสำหรับทีมขนาดกลางถึงใหญ่ที่ต้องการ quality control แต่ยังคงความคล่องตัวในการพัฒนา[^2][^1]
-<span style="display:none">[^10][^8][^9]</span>
-
-<div align="center">⁂</div>
-
-[^1]: https://graphite.com/guides/advanced-git-branching-strategies
-
-[^2]: https://www.harness.io/blog/github-flow-vs-git-flow-whats-the-difference
-
-[^3]: https://www.reddit.com/r/programming/comments/uauari/when_it_comes_to_microservices_do_you_put_each/
-
-[^4]: https://dev.to/koseimori/implementing-continuous-delivery-for-github-monorepos-and-microservices-with-github-actions-50i8
-
-[^5]: https://dev.to/karmpatel/git-branching-strategies-a-comprehensive-guide-24kh
-
-[^6]: https://www.datacamp.com/tutorial/git-branching-strategy-guide
-
-[^7]: https://sandboxtechnology.in/mastering-git-branching-merging-best-practices/
-
-[^8]: https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow
-
-[^9]: https://docs.aws.amazon.com/prescriptive-guidance/latest/choosing-git-branch-approach/git-branching-strategies.html
-
-[^10]: https://www.geeksforgeeks.org/git/git-flow-vs-github-flow/
-
+Git Flow นี้ให้ความสมดุลระหว่าง structure และ flexibility เหมาะสำหรับทีมขนาดกลางถึงใหญ่ที่ต้องการ quality control แต่ยังคงความคล่องตัวในการพัฒนา 
