@@ -157,6 +157,184 @@ air
 | **Usecase** | `internal/usecase/` | Business logic: hash, JWT, email queue, validation |
 | **Delivery** | `internal/delivery/rest/` | HTTP handlers, middleware, DTO, router |
 | **Worker** | `internal/delivery/worker/` | Background job สำหรับส่งอีเมล |
+ 
+### Model คืออะไร?
+Models คือโครงสร้างข้อมูล (struct) ที่แทน entity ในฐานข้อมูล หรือข้อมูลที่ใช้ในการสื่อสารระหว่าง layers (DTO) โดยปกติจะสอดคล้องกับตารางใน PostgreSQL และใช้ GORM tags สำหรับ mapping
+
+### มีกี่แบบ?
+1. **Entity Model** – สอดคล้องกับตาราง DB โดยตรง (user, session)
+2. **DTO (Data Transfer Object)** – ใช้รับ/ส่งข้อมูลระหว่าง API (Request/Response)
+3. **Embedded Model** – struct ที่ถูกแทรกใน model อื่น (เช่น BaseModel)
+4. **Enum-like Model** – ใช้ iota สำหรับ status constants
+
+### ใช้อย่างไร / นำไปใช้กรณีไหน
+- ใช้ GORM annotations (`gorm:"column:name;type:..."`) เพื่อกำหนด schema
+- ใช้ JSON tags (`json:"field_name"`) สำหรับ serialization
+- ใช้ Validator tags (`validate:"required,email"`) สำหรับ input validation
+
+### ทำไมต้องใช้
+- จัดระเบียบโครงสร้างข้อมูลให้เป็นหนึ่งเดียว
+- ช่วยให้ GORM สร้างตารางอัตโนมัติ (AutoMigrate)
+- แยก business entity ออกจาก database details
+
+### ประโยชน์ที่ได้รับ
+- Type safety ใน Go (ไม่ต้องใช้ map[string]interface{})
+- ลด boilerplate code สำหรับ CRUD
+- รองรับความสัมพันธ์ระหว่างตาราง (Relationships: BelongsTo, HasMany)
+
+### Boilerplate คือ โค้ดหรือข้อความรูปแบบมาตรฐานที่สามารถนำกลับมาใช้ใหม่ได้หลายครั้งโดยมีการเปลี่ยนแปลงแก้ไขน้อยมากหรือไม่มีเลย 
+- มีวัตถุประสงค์หลักเพื่อลดเวลาในการทำงานซ้ำซ้อน เพิ่มมาตรฐานให้กับชิ้นงาน และช่วยให้โครงสร้างไฟล์เริ่มต้นเป็นระเบียบ เช่น โครงสร้างพื้นฐานของ HTML หรือการตั้งค่าเริ่มต้นในโปรเจกต์ซอฟต์แวร์ Amazon Web Services
+- จุดเด่นและประโยชน์ของ Boilerplate:
+- ความรวดเร็ว: ไม่ต้องเสียเวลาเขียนโค้ดตั้งต้นใหม่ทุกครั้ง
+- มาตรฐาน: สร้างความสม่ำเสมอในโค้ดหรือเอกสาร
+- ลดข้อผิดพลาด: เนื่องจากใช้โค้ดที่ผ่านการตรวจสอบมาแล้ว
+
+### ข้อควรระวัง
+- ห้ามเก็บ password plain text (ต้อง hashed)
+- ใช้ pointer type สำหรับ nullable fields (`*time.Time` แทน `time.Time`)
+- ระวัง zero values (0, "", false) vs null
+
+### ข้อดี
+- ชัดเจน, ตรวจสอบได้ตอน compile
+- รองรับ GORM hooks (BeforeCreate, AfterUpdate)
+
+### ข้อเสีย
+- ต้องเปลี่ยนแปลง struct เมื่อ schema เปลี่ยน
+- อาจมีหลาย struct ที่คล้ายกัน (entity vs response DTO)
+
+### ข้อห้าม
+- ห้ามใช้ model สำหรับ business logic (ควรอยู่ใน usecase)
+- ห้าม serialize model ที่มี password ไปเป็น JSON
+
+
+### Repository คืออะไร?
+Repository Pattern คือตัวกลาง (abstraction) ระหว่าง business logic (usecase) และแหล่งข้อมูล (database, cache, external API) โดยกำหนด interface สำหรับการเข้าถึงข้อมูล และมี implementation ที่เป็นรูปธรรม (PostgreSQL, Redis) แยกออกจากกัน
+
+### มีกี่แบบ?
+1. **Specific Repository** – แต่ละ entity มี interface ของตัวเอง (UserRepository, SessionRepository) – ใช้ในโปรเจกต์นี้
+2. **Generic Repository** – interface เดียวที่ใช้กับ entity ใดก็ได้ (ใช้ reflection หรือ interface{})
+3. **Transaction Repository** – repository ที่มี method สำหรับ transaction (Begin, Commit, Rollback)
+4. **Cached Repository** – decorator ที่เพิ่ม cache layer ให้กับ repository หลัก
+
+### ใช้อย่างไร / นำไปใช้กรณีไหน
+- ใช้ interface เพื่อกำหนด method ที่ usecase จะเรียก
+- implementation จริงใช้ GORM สำหรับ PostgreSQL และ go-redis สำหรับ Redis
+- usecase ไม่รู้ว่าข้อมูลมาจาก DB หรือ Cache
+- เหมาะกับระบบที่ต้องเปลี่ยนแหล่งข้อมูลบ่อย หรือต้องการ mock สำหรับ unit test
+
+### ทำไมต้องใช้
+- แยก business logic ออกจาก data access code
+- ทดสอบ usecase ได้ง่ายโดยใช้ mock repository
+- สามารถเปลี่ยนจาก PostgreSQL เป็น MongoDB ได้โดยไม่ต้องแก้ usecase
+
+### ประโยชน์ที่ได้รับ
+- ลด dependency coupling
+- โค้ดสะอาดขึ้น (Clean Architecture)
+- รองรับ caching, logging, monitoring ได้โดยไม่แก้ usecase
+
+### ข้อควรระวัง
+- repository ควรคืนค่าเป็น model ของ domain (internal/models) ไม่ใช่ DTO
+- repository ไม่ควรมี business logic (เช่น การตรวจสอบว่า email ซ้ำ ควรอยู่ใน usecase)
+- ระวังเรื่อง transaction: ถ้าต้องการ atomic operation ควรส่ง transaction object (`*gorm.DB`) เข้าไปใน method
+
+### ข้อดี
+- ทดสอบง่าย, เปลี่ยนแหล่งข้อมูลได้, แยกความรับผิดชอบชัดเจน
+
+### ข้อเสีย
+- มีโค้ดเพิ่มขึ้น (interface + implementation หลายตัว)
+- อาจเพิ่มความซับซ้อนในโปรเจกต์เล็ก
+
+### ข้อห้าม
+- ห้ามเรียก repository โดยตรงจาก handler (ต้องผ่าน usecase)
+- ห้ามใช้ repository ใน repository อื่น (ควรใช้ service หรือ usecase แทน)
+- ห้ามใส่ context ลงใน struct repository (ควรส่งผ่าน method argument)
+
+### Usecase คืออะไร?
+Usecase (หรือ Service layer) คือชั้นที่บรรจุ **business logic** ของแอปพลิเคชัน ทำหน้าที่ประสานงานระหว่าง repository ต่างๆ ตรวจสอบกฎทางธุรกิจ และแปลงข้อมูลจากรูปแบบของ repository ให้เป็นรูปแบบที่ delivery (handler) ต้องการ โดย usecase **ไม่รู้** ว่า repository ใช้ PostgreSQL หรือ Redis หรือ external API
+
+### มีกี่แบบ?
+1. **Specific Usecase** – แต่ละฟีเจอร์มี usecase ของตัวเอง (AuthUsecase, UserUsecase) – ใช้ในโปรเจกต์นี้
+2. **Generic Usecase** – ใช้ interface เดียวกันกับหลาย entity (ไม่ค่อยพบใน Go)
+3. **Command/Query Segregation** – แยก Usecase สำหรับการแก้ไขข้อมูล (Command) และการอ่านข้อมูล (Query)
+4. **Domain Service** – เมื่อ logic ซับซ้อนและเกี่ยวข้องกับหลาย entity
+
+### ใช้อย่างไร / นำไปใช้กรณีไหน
+- ใช้ใน handler: `authUsecase.Login(ctx, email, password)` 
+- usecase จะเรียก repository method ต่างๆ และอาจเรียกใช้ transaction manager
+- คืนค่า business result หรือ error (ไม่คืน HTTP status code)
+
+### ทำไมต้องใช้
+- ป้องกัน business logic กระจายอยู่ใน handler หรือ repository
+- ทำให้ทดสอบ business logic ได้โดยไม่ต้องมี HTTP request หรือ database จริง (ใช้ mock repository)
+- สอดคล้องกับ Clean Architecture
+
+### ประโยชน์ที่ได้รับ
+- เปลี่ยน business logic ได้โดยไม่กระทบ delivery (handler) และ repository
+- รองรับการ reuse logic (handler เดียวกันใช้ usecase เดียว)
+- ง่ายต่อการเพิ่ม logging, tracing, metrics ในชั้นเดียว
+
+### ข้อควรระวัง
+- usecase **ห้าม** import package `net/http` หรือ `gin/chi` เพราะจะทำให้ coupling กับ delivery
+- usecase **ห้าม** ส่งออก HTTP status code หรือ JSON
+- ควรใช้ interface สำหรับ usecase เพื่อให้ handler มองเห็นแค่ method ที่จำเป็น
+
+### ข้อดี
+- แยก business logic ชัดเจน
+- ทดสอบ unit ได้ง่าย (ใช้ mock)
+- ปรับเปลี่ยน flow ได้โดยไม่แก้ handler
+
+### ข้อเสีย
+- เพิ่ม layer ทำให้มีไฟล์มากขึ้น
+- มือใหม่อาจเข้าใจยากว่าควรใส่ logic ตรงไหน (repository หรือ usecase)
+
+### ข้อห้าม
+- ห้ามเรียก handler โดยตรงจาก usecase
+- ห้ามใช้ `*gorm.DB` ใน usecase (ใช้ repository interface แทน)
+- ห้ามใช้ context เพื่อส่งค่าที่ไม่เกี่ยวกับ request (ใช้ argument ปกติ)
+
+---
+### Delivery คืออะไร?
+Delivery layer เป็นชั้นที่อยู่ด้านนอกสุดของ Clean Architecture ทำหน้าที่รับ request จากผู้ใช้ (HTTP, gRPC, CLI) แปลงข้อมูล, เรียกใช้ usecase, และส่ง response กลับ โดยไม่มีการประมวลผลทางธุรกิจใดๆ
+
+### มีกี่แบบ?
+1. **HTTP/REST handlers** – รับ JSON, เรียก usecase, ส่ง JSON response
+2. **Middleware** – ทำงานก่อน/หลัง handlers (authentication, logging, CORS, rate limiting)
+3. **WebSocket handlers** – จัดการ real-time connections
+4. **gRPC services** – สำหรับ internal microservices
+5. **CLI commands** – สำหรับ admin tasks (migrate, seed)
+
+### ใช้อย่างไร / นำไปใช้กรณีไหน
+- Handler: แปลง HTTP request → usecase input, usecase output → HTTP response
+- Middleware: ตรวจสอบ token, log request, จำกัด rate, เพิ่ม security headers
+- DTO: กำหนดโครงสร้าง JSON request/response (แยกจาก entity model)
+- Router: จับคู่ path กับ handler และ middleware
+
+### ทำไมต้องใช้
+- แยกการรับ/ส่งข้อมูลออกจาก business logic
+- เปลี่ยนจาก REST เป็น GraphQL ได้โดยไม่ต้องแก้ usecase
+- จัดการ cross-cutting concerns (logging, auth) เป็น centralized
+
+### ประโยชน์ที่ได้รับ
+- เปลี่ยนรูปแบบ API (REST → gRPC) โดยไม่กระทบ usecase
+- ทดสอบ handler แบบ integration ได้ง่าย
+- middleware reuse
+
+### ข้อควรระวัง
+- handler ควรสั้น (แค่ binding, validation, call usecase, response)
+- อย่าใส่ business logic ใน handler
+- DTO ควรแยกจาก entity model เพื่อป้องกันข้อมูล泄露 (password hash)
+
+### ข้อดี
+- แยกชัดเจน, ยืดหยุ่น, middleware จัดการ统一
+
+### ข้อเสีย
+- มีไฟล์จำนวนมาก (handler, dto, middleware แต่ละตัว)
+- อาจมีการ mapping ซ้ำซ้อน (entity → dto)
+
+### ข้อห้าม
+- ห้ามเรียก repository โดยตรงจาก handler
+- ห้ามทำ business logic (if-else ที่เกี่ยวกับธุรกิจ) ใน handler
+- ห้ามใช้ entity model เป็น request DTO ถ้ามี field ที่ไม่ต้องการให้ client ส่งมา
 
 ### โฟลเดอร์หลัก (ย่อ)
 
