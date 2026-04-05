@@ -1,5 +1,11 @@
 # Go Restful API 
 
+**หมายเหตุ เนื้อหาในหนังสือ:**  
+เนื้อหาในหนังสือ "ใช้ AI ช่วยเขียน  เพื่อทดสอบ AI Model ผู้เขียนเป็นผู้ออกแบบ ใช้ AI ช่วยจัดเรียง ซึ่งมีค่าใช้จ่ายพอสมควร ให้ใช้ฟรีก่อน ต้องการสนับสนุนเพื่อทำเนื้อหาแนวนี้ต่อ สามารถให้การสนับสนุนได้ครับ ตามกำลังศรัทธา 
+📞 โทรศัพท์ / พร้อมเพย์: **0955088091**  
+- Code ใช้งานได้จริง
+---
+
 An API dev written in Golang with chi-route and Gorm. Write restful API with fast development and developer friendly.
 
 ## Architecture
