@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"gorestapi/config"
-	"gorestapi/internal/models"
-	"gorestapi/pkg/db/postgres"
-	"gorestapi/pkg/logger"
+	"icmongolang/config"
+	"icmongolang/internal/models"
+	"icmongolang/pkg/db/postgres"
+	"icmongolang/pkg/logger"
 
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
