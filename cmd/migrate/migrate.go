@@ -29,7 +29,6 @@ var migrateCmd = &cobra.Command{
 		}
 
 		err = Migrate(psqlDB)
-
 		if err != nil {
 			appLogger.Info("Can not migrate data - ไม่สามารถ migrate ข้อมูลได้")
 		} else {
@@ -39,13 +38,8 @@ var migrateCmd = &cobra.Command{
 }
 
 func Migrate(db *gorm.DB) error {
-	var migrationModels = []interface{}{&models.User{}, &models.Item{}}
-
-	err := db.AutoMigrate(migrationModels...)
-	if err != nil {
-		return err
-	}
-	return nil
+	migrationModels := []interface{}{&models.User{}, &models.Item{}}
+	return db.AutoMigrate(migrationModels...)
 }
 
 func init() {

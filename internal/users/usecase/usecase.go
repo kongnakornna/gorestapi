@@ -514,3 +514,51 @@ func (u *userUseCase) GenerateRedisUserKey(id uuid.UUID) string {
 func (u *userUseCase) GenerateRedisRefreshTokenKey(id uuid.UUID) string {
 	return fmt.Sprintf("RefreshToken:%s", id.String())
 }
+
+// ResendVerification ส่งอีเมลยืนยันใหม่
+// ResendVerification sends a new verification email
+func (u *userUseCase) ResendVerification(ctx context.Context, email string) error {
+	user, err := u.pgRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return httpErrors.ErrNotFound(err)
+	}
+	if user.Verified {
+		return httpErrors.ErrUserAlreadyVerified(errors.New("user already verified"))
+	}
+
+	// สร้าง verification code ใหม่
+	verificationCode, err := secureRandom.RandomHex(16)
+	if err != nil {
+		return err
+	}
+
+	// อัปเดต verification code ในฐานข้อมูล
+	_, err = u.pgRepo.UpdateVerificationCode(ctx, user, verificationCode)
+	if err != nil {
+		return err
+	}
+
+	// ลบ cache เก่า
+	_ = u.redisRepo.Delete(ctx, u.GenerateRedisUserKey(user.Id))
+
+	// สร้าง template อีเมล
+	bodyHtml, bodyPlain, err := u.emailTemplateGenerator.GenerateVerificationCodeTemplate(
+		ctx,
+		user.Name,
+		fmt.Sprintf("http://localhost:8088/auth/verify-email?code=%s", verificationCode),
+	)
+	if err != nil {
+		return err
+	}
+
+	// ส่ง task ไปยัง worker
+	err = u.redisTaskDistributor.DistributeTaskSendEmail(ctx, &users.PayloadSendEmail{
+		From:      u.Cfg.Email.From,
+		To:        user.Email,
+		Subject:   u.Cfg.Email.VerificationSubject,
+		BodyHtml:  bodyHtml,
+		BodyPlain: bodyPlain,
+	}, asynq.MaxRetry(10), asynq.Queue(worker.QueueCritical))
+
+	return err
+}

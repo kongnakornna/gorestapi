@@ -26,4 +26,5 @@ type UserUseCaseI interface {
 	Verify(ctx context.Context, verificationCode string) error
 	ForgotPassword(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, resetToken string, newPassword string, confirmPassword string) error
+	ResendVerification(ctx context.Context, email string) error
 }

@@ -124,6 +124,9 @@ go mod download
 go mod verify
 go run cmd/api/main.go serve
 
+ # update db
+ go run cmd/api/main.go migrate
+
  ```
 # Auto Run 
 
