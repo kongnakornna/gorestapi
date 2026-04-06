@@ -729,9 +729,9 @@ func SetupRoutes() *chi.Mux {
 
 ---
 
-### โฟลเดอร์หลัก  icmongolang
+### โฟลเดอร์หลัก  gorestapi
 ```
-icmongolang/
+gorestapi/
 ├── .vscode/
 │   ├── launch.json
 │   └── settings.json
@@ -833,11 +833,11 @@ icmongolang/
 └── BookGolang.md
 ```
 
-# คำอธิบายการทำงานตามโครงสร้าง `icmongolang`
+# คำอธิบายการทำงานตามโครงสร้าง `gorestapi`
 
 ## 1. โครงสร้างนี้คืออะไร?
 
-โครงสร้าง `icmongolang` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
+โครงสร้าง `gorestapi` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
 
 - **Model Layer** (`internal/models/`) – กำหนดโครงสร้างข้อมูล (entity) ที่สอดคล้องกับฐานข้อมูล
 - **Repository Layer** (`internal/repository/`) – ติดต่อฐานข้อมูลและ Redis โดยใช้ interface

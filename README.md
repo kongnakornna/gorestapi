@@ -118,7 +118,7 @@ git clone github.com/kongnakornna/gorestapi.git
 cd gorestapi
 ```
 ```bash
-
+go clean 
 go mod tidy
 go mod download
 go mod verify
@@ -1678,7 +1678,7 @@ flowchart TB
 
 ![87796](https://github.com/user-attachments/assets/548e4d80-9f48-4293-9b41-e5c3ce1627b9)
 
-# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `icmongolang`  
+# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapi`  
 ## ตัวอย่าง: เพิ่ม Module **Monitoring & Auto Control** (ระบบเฝ้าระวังภัย, แจ้งเตือน, ควบคุมอัตโนมัติ, รายงาน)
 
 จาก Requirement **CMON IoT Solution** (Monitoring, Smart Building, Smart Farm, ฯลฯ)  
@@ -1986,7 +1986,7 @@ flowchart LR
 
 ---
 
-**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `icmongolang` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
+**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapi` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
 
 ### การนำ Template ไปใช้
 
