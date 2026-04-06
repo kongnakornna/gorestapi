@@ -1235,7 +1235,11 @@ flowchart TB
 การเพิ่ม module ใหม่จะไม่ต้องแก้ไข `auth` หรือ `users` module ยกเว้นต้องเพิ่มความสัมพันธ์ (foreign key) เช่น Device มี UserID เป็นต้น
 
 
+<<<<<<< HEAD
 # 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapi`  
+=======
+# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapig`  
+>>>>>>> dev
 ## ตัวอย่าง: เพิ่ม Module **Monitoring & Auto Control** (ระบบเฝ้าระวังภัย, แจ้งเตือน, ควบคุมอัตโนมัติ, รายงาน)
 
 จาก Requirement **CMON IoT Solution** (Monitoring, Smart Building, Smart Farm, ฯลฯ)  
@@ -1542,4 +1546,8 @@ flowchart LR
 
 ---
 
+<<<<<<< HEAD
 **หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapi` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
+=======
+**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapig` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
+>>>>>>> dev

@@ -729,9 +729,15 @@ func SetupRoutes() *chi.Mux {
 
 ---
 
+<<<<<<< HEAD
 ### โฟลเดอร์หลัก  gorestapi
 ```
 gorestapi/
+=======
+### โฟลเดอร์หลัก  gorestapig
+```
+gorestapig/
+>>>>>>> dev
 ├── .vscode/
 │   ├── launch.json
 │   └── settings.json
@@ -833,11 +839,19 @@ gorestapi/
 └── BookGolang.md
 ```
 
+<<<<<<< HEAD
 # คำอธิบายการทำงานตามโครงสร้าง `gorestapi`
 
 ## 1. โครงสร้างนี้คืออะไร?
 
 โครงสร้าง `gorestapi` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
+=======
+# คำอธิบายการทำงานตามโครงสร้าง `gorestapig`
+
+## 1. โครงสร้างนี้คืออะไร?
+
+โครงสร้าง `gorestapig` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
+>>>>>>> dev
 
 - **Model Layer** (`internal/models/`) – กำหนดโครงสร้างข้อมูล (entity) ที่สอดคล้องกับฐานข้อมูล
 - **Repository Layer** (`internal/repository/`) – ติดต่อฐานข้อมูลและ Redis โดยใช้ interface
