@@ -118,11 +118,8 @@ git clone github.com/kongnakornna/gorestapi.git
 cd gorestapi
 ```
 ```bash
-<<<<<<< HEAD
+
 go clean 
-=======
-go clean
->>>>>>> dev
 go mod tidy
 go mod download
 go mod verify
