@@ -55,10 +55,21 @@ In this project use 3 layer architecture
 
 ### Run
 - `docker-compose up`
-- OR  go run cmd/api/main.go serve  on loca Windows OS
-- Swagger: [localhost:5000/swagger/](http://localhost:5000/swagger/)
-- http://localhost:5000/swagger/index.html#/
+- OR  go run ./main.go serve  on loca Windows OS
+- Swagger: [localhost:8088/swagger/](http://localhost:8088/swagger/)
+- http://localhost:8088/swagger/index.html#/
 
+### monitoring
+
+- http://localhost:8088/monitoring/health
+- http://localhost:8088/monitoring/metrics
+- http://localhost:8088/monitoring/system
+
+### curl
+curl http://localhost:8088/monitoring/health
+curl http://localhost:8088/monitoring/metrics
+curl http://localhost:8088/monitoring/system
+ 
 ```bash
   Email: root@gmail.com
   Password: root_password
@@ -95,13 +106,13 @@ In this project use 3 layer architecture
 
 ```bash
 - ตรวจสอบว่า go.mod มี replace directive หรือใช้ local module หรือไม่
-- ถ้า gorestapi เป็น local module ให้ใช้ replace gorestapi => gorestapi
+- ถ้า icmongolang เป็น local module ให้ใช้ replace icmongolang => icmongolang
 - หรือถ้าเป็น private repo ให้ตั้ง GOPRIVATE และใช้ access token
-- Perfect! You're setting up an existing Go project (gorestapi). Here's how to properly set it up and run it:
+- Perfect! You're setting up an existing Go project (icmongolang). Here's how to properly set it up and run it:
 ```bash
-## Complete Setup Steps for Your gorestapi Project
-## 📘 การจัดการ `go.mod` และ dependencies สำหรับโปรเจกต์ `gorestapi`  
-## 📘 Managing `go.mod` and dependencies for `gorestapi` project
+## Complete Setup Steps for Your icmongolang Project
+## 📘 การจัดการ `go.mod` และ dependencies สำหรับโปรเจกต์ `icmongolang`  
+## 📘 Managing `go.mod` and dependencies for `icmongolang` project
 
 > คำแนะนำแบบทีละขั้นตอน (ไทย / อังกฤษ)  
 > Step-by-step guide (Thai / English)
@@ -114,18 +125,27 @@ In this project use 3 layer architecture
 ```bash
 # ไทย: โคลน repository จาก GitHub และเปลี่ยนไปยังไดเรกทอรีโปรเจกต์
 # EN: Clone the repository from GitHub and change into the project directory
-git clone github.com/kongnakornna/gorestapi.git
-cd gorestapi
+git clone github.com/kongnakornna/icmongolang.git
+cd icmongolang
 ```
 ```bash
-go clean
+
 go mod tidy
 go mod download
 go mod verify
-go run cmd/api/main.go serve
 
- # update db
- go run cmd/api/main.go migrate
+# ล้างฐานข้อมูลเก่า (ระวังข้อมูล)
+# go run cmd/api/main.go migrate:reset (ถ้ามีคำสั่ง)
+
+# รัน migrate ใหม่
+go run  main.go migrate
+
+
+go run ./main.go serve
+
+OR ใช้ go run โดยตรง (ไม่ต้อง build exe)
+
+go run ./cmd/api/main.go serve
 
  ```
 # Auto Run 
@@ -161,7 +181,7 @@ air
 
 ![Icmon5](https://github.com/user-attachments/assets/fa802d05-f4f7-4f60-bab0-897a95cea541)
 
-# 🚀 โครงสร้างและ Workflow ของโปรเจกต์ `gorestapi` (Go Backend Clean Architecture)
+# 🚀 โครงสร้างและ Workflow ของโปรเจกต์ `icmongolang` (Go Backend Clean Architecture)
 
 เอกสารนี้  ประกอบด้วย  
 - โครงสร้างการทำงานแบบละเอียด  
@@ -595,7 +615,7 @@ Worker ใน Go เป็น **concurrency pattern ที่ใช้ goroutine
 ### โฟลเดอร์หลัก (ย่อ)
 
 ```
-gorestapi/
+icmongolang/
 ├── cmd/                     # Cobra CLI (serve, migrate, initdata, worker)
 ├── config/                  # Viper config (YAML + env)
 ├── internal/                # โค้ดส่วนตัว (ไม่ถูก import จากภายนอก)
@@ -1027,16 +1047,16 @@ go run cmd/api/main.go migrate
 go run cmd/api/main.go worker
 
 # 6. รัน HTTP server (หรือใช้ air เพื่อ hot-reload)
-go run cmd/api/main.go serve
+go run ./main.go serve
 # หรือ
 air -c .air.toml
 
 # 7. ทดสอบ API
-curl -X POST http://localhost:5000/api/v1/register \
+curl -X POST http://localhost:8088/api/v1/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"P@ssw0rd","name":"Test User"}'
 
-curl -X POST http://localhost:5000/api/v1/login \
+curl -X POST http://localhost:8088/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"P@ssw0rd"}'
 ```
@@ -1106,118 +1126,15 @@ curl -X POST http://localhost:5000/api/v1/login \
 
 ---
 
-> **หมายเหตุ**: ตัวอย่างโค้ดทั้งหมดอยู่ใน namespace `yourmodule` – คุณควรเปลี่ยนเป็น `gorestapi` ตามชื่อโปรเจกต์จริง และต้องติดตั้ง dependencies ด้วย `go mod tidy` ก่อนรัน
+> **หมายเหตุ**: ตัวอย่างโค้ดทั้งหมดอยู่ใน namespace `yourmodule` – คุณควรเปลี่ยนเป็น `icmongolang` ตามชื่อโปรเจกต์จริง และต้องติดตั้ง dependencies ด้วย `go mod tidy` ก่อนรัน
 
 
-### โฟลเดอร์หลัก  gorestapi
-```
-gorestapi/
-├── .vscode/
-│   ├── launch.json
-│   └── settings.json
-├── cmd/
-│   ├── api/
-│   │   └── main.go
-│   ├── initdata.go
-│   ├── migrate.go
-│   ├── root.go
-│   ├── serve.go
-│   └── worker.go
-├── config/
-│   ├── config-local.yml
-│   ├── config-prod.yml
-│   └── config.go
-├── docdev/
-├── docs/
-├── internal/
-│   ├── models/
-│   │   ├── base.go
-│   │   ├── session.go
-│   │   ├── user.go
-│   │   └── verification.go
-│   ├── repository/
-│   │   ├── pg_repository.go
-│   │   ├── redis_repo.go
-│   │   ├── session_repo.go
-│   │   └── user_repo.go
-│   ├── usecase/
-│   │   ├── auth_usecase.go
-│   │   ├── cache_usecase.go
-│   │   └── user_usecase.go
-│   ├── delivery/
-│   │   ├── rest/
-│   │   │   ├── handler/
-│   │   │   │   ├── auth_handler.go
-│   │   │   │   ├── health_handler.go
-│   │   │   │   └── user_handler.go
-│   │   │   ├── middleware/
-│   │   │   │   ├── auth.go
-│   │   │   │   ├── cors.go
-│   │   │   │   ├── logger.go
-│   │   │   │   ├── monitoring.go
-│   │   │   │   ├── rate_limit.go
-│   │   │   │   └── security.go
-│   │   │   ├── dto/
-│   │   │   │   ├── auth_dto.go
-│   │   │   │   ├── error_dto.go
-│   │   │   │   └── user_dto.go
-│   │   │   └── router.go
-│   │   └── worker/
-│   │       └── email_worker.go
-│   └── pkg/
-│       ├── email/
-│       │   ├── gomail_sender.go
-│       │   ├── sender.go
-│       │   └── templates/
-│       │       ├── reset_password.html
-│       │       └── verification.html
-│       ├── hash/
-│       │   └── bcrypt.go
-│       ├── jwt/
-│       │   ├── maker.go
-│       │   ├── payload.go
-│       │   └── rsa_maker.go
-│       ├── logger/
-│       │   └── zap_logger.go
-│       ├── redis/
-│       │   ├── cache.go
-│       │   ├── client.go
-│       │   └── refresh_store.go
-│       ├── utils/
-│       │   ├── random.go
-│       │   └── time.go
-│       └── validator/
-│           └── custom_validator.go
-├── migrations/
-│   ├── 000001_create_users_table.down.sql
-│   └── 000001_create_users_table.up.sql
-├── pkg/
-│   └── utils/
-├── scripts/
-│   ├── build.sh
-│   └── deploy.sh
-├── vendor/
-├── .air.toml
-├── .dockerignore
-├── .env.dev
-├── .env.prod
-├── .gitignore
-├── docker-compose.dev.yml
-├── docker-compose.prod.yml
-├── Dockerfile.dev
-├── Dockerfile.prod
-├── go.mod
-├── go.sum
-├── LICENSE
-├── README.md
-└── BookGolang.md
-```
 
-# คำอธิบายการทำงานตามโครงสร้าง `gorestapi`
+# คำอธิบายการทำงานตามโครงสร้าง `icmongolang`
 
 ## 1. โครงสร้างนี้คืออะไร?
 
-โครงสร้าง `gorestapi` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
+โครงสร้าง `icmongolang` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
 
 - **Model Layer** (`internal/models/`) – กำหนดโครงสร้างข้อมูล (entity) ที่สอดคล้องกับฐานข้อมูล
 - **Repository Layer** (`internal/repository/`) – ติดต่อฐานข้อมูลและ Redis โดยใช้ interface
@@ -1411,7 +1328,7 @@ flowchart LR
 
 ![Icmon3](https://github.com/user-attachments/assets/cbb342e0-2e51-47c6-b755-40a58dc3f59f)
 
-# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapi`  
+# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `icmongolang`  
 ## ตัวอย่าง: เพิ่ม Module IoT (ระบบสั่งซื้อน้ำออนไลน์ + GPS Tracking + MQTT + Queue Processor)
 
 โครงสร้างเดิมเป็น Clean Architecture ที่แยก Model → Repository → Usecase → Delivery อย่างชัดเจน การเพิ่ม module ใหม่จะทำแบบ **Modular** โดยไม่กระทบ module เดิม (auth, users)
@@ -1548,459 +1465,19 @@ func (r *Router) SetupIotRoutes(deviceHandler *handler.DeviceHandler, authMiddle
 - ใส่ annotation ใน handler เพื่อให้ `swag` สร้าง docs
 - รัน `swag init` แล้วทดสอบที่ `/swagger/index.html`
 
----
-
-## 2. ออกแบบ Workflow (Flowchart)
-
-### 2.1 Workflow การสั่งซื้อน้ำออนไลน์ (Water Order)
-
-```mermaid
-flowchart TB
-    A[User ผ่าน Mobile App] --> B[POST /api/v1/devices/{id}/orders]
-    B --> C[Device Handler]
-    C --> D[IotUsecase.CreateWaterOrder]
-    D --> E[WaterOrderRepo.Create -> status=pending]
-    E --> F[Enqueue order job ไปยัง Redis Stream]
-    F --> G[Order Worker (background)]
-    G --> H[Dequeue job]
-    H --> I[Publish MQTT command to device topic]
-    I --> J[Device ตอบกลับผ่าน MQTT]
-    J --> K[Update order status -> completed/failed]
-    K --> L[Notify user via WebSocket/Email (optional)]
-```
-
-### 2.2 Workflow การรับ GPS แบบ Real-time ผ่าน MQTT
-
-```mermaid
-flowchart LR
-    A[IoT Device] -- MQTT publish --> B[MQTT Broker (Mosquitto)]
-    B -- subscribe --> C[MQTT Subscriber (Go routine)]
-    C --> D[GpsUsecase.UpdateGpsLocation]
-    D --> E[เก็บตำแหน่งล่าสุดใน Redis]
-    D --> F[เก็บประวัติใน PostgreSQL]
-    E --> G[REST API: GET /devices/{id}/gps/latest]
-    F --> H[REST API: GET /devices/{id}/gps/history]
-```
-
-### 2.3 Workflow การควบคุมอุปกรณ์ผ่าน MQTT (สั่งเปิด/ปิด)
-
-```mermaid
-flowchart TB
-    A[User] --> B[POST /api/v1/devices/{id}/command]
-    B --> C[Device Handler]
-    C --> D[IotUsecase.SendCommand]
-    D --> E[MQTT Publisher]
-    E --> F[Mosquitto]
-    F --> G[Device]
-    G -- response MQTT --> H[Subscriber]
-    H --> I[Usecase.LogCommandResult]
-    I --> J[Response 200 OK to user]
-```
-
----
-
-## 3. ประโยชน์ที่ได้รับ
-
-| ด้าน | ประโยชน์ |
-|------|----------|
-| **โครงสร้าง** | แยก IoT logic ออกจาก auth/user ชัดเจน, เปลี่ยน MQTT broker ได้โดยไม่กระทบ handler |
-| **ทดสอบ** | สามารถ mock MQTT client และ repository เพื่อ unit test usecase |
-| **Performance** | ใช้ queue processor ทำให้ REST API response ไว ไม่รอ MQTT response |
-| **Real-time** | MQTT subscriber แยก goroutine, รับ GPS ได้ทันที |
-| **Scalability** | สามารถเพิ่ม worker instances สำหรับ order queue และ MQTT subscriber ได้ |
-| **Maintainability** | เพิ่ม feature ใหม่โดยไม่ต้องแก้ไข layer อื่น (ถ้าใช้ interface) |
-
----
-
-## 4. ข้อควรระวัง
-
-- **MQTT broker เป็น SPOF** – ควรใช้ cluster หรือมี fallback broker
-- **Idempotency** – MQTT message อาจถูกส่งซ้ำ (QoS 1,2) ต้องออกแบบ order processing ให้ idempotent (ใช้ unique request ID)
-- **Order queue overflow** – ต้องมี monitoring และ dead-letter queue
-- **GPS data ขนาดใหญ่** – ควรใช้ Redis geospatial หรือ TimescaleDB สำหรับเก็บประวัติ
-- **Device authentication** – ควรใช้ JWT หรือ API key สำหรับ MQTT connect (ไม่ใช่แค่ username/password)
-- **Network latency** – MQTT publish อาจ delay, ต้อง set timeout และ retry logic
-
----
-
-## 5. ข้อดี
-
-- **Reuse existing infrastructure** – ใช้ Redis queue, logger, validator, GORM เดิมได้เลย
-- **Clean separation** – IoT module ไม่ต้องรู้จัก auth module (ยกเว้นผ่าน user ID)
-- **Flexible deployment** – MQTT subscriber สามารถรันเป็น separate microservice ได้ในอนาคต
-- **Real-time capability** – MQTT เหมาะกับ GPS tracking และ control command มากกว่า HTTP polling
-- **Async processing** – Order queue ป้องกันการ overload MQTT broker
-
----
-
-## 6. ข้อเสีย
-
-- **Complexity เพิ่มขึ้น** – ต้องจัดการ MQTT connection, reconnection, และ message ordering
-- **Debug ยากขึ้น** – ต้องดู logs ทั้ง HTTP, worker, MQTT subscriber
-- **State management** – ต้อง track device online/offline status (ใช้ Redis หรือ MQTT Last Will)
-- **ต้องเพิ่ม infrastructure** – ต้องรัน MQTT broker (Mosquitto/EMQX) ใน docker-compose
-- **Security ซับซ้อน** – ต้องจัดการ TLS สำหรับ MQTT และ device credential
-
----
-
-## 7. ข้อห้าม (ต้องห้าม)
-
-| ข้อห้าม | เหตุผล |
-|---------|--------|
-| **ห้ามทำ MQTT publish ใน HTTP handler โดยไม่ใช้ queue** | จะทำให้ request ติดขัดเมื่อ MQTT broker ช้า |
-| **ห้ามเก็บ raw GPS ทุกจุดโดยไม่มีการ downsample** | ฐานข้อมูลจะใหญ่เกินไป ควรเก็บเฉพาะตำแหน่งเปลี่ยนแปลง หรือใช้ aggregation |
-| **ห้ามส่งคำสั่ง control ผ่าน MQTT โดยไม่มีการ confirm** | ผู้ใช้ไม่รู้ว่าคำสั่งถึง device หรือไม่ ต้องมี response หรือ callback |
-| **ห้ามใช้ MQTT topic ที่ hardcode ชื่อ device ใน subscriber** | ควร subscribe pattern `device/+/command` แล้ว filter ใน application |
-| **ห้ามเก็บ MQTT password ใน plain text config** | ใช้ environment variables หรือ secret manager |
-| **ห้ามใช้ QoS 0 สำหรับ water order** | อาจสูญเสียคำสั่ง ควรใช้ QoS 1 หรือ 2 |
-| **ห้ามให้ device สั่งน้ำได้โดยไม่ตรวจสอบสิทธิ์** | ต้องตรวจสอบ JWT หรือ device token ทุกครั้ง |
-
----
-
-## 8. สรุปตารางการเพิ่ม module ใหม่ (Checklist)
-
-| ลำดับ | การกระทำ | ไฟล์/โฟลเดอร์ที่เกี่ยวข้อง |
-|--------|-----------|----------------------------|
-| 1 | สร้าง model | `internal/models/device.go`, `water_order.go`, `gps_location.go` |
-| 2 | สร้าง repository interface + impl | `internal/repository/device_repo.go`, `order_repo.go` |
-| 3 | สร้าง usecase interface + impl | `internal/usecase/iot_usecase.go` |
-| 4 | สร้าง handler + DTO | `internal/delivery/rest/handler/device_handler.go`, `dto/iot_dto.go` |
-| 5 | เพิ่ม route | `internal/delivery/rest/router.go` |
-| 6 | สร้าง MQTT pkg | `internal/pkg/mqtt/client.go`, `publisher.go`, `subscriber.go` |
-| 7 | สร้าง queue worker | `internal/delivery/worker/order_worker.go` |
-| 8 | เพิ่ม CLI command | `cmd/iotworker.go` หรือขยาย `cmd/worker.go` |
-| 9 | อัปเดต docker-compose | เพิ่ม `mosquitto` service |
-| 10 | ทดสอบและทำ docs | `swag init`, เรียก API |
-
----
-
-**หมายเหตุ:** ขั้นตอนทั้งหมดยึดตาม Clean Architecture ที่มีอยู่แล้วใน `gorestapi` 
-การเพิ่ม module ใหม่จะไม่ต้องแก้ไข `auth` หรือ `users` module ยกเว้นต้องเพิ่มความสัมพันธ์ (foreign key) เช่น Device มี UserID เป็นต้น
-
-![Icmon6](https://github.com/user-attachments/assets/aeab954d-8b6f-4258-927f-676ca0c2e92b)
-
-![87796](https://github.com/user-attachments/assets/548e4d80-9f48-4293-9b41-e5c3ce1627b9)
-
-# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapig`  
-## ตัวอย่าง: เพิ่ม Module **Monitoring & Auto Control** (ระบบเฝ้าระวังภัย, แจ้งเตือน, ควบคุมอัตโนมัติ, รายงาน)
-
-จาก Requirement **CMON IoT Solution** (Monitoring, Smart Building, Smart Farm, ฯลฯ)  
-เราจะใช้ **ระบบเฝ้าระวังอุณหภูมิ/ความชื้น + แจ้งเตือน + ควบคุมอัตโนมัติ** เป็นกรณีศึกษาในการเพิ่ม Module ใหม่
-
----
- 
-
-## 1. ขั้นตอนการเพิ่ม Module Monitoring (ตามลำดับ)
-
-### ✅ Step 1: วิเคราะห์ Entity / Data Model
-
-สร้างไฟล์ใน `internal/models/`
-
-| Entity | ฟิลด์สำคัญ |
-|--------|------------|
-| `Sensor` | ID, Serial, Type (temp/humidity/smoke/leak), Location, Unit, ThresholdMin, ThresholdMax, WarningThreshold, AlarmThreshold |
-| `SensorData` | ID, SensorID, Value, Timestamp |
-| `Rule` | ID, Name, Condition (เช่น `temp > 35`), ActionType (email/sms/line/relay), ActionTarget, Priority (warning/alarm) |
-| `Alert` | ID, RuleID, SensorID, Severity, Message, TriggeredAt, ResolvedAt |
-| `ScheduleTask` | ID, Name, CronExpr, ActionType, ActionTarget, LastRun |
-
-```go
-// internal/models/sensor.go
-type Sensor struct {
-    ID               uint    `gorm:"primaryKey"`
-    Serial           string  `gorm:"uniqueIndex"`
-    Type             string  // temperature, humidity, water_leak, smoke
-    Location         string
-    MinThreshold     float64
-    MaxThreshold     float64
-    WarningThreshold float64
-    AlarmThreshold   float64
-    Unit             string  // °C, %, etc.
-    Status           string  // active, maintenance, offline
-}
-```
-
-### ✅ Step 2: สร้าง Repository Interface + Implementation
-
-```go
-// internal/repository/sensor_repo.go
-type SensorRepository interface {
-    Create(ctx context.Context, s *models.Sensor) error
-    FindByID(ctx context.Context, id uint) (*models.Sensor, error)
-    FindBySerial(ctx context.Context, serial string) (*models.Sensor, error)
-    Update(ctx context.Context, s *models.Sensor) error
-    Delete(ctx context.Context, id uint) error
-    List(ctx context.Context, filter map[string]interface{}) ([]models.Sensor, error)
-}
-
-// internal/repository/sensor_data_repo.go
-type SensorDataRepository interface {
-    Insert(ctx context.Context, data *models.SensorData) error
-    GetHistory(ctx context.Context, sensorID uint, from, to time.Time) ([]models.SensorData, error)
-    GetLatest(ctx context.Context, sensorID uint) (*models.SensorData, error)
-}
-
-// internal/repository/rule_repo.go (สำหรับ rule engine)
-type RuleRepository interface {
-    GetAllActive(ctx context.Context) ([]models.Rule, error)
-    EvaluateAndTrigger(ctx context.Context, sensorData *models.SensorData) error
-}
-```
-
-### ✅ Step 3: สร้าง Usecase (Business Logic)
-
-```go
-// internal/usecase/monitoring_usecase.go
-type MonitoringUsecase interface {
-    // รับข้อมูลจาก MQTT
-    ProcessSensorReading(serial string, value float64, timestamp time.Time) error
-    // ประเมินเงื่อนไขและสร้าง Alert
-    EvaluateRules(sensor *models.Sensor, value float64) ([]models.Alert, error)
-    // ส่งการแจ้งเตือน (async)
-    SendAlert(alert models.Alert) error
-    // ควบคุมอุปกรณ์อัตโนมัติ (DO, MQTT command)
-    ExecuteAutoControl(action models.Action) error
-    // รายงาน
-    GenerateReport(sensorID uint, from, to time.Time) (*ReportData, error)
-}
-```
-
-### ✅ Step 4: สร้าง MQTT Subscriber (ใน `internal/pkg/mqtt/`)
-
-```go
-// internal/pkg/mqtt/subscriber.go
-type Subscriber struct {
-    client mqtt.Client
-    onMessage func(topic string, payload []byte)
-}
-
-func (s *Subscriber) Subscribe(topics ...string) {
-    // subscribe topic: "sensor/+/data"
-    // เมื่อได้ payload -> unmarshal JSON -> เรียก monitoringUsecase.ProcessSensorReading
-}
-```
-
-### ✅ Step 5: สร้าง Handler + DTO + Routes
-
-```go
-// internal/delivery/rest/handler/monitoring_handler.go
-func (h *MonitoringHandler) GetSensorData(w http.ResponseWriter, r *http.Request) {
-    // GET /api/v1/sensors/:id/data?from=...&to=...
-}
-
-func (h *MonitoringHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
-    // POST /api/v1/rules
-}
-
-func (h *MonitoringHandler) GetAlerts(w http.ResponseWriter, r *http.Request) {
-    // GET /api/v1/alerts?severity=alarm&resolved=false
-}
-```
-
-```go
-// internal/delivery/rest/router.go
-func (r *Router) SetupMonitoringRoutes(handler *handler.MonitoringHandler, authMiddleware func(http.Handler) http.Handler) {
-    r.router.Route("/api/v1/monitoring", func(mon chi.Router) {
-        mon.Use(authMiddleware)
-        mon.Get("/sensors", handler.ListSensors)
-        mon.Get("/sensors/{id}/data", handler.GetSensorData)
-        mon.Post("/rules", handler.CreateRule)
-        mon.Get("/alerts", handler.GetAlerts)
-        mon.Post("/alerts/{id}/resolve", handler.ResolveAlert)
-    })
-}
-```
-
-### ✅ Step 6: สร้าง Queue Worker สำหรับ Alert Notification
-
-- ใช้ Redis Stream หรือ Go channel (ตามโครงสร้างเดิมมี email queue)
-- Worker จะอ่าน job → ส่ง email/SMS/Line/Webhook
-
-```go
-// internal/delivery/worker/alert_worker.go
-type AlertWorker struct {
-    alertQueue <-chan models.Alert
-    emailSender email.Sender
-    lineClient  *line.Client
-}
-
-func (w *AlertWorker) Start() {
-    for alert := range w.alertQueue {
-        switch alert.Channel {
-        case "email":
-            w.emailSender.Send(alert.To, alert.Subject, alert.Body)
-        case "line":
-            w.lineClient.PushMessage(alert.LineToken, alert.Message)
-        }
-    }
-}
-```
-
-### ✅ Step 7: เพิ่ม Command ใน Cobra (ถ้าต้องการรัน worker แยก)
-
-```go
-// cmd/alertworker.go
-var alertWorkerCmd = &cobra.Command{
-    Use:   "alert-worker",
-    Short: "Run alert notification worker",
-    Run: func(cmd *cobra.Command, args []string) {
-        // สร้าง alertWorker และ start
-    },
-}
-```
-
-### ✅ Step 8: อัปเดต Docker Compose (MQTT broker + Redis)
-
-```yaml
-services:
-  mosquitto:
-    image: eclipse-mosquitto:2.0
-    ports:
-      - "1883:1883"
-  redis:
-    image: redis:7-alpine
-  # ... postgres, mailhog
-```
-
-### ✅ Step 9: เพิ่ม Scheduler สำหรับงานตามเวลา (Cron)
-
-- ใช้ `github.com/robfig/cron/v3`
-- สร้าง `internal/pkg/scheduler/scheduler.go`
-- ลงทะเบียน job: ส่งรายงานอัตโนมัติ, เปิด/ปิดอุปกรณ์ตามเวลาทำการ
-
-### ✅ Step 10: ทดสอบและ Document API (Swagger)
-
----
-
-## 2. ออกแบบ Workflow (Flowchart)
-
-### 2.1 Workflow การรับข้อมูล Sensor → วิเคราะห์ → แจ้งเตือน → ควบคุมอัตโนมัติ
-
-```mermaid
-flowchart TB
-    A[IoT Sensor<br/>(Temp/Humidity/Leak)] -- MQTT publish --> B[MQTT Broker<br/>(Mosquitto)]
-    B -- subscribe --> C[MQTT Subscriber<br/>(Go routine)]
-    C --> D[MonitoringUsecase.ProcessSensorReading]
-    D --> E[บันทึก SensorData ลง PostgreSQL]
-    D --> F[Rule Engine: ตรวจสอบ Threshold]
-    F -- ค่าปกติ --> G[ไม่ทำอะไร]
-    F -- Warning --> H[สร้าง Alert ระดับ Warning]
-    F -- Alarm --> I[สร้าง Alert ระดับ Alarm]
-    H --> J[Enqueue Alert job ไปยัง Redis Stream]
-    I --> J
-    J --> K[Alert Worker]
-    K --> L[ส่ง Email/SMS/Line]
-    K --> M[เปิดสัญญาณไฟ (DO) / เปิดไซเรน]
-    K --> N[สั่ง MQTT command ไปยัง Actuator<br/>(เปิดพัดลม/แอร์สำรอง)]
-    N --> B
-```
-
-### 2.2 Workflow การตั้งเวลา (Schedule) ควบคุมอุปกรณ์
-
-```mermaid
-flowchart LR
-    A[Cron Scheduler] -- ทุก 5 นาที --> B[ดึง ScheduleTask ที่ถึงเวลา]
-    B --> C[ScheduleUsecase.ExecuteTask]
-    C --> D[MQTT Publish Command]
-    C --> E[Digital Output (Relay)]
-    D --> F[อุปกรณ์ IoT]
-    E --> G[อุปกรณ์ภายนอก (NO/NC)]
-    C --> H[บันทึก Log]
-    H --> I[ส่งรายงานทาง Email]
-```
-
----
-
-## 3. ประโยชน์ที่ได้รับ (Benefits)
-
-| ด้าน | ประโยชน์ |
-|------|----------|
-| **Real-time** | รับข้อมูล Sensor ผ่าน MQTT → วิเคราะห์และแจ้งเตือนภายใน < 45 วินาที ตาม requirement |
-| **อัตโนมัติ** | Rule Engine ช่วยลดการทำงาน manual, สามารถสั่งงานอุปกรณ์สำรองทันที |
-| **หลากหลายช่องทาง** | แจ้งเตือนทั้ง dashboard, email, SMS, LINE, สัญญาณไฟ/เสียง, relay (NO/NC) |
-| **รายงานอัตโนมัติ** | สร้างรายงานรายวัน/สัปดาห์/เดือน ส่งทางอีเมลตาม schedule |
-| **ขยายง่าย** | เพิ่ม sensor หรือ rule ใหม่ได้โดยไม่ต้องแก้ core logic |
-| **ลด Downtime** | ตรวจจับความผิดปกติตั้งแต่ระยะแรก (Warning) ก่อนเกิด Alarm |
-
----
-
-## 4. ข้อควรระวัง
-
-- **MQTT broker เป็นจุดรวม** – ควรใช้ cluster (EMQX) หรือมี fallback
-- **Alert flood** – ต้อง implement debounce (ไม่ส่งแจ้งเตือนซ้ำทุก 1 นาที) และ rate limit
-- **Time synchronization** – Sensor และ Server ต้องใช้ NTP เพื่อ timestamp ตรงกัน
-- **Security** – MQTT ต้องใช้ TLS และ authentication (username/password หรือ JWT)
-- **Data retention** – ข้อมูล SensorData เติบโตเร็ว ต้องมี policy ลบข้อมูลเก่า (หรือใช้ TimescaleDB)
-- **Idempotency** – เมื่อ network เด้ง อาจได้รับ duplicate MQTT message ต้องจัดการ (ใช้ message ID)
-
----
-
-## 5. ข้อดี
-
-- **Reuse โครงสร้างเดิม** – ใช้ Redis queue, logger, GORM, Chi routing ได้ทันที
-- **Testability** – Mock MQTT client และ repository เพื่อ test usecase ได้
-- **Asynchronous** – Alert sending ผ่าน queue ทำให้ processing sensor data ไม่ติดขัด
-- **Standard protocols** – MQTT และ SNMP ทำให้รวมอุปกรณ์หลายยี่ห้อได้
-- **Dashboard แบบ Graphic** – สามารถสร้าง real-time chart และ map สถานที่ได้
-
----
-
-## 6. ข้อเสีย
-
-- **Complexity สูงขึ้น** – ต้องจัดการ MQTT connection, reconnection, QoS, retain message
-- **Debug ยาก** – ต้องดู logs ทั้ง subscriber, rule engine, worker
-- **ต้องการ infrastructure เพิ่ม** – ต้องรัน MQTT broker และอาจต้องใช้ Redis Streams แทน channel
-- **Rule Engine อาจซับซ้อน** – ถ้ามีเงื่อนไขหลายร้อยข้อ ต้องออกแบบ efficient (ใช้โครงสร้างต้นไม้)
-- **Latency 45 วินาที** – ตาม requirement แต่บาง use case ต้องการ sub-second (ต้องใช้ WebSocket หรือ gRPC)
-
----
-
-## 7. ข้อห้าม (ต้องห้าม)
-
-| ข้อห้าม | เหตุผล |
-|---------|--------|
-| **ห้ามทำ MQTT publish ใน HTTP handler แบบ synchronous** | จะทำให้ request ติดขัดเมื่อ broker ช้า |
-| **ห้ามเก็บ raw sensor data ทุกตัวโดยไม่มีการ downsampling หรือ partition** | ฐานข้อมูลจะใหญ่เกินไป ควรใช้ TimescaleDB หรือ ตาราง按月 partition |
-| **ห้ามส่ง alert ทุกครั้งที่ค่าเปลี่ยนแปลง** | จะเกิด alert flood ต้องตั้ง debounce interval |
-| **ห้ามใช้ QoS 0 สำหรับ sensor data ที่สำคัญ (เช่น water leak, smoke)** | อาจสูญเสียข้อมูล ควรใช้ QoS 1 หรือ 2 |
-| **ห้าม hardcode MQTT topic** | ควรใช้ template เช่น `sensor/{device_id}/data` และ validate |
-| **ห้ามเปิด relay (DO) โดยไม่มีการ confirm กลับ** | ต้องมี feedback หรือ timeout retry |
-| **ห้ามเก็บ MQTT password ใน config file** | ใช้ environment variables หรือ Vault |
-| **ห้ามลืมตั้ง TTL สำหรับ Redis cache ของ sensor status** | มิฉะนั้น memory จะเต็ม |
-
----
-
-## 8. สรุปตารางขั้นตอน (Checklist สำหรับ Developer)
-
-| ลำดับ | การกระทำ | ไฟล์/โฟลเดอร์ที่เกี่ยวข้อง |
-|--------|-----------|----------------------------|
-| 1 | สร้าง model (Sensor, SensorData, Rule, Alert, ScheduleTask) | `internal/models/` |
-| 2 | สร้าง repository interface + impl (GORM) | `internal/repository/` |
-| 3 | สร้าง usecase (ProcessSensorReading, EvaluateRules, SendAlert, ExecuteAutoControl) | `internal/usecase/monitoring_usecase.go` |
-| 4 | สร้าง MQTT subscriber ใน pkg | `internal/pkg/mqtt/subscriber.go` |
-| 5 | สร้าง handler + DTO | `internal/delivery/rest/handler/monitoring_handler.go`, `dto/monitoring_dto.go` |
-| 6 | เพิ่ม route | `internal/delivery/rest/router.go` |
-| 7 | สร้าง alert worker | `internal/delivery/worker/alert_worker.go` |
-| 8 | สร้าง scheduler (cron) | `internal/pkg/scheduler/scheduler.go` |
-| 9 | เพิ่ม CLI command สำหรับ worker | `cmd/alertworker.go` |
-| 10 | อัปเดต docker-compose (mosquitto, redis) | `docker-compose.dev.yml` |
-| 11 | ทดสอบด้วย MQTT client (mosquitto_pub) และตรวจสอบ alert | - |
-| 12 | สร้าง Swagger docs | `swag init` |
-
----
-
-**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapig` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
+--- 
+**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `icmongolang` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
 
 ### การนำ Template ไปใช้
 
 - **ผู้เริ่มต้น** ควรศึกษาเนื้อหาตามลำดับตั้งแต่ภาคที่ 1 ถึงภาคที่ 3
-- https://github.com/kongnakornna/gorestapi/blob/main/Book/BookGolang1.md
+- https://github.com/kongnakornna/icmongolang/blob/main/knowledge/Book/BookGolang1.md
 - **นักพัฒนาที่มีประสบการณ์** สามารถข้ามไปยังภาคที่ 7-9 เพื่อศึกษา Clean Architecture, DDD และการผสานระบบภายนอก
-- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/sulution
+- https://github.com/kongnakornna/icmongolang/tree/main/knowledge/project_manamet/sulution
 - **ทีมพัฒนา** สามารถนำ Task List Template และ Checklist Template ไปปรับใช้ในการทำงาน
-- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/Template
+- https://github.com/kongnakornna/icmongolang/tree/main/knowledge/project_manamet/Template
 - **Design Thinking  & Business Model Canvas (BMC) - Design & Implementation Package **
-- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/DesignThinking
+- https://github.com/kongnakornna/icmongolang/tree/main/knowledge/project_manamet/DesignThinking
 ---
 **ผู้เขียน:** คงนคร จันทะคุณ  
 **อีเมล:** kongnakornjantakun@gmail.com  

@@ -1,10 +1,10 @@
 package users
 
 import (
-	"gorestapi/internal"
-	"gorestapi/internal/models"
+	"icmongolang/internal"
+	"icmongolang/internal/models"
 )
 
 type UserRedisRepository interface {
-	internal.RedisRepository[models.User]
+	internal.RedisRepository[models.SdUser]
 }

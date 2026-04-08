@@ -20,7 +20,7 @@ type Message struct {
 	MaxRetries int             `json:"max_retries"`
 }
 
-// Handler ตัวจัดการข้อความ 
+// Handler ตัวจัดการข้อความ
 type Handler func(ctx context.Context, msg *Message) error
 
 // Queue อินเทอร์เฟซของคิว
@@ -269,10 +269,12 @@ func (rq *RedisQueue) processDelayedMessages() {
 			now := float64(time.Now().Unix())
 			key := "delayed_queue"
 
-			// ดึงข้อความที่ครบกำหนดทั้งหมด
-			messages, err := rq.client.ZRangeByScore(rq.ctx, key, &redis.ZRangeBy{
-				Min: "0",
-				Max: fmt.Sprintf("%f", now),
+			// ✅ FIX: ใช้ ZRangeArgs แทน ZRangeByScore ที่ถูก deprecate
+			messages, err := rq.client.ZRangeArgs(rq.ctx, redis.ZRangeArgs{
+				Key:     key,
+				Start:   "0",
+				Stop:    fmt.Sprintf("%f", now),
+				ByScore: true,
 			}).Result()
 
 			if err != nil {

@@ -37,7 +37,7 @@ var DefaultSecurityConfig = SecurityConfig{
 		"form-action 'self'; " +
 		"upgrade-insecure-requests;",
 	StrictTransportSecurity: "max-age=31536000; includeSubDomains; preload",
-	AllowedOrigins:          []string{"https://icmon.com"},
+	AllowedOrigins:          []string{"*"},
 	EnableCSP:               true,
 	EnableHSTS:              true,
 	EnableXSS:               true,

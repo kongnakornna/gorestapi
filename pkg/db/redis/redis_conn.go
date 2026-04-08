@@ -3,7 +3,7 @@ package redis
 import (
 	"time"
 
-	"gorestapi/config"
+	"icmongolang/config"
 
 	"github.com/redis/go-redis/v9"
 )

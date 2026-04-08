@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"gorestapi/internal"
-	"gorestapi/internal/models"
+	"icmongolang/internal"
+	"icmongolang/internal/models"
 )
 
 type ItemUseCaseI interface {

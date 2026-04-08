@@ -1,6 +1,6 @@
 server:
   AppVersion: 1.0.0
-  Port: 8080
+  Port: 8088
   Mode: Development
   ProcessTimeout: 60
   ReadTimeout: 5
@@ -9,7 +9,7 @@ server:
 
 jwt:
   SecretKey: 9056b94a8611363c2c43aa3760d65a48c834744b877b5041fa99a919d5aaf635
-  Issuer: go-dev
+  Issuer: golang-app
   AccessTokenExpireDuration: 15
   AccessTokenPrivateKey: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlDWEFJQkFBS0JnUUNnc2RDdU92MGJDY1FCbjJxOWhIa1U5MWhscFMxWVJNRnBib1VROEI3VkxjVU9LMGMxCmc3TGdNYzh0d2VwQzcvNisweWFkZzIxN1NlNWw2M2RoK0xzZVgwUEQ0ckhtUm1HaW8rbks3ei9wZW9MMUY1a1AKbVc5UU9vQ1NUU3hrTE51RUFYUSt3NmtuMXJiSlpFMlprU1pwLzBRZ2pOckFWTm9OQ2ttVjdHZGdNd0lEQVFBQgpBb0dBUlZPeGhobG83T3RQcHF1U0wyVWhuOHYrVlF2bi9qYmJncEx0MFpybWttNEduOUJJRG14ZEZhQW5rOFFmClB2V3ZYOEJVM291L0JmdWxZRTh2MkJLcEZ3UEpaeTFETWNpY3R2ZDlhUVo0ekI1bFZ4Wk85UWFONVpnSCtWbDAKQjVTNE9mWEtZZFFnTDBiUU1NMmlDclpMVTJaVEJ4YlNDMlUrRkNYVG5LUk45eUVDUVFEK3pYcWI4UXpIemUzYwpHWCt6TkVNOVp6NE9SUG5tK0FyY1hHQksxTkJMWkxJZkVvMG5xUlFBVUMzYit3QjhZOFdqYi9EZWNIUnpleFJYClNvZEVxaWQ3QWtFQW9YTWdhdVVBdUI4T0VsenJmdlZEREM4WWhJblJtRytFNlVFL084bTB5NUtjT29mZXRvd1oKRDlQbFdDb2FyajlwbE9jclZpNG45YU9nV1VDeVJERHdxUUpBTHBuQi9OYy9NU08yaHZTYTZGbDhtclJSSXliMgpWWW16NHMxNlJ2VlpDeERsaXMxSHg2TWlwMVFDcnlMZTJlRWRlbUMwdXRueVVsU0dTZGkxbUpkT0ZRSkFjZ2V1ClRkR1F3SHF1cGFtYmF3QXZhdHVZcFlQeDFZaHVoNURkNkl4K2RZb0hiZytvN2FYbHpaZ0wxRWxvcnNsNitRQ04KUzBFdVdBQkpzTUJSS0hpb2dRSkJBTGhvTUVTZG40UHgrWjE2VWw3Q3B4RTdudjR6anYyTVlRazhzUXRySjl6WgpjVmdCVHJ5YTFsdzhkampmL0pUbS9ZQ2pCOGFYWis4SGdRajlHbVloZmNJPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQ==
   AccessTokenPublicKey: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDZ3NkQ3VPdjBiQ2NRQm4ycTloSGtVOTFobApwUzFZUk1GcGJvVVE4QjdWTGNVT0swYzFnN0xnTWM4dHdlcEM3LzYrMHlhZGcyMTdTZTVsNjNkaCtMc2VYMFBECjRySG1SbUdpbytuSzd6L3Blb0wxRjVrUG1XOVFPb0NTVFN4a0xOdUVBWFErdzZrbjFyYkpaRTJaa1NacC8wUWcKak5yQVZOb05Da21WN0dkZ013SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQ==
@@ -31,7 +31,7 @@ postgres:
   Port: 5432
   User: postgres
   Password: postgres
-  Dbname: db2
+  Dbname: db
 
 redis:
   Addr: localhost:6379
@@ -48,7 +48,7 @@ taskRedis:
 email:
   From: kongnakornna@gamil.com
   Name: Go restapi
-  Link: https://gorestapi
+  Link: https://icmongolang
   LogoLink: https://media.vov.vn/sites/default/files/styles/front_large/public/2022-12/nhung-dieu-thu-vi-ve-logo-apple-ma-ban-chua-biet-4.png
   Copyright: Copyright © 2026 example inc. All rights reserved.
   VerificationSubject: Your account verification code
@@ -61,3 +61,19 @@ smtpEmail:
   Password: icmon
   UseTls: true
   UseSsl: false
+
+monitoring:
+  enabled: true
+  metrics_enabled: true
+  tracing_enabled: true
+  sentry_enabled: true
+  alert_enabled: true
+  system_metrics_enabled: true
+  sentry_dsn: "https://your-dsn@sentry.io/project-id"
+  jaeger_endpoint: "localhost:4317"
+  alert_smtp_host: "smtp.gmail.com"
+  alert_smtp_port: "465"
+  alert_smtp_user: "your-email@gmail.com"
+  alert_smtp_pass: "your-app-password"
+  alert_from_email: "alert@icmongolang.com"
+  alert_to_email: "admin@icmongolang.com"

@@ -11,8 +11,8 @@ import (
 	"errors"
 	"time"
 
-	"gorestapi/internal"
-	"gorestapi/pkg/httpErrors"
+	"icmongolang/internal"
+	"icmongolang/pkg/httpErrors"
 	"github.com/redis/go-redis/v9"
 )
 
