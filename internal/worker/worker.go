@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/hibiken/asynq"
-	"gorestapi/config"
+	"icmongolang/config"
 
-	"gorestapi/internal/users"
-	userProcessor "gorestapi/internal/users/processor"
-	"gorestapi/pkg/logger"
-	"gorestapi/pkg/sendEmail"
+	"icmongolang/internal/users"
+	userProcessor "icmongolang/internal/users/processor"
+	"icmongolang/pkg/logger"
+	"icmongolang/pkg/sendEmail"
 )
 
 const (

@@ -3,14 +3,21 @@ package users
 import "net/http"
 
 type Handlers interface {
-	Create() func(w http.ResponseWriter, r *http.Request)
-	Get() func(w http.ResponseWriter, r *http.Request)
-	GetMulti() func(w http.ResponseWriter, r *http.Request)
-	Delete() func(w http.ResponseWriter, r *http.Request)
-	Update() func(w http.ResponseWriter, r *http.Request)
-	Me() func(w http.ResponseWriter, r *http.Request)
-	UpdateMe() func(w http.ResponseWriter, r *http.Request)
-	UpdatePassword() func(w http.ResponseWriter, r *http.Request)
-	UpdatePasswordMe() func(w http.ResponseWriter, r *http.Request)
-	LogoutAllAdmin() func(w http.ResponseWriter, r *http.Request)
+	// Public
+	Register() http.HandlerFunc
+
+	// Authenticated
+	Me() http.HandlerFunc
+	UpdateMe() http.HandlerFunc
+	UpdatePasswordMe() http.HandlerFunc
+
+	// Admin
+	Create() http.HandlerFunc
+	GetMulti() http.HandlerFunc
+	Get() http.HandlerFunc
+	Update() http.HandlerFunc
+	UpdatePassword() http.HandlerFunc
+	Delete() http.HandlerFunc
+	UpdateRole() http.HandlerFunc
+	LogoutAllAdmin() http.HandlerFunc
 }

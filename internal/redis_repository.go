@@ -14,3 +14,7 @@ type RedisRepository[M any] interface {
 	SIsMember(ctx context.Context, key string, value string) (bool, error)
 	// SMembers(ctx context.Context, key string) ([]string, error)
 }
+/*****
+
+
+*/

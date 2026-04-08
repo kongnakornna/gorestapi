@@ -3,7 +3,7 @@ definitions:
   httpErrors.ErrResponse:
     properties:
       msg:
-        description: application-level error message, for debugging
+        description: application-level error message
         example: not found user
         type: string
       status:
@@ -15,13 +15,172 @@ definitions:
         example: not_found
         type: string
     type: object
-  presenter.ForgotPassword:
+  icmongolang_internal_monitoring_handler.HealthResponse:
+    properties:
+      status:
+        type: string
+      timestamp:
+        type: string
+      uptime:
+        type: string
+    type: object
+  icmongolang_internal_users_presenter.ForgotPassword:
     properties:
       email:
         example: kongnakornna@gmail.com
         type: string
     required:
     - email
+    type: object
+  icmongolang_internal_users_presenter.PublicKey:
+    properties:
+      public_key_access_token:
+        type: string
+      public_key_refresh_token:
+        type: string
+    type: object
+  icmongolang_internal_users_presenter.ResetPassword:
+    properties:
+      confirm_password:
+        example: password
+        minLength: 8
+        type: string
+      new_password:
+        example: password
+        minLength: 8
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    type: object
+  icmongolang_internal_users_presenter.Token:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  icmongolang_internal_users_presenter.UserCreate:
+    properties:
+      confirm_password:
+        example: password
+        minLength: 8
+        type: string
+      email:
+        example: kongnakornna@gmail.com
+        type: string
+      firstname:
+        example: Kongnakorn
+        type: string
+      fullname:
+        example: Kongnakorn Jantakun
+        type: string
+      lastname:
+        example: Jantakun
+        type: string
+      line_id:
+        example: kongnakorn_line
+        type: string
+      location_id:
+        example: loc_001
+        type: string
+      mobile_number:
+        example: "0812345678"
+        type: string
+      password:
+        example: password
+        minLength: 8
+        type: string
+      phone_number:
+        example: "021234567"
+        type: string
+      role_id:
+        example: 2
+        minimum: 1
+        type: integer
+    required:
+    - confirm_password
+    - email
+    - password
+    - role_id
+    type: object
+  icmongolang_internal_users_presenter.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      firstname:
+        type: string
+      fullname:
+        type: string
+      id:
+        type: string
+      is_superuser:
+        type: boolean
+      lastname:
+        type: string
+      line_id:
+        type: string
+      location_id:
+        type: string
+      mobile_number:
+        type: string
+      phone_number:
+        type: string
+      role_id:
+        type: integer
+      status:
+        description: 1 active, 0 inactive
+        type: integer
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  icmongolang_internal_users_presenter.UserUpdate:
+    properties:
+      firstname:
+        type: string
+      fullname:
+        type: string
+      lastname:
+        type: string
+      line_id:
+        type: string
+      location_id:
+        type: string
+      mobile_number:
+        type: string
+      phone_number:
+        type: string
+    type: object
+  icmongolang_internal_users_presenter.UserUpdatePassword:
+    properties:
+      confirm_password:
+        minLength: 8
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+      old_password:
+        minLength: 8
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    - old_password
+    type: object
+  icmongolang_knowledge_dev_monitoring_modules_internal_monitoring_handler.HealthResponse:
+    properties:
+      status:
+        type: string
+      timestamp:
+        type: string
+      uptime:
+        type: string
     type: object
   presenter.ItemCreate:
     properties:
@@ -55,108 +214,22 @@ definitions:
         example: item title
         type: string
     type: object
-  presenter.PublicKey:
-    properties:
-      public_key_access_token:
-        type: string
-      public_key_refresh_token:
-        type: string
-    type: object
-  presenter.ResetPassword:
-    properties:
-      confirm_password:
-        example: password
-        minLength: 8
-        type: string
-      new_password:
-        example: password
-        minLength: 8
-        type: string
-    required:
-    - confirm_password
-    - new_password
-    type: object
-  presenter.Token:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-      token_type:
-        type: string
-    type: object
-  presenter.UserCreate:
-    properties:
-      confirm_password:
-        example: password
-        minLength: 8
-        type: string
-      email:
-        example: kongnakornna@gmail.com
-        type: string
-      name:
-        example: Xuan Hien
-        type: string
-      password:
-        example: password
-        minLength: 8
-        type: string
-    required:
-    - confirm_password
-    - email
-    - name
-    - password
-    type: object
-  presenter.UserResponse:
-    properties:
-      created_at:
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      is_superuser:
-        type: boolean
-      name:
-        type: string
-      updated_at:
-        type: string
-      verified:
-        type: boolean
-    type: object
-  presenter.UserUpdate:
-    properties:
-      name:
-        example: Xuan Hien
-        type: string
-    type: object
-  presenter.UserUpdatePassword:
-    properties:
-      confirm_password:
-        example: password
-        minLength: 8
-        type: string
-      new_password:
-        example: password
-        minLength: 8
-        type: string
-      old_password:
-        example: old_password
-        minLength: 8
-        type: string
-    required:
-    - confirm_password
-    - new_password
-    - old_password
-    type: object
   responses.ErrorResponse:
     properties:
       error:
         $ref: '#/definitions/httpErrors.ErrResponse'
       is_success:
         example: false
+        type: boolean
+    type: object
+  responses.SuccessResponse-array_icmongolang_internal_users_presenter_UserResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserResponse'
+        type: array
+      is_success:
+        example: true
         type: boolean
     type: object
   responses.SuccessResponse-array_presenter_ItemResponse:
@@ -169,12 +242,10 @@ definitions:
         example: true
         type: boolean
     type: object
-  responses.SuccessResponse-array_presenter_UserResponse:
+  responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse:
     properties:
       data:
-        items:
-          $ref: '#/definitions/presenter.UserResponse'
-        type: array
+        $ref: '#/definitions/icmongolang_internal_users_presenter.UserResponse'
       is_success:
         example: true
         type: boolean
@@ -187,18 +258,11 @@ definitions:
         example: true
         type: boolean
     type: object
-  responses.SuccessResponse-presenter_UserResponse:
-    properties:
-      data:
-        $ref: '#/definitions/presenter.UserResponse'
-      is_success:
-        example: true
-        type: boolean
-    type: object
 info:
   contact: {}
-  title: Go RestAPI Kongnak
-  version: "2026.03.31 1.0"
+  description: API for ICMON project
+  title: Go Rest API
+  version: "1.0"
 paths:
   /auth/forgotpassword:
     post:
@@ -211,7 +275,7 @@ paths:
         name: forgotPassword
         required: true
         schema:
-          $ref: '#/definitions/presenter.ForgotPassword'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.ForgotPassword'
       produces:
       - application/json
       responses:
@@ -252,7 +316,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/presenter.Token'
+            $ref: '#/definitions/icmongolang_internal_users_presenter.Token'
         "400":
           description: Bad Request
           schema:
@@ -329,7 +393,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/presenter.PublicKey'
+            $ref: '#/definitions/icmongolang_internal_users_presenter.PublicKey'
         "400":
           description: Bad Request
           schema:
@@ -358,7 +422,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/presenter.Token'
+            $ref: '#/definitions/icmongolang_internal_users_presenter.Token'
         "400":
           description: Bad Request
           schema:
@@ -387,7 +451,7 @@ paths:
         name: resetPassword
         required: true
         schema:
-          $ref: '#/definitions/presenter.ResetPassword'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.ResetPassword'
       produces:
       - application/json
       responses:
@@ -640,6 +704,76 @@ paths:
       summary: Update item
       tags:
       - items
+  /monitoring/health:
+    get:
+      description: ตรวจสอบสถานะของ service (alive)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: service is healthy
+          schema:
+            $ref: '#/definitions/icmongolang_knowledge_dev_monitoring_modules_internal_monitoring_handler.HealthResponse'
+      summary: Health check
+      tags:
+      - Monitoring
+  /monitoring/metrics:
+    get:
+      description: ส่ง metrics ในรูปแบบที่ Prometheus เข้าใจ (plain text)
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Prometheus metrics
+          schema:
+            type: string
+      summary: Get Prometheus metrics
+      tags:
+      - Monitoring
+  /monitoring/system:
+    get:
+      description: ดึงข้อมูลการใช้ CPU, RAM, จำนวน goroutine
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: system stats
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System statistics
+      tags:
+      - Monitoring
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: ลงทะเบียนผู้ใช้ทั่วไป (ไม่ต้องใช้ token)
+      parameters:
+      - description: ข้อมูลสมัคร
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: สมัครสมาชิกผู้ใช้ใหม่
+      tags:
+      - users
   /user:
     get:
       consumes:
@@ -662,7 +796,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-array_presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-array_icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -690,14 +824,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/presenter.UserCreate'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserCreate'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -732,7 +866,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -774,7 +908,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -815,14 +949,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/presenter.UserUpdate'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserUpdate'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -905,14 +1039,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/presenter.UserUpdatePassword'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserUpdatePassword'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -949,7 +1083,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -985,14 +1119,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/presenter.UserUpdate'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserUpdate'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -1029,14 +1163,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/presenter.UserUpdatePassword'
+          $ref: '#/definitions/icmongolang_internal_users_presenter.UserUpdatePassword'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/responses.SuccessResponse-presenter_UserResponse'
+            $ref: '#/definitions/responses.SuccessResponse-icmongolang_internal_users_presenter_UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -1065,6 +1199,9 @@ paths:
 securityDefinitions:
   OAuth2Password:
     flow: password
+    scopes:
+      read: Grants read access
+      write: Grants write access
     tokenUrl: /api/auth/login
     type: oauth2
 swagger: "2.0"

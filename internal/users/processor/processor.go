@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gorestapi/config"
-	"gorestapi/internal/processor"
-	"gorestapi/internal/users"
-	"gorestapi/pkg/logger"
-	"gorestapi/pkg/sendEmail"
+	"icmongolang/config"
+	"icmongolang/internal/processor"
+	"icmongolang/internal/users"
+	"icmongolang/pkg/logger"
+	"icmongolang/pkg/sendEmail"
 
 	"github.com/hibiken/asynq"
 )
@@ -26,24 +26,14 @@ func NewUserRedisTaskProcessor(server *asynq.Server, cfg *config.Config, logger 
 	}
 }
 
-func (processor *userRedisTaskProcessor) ProcessTaskSendEmail(ctx context.Context, task *asynq.Task) error {
+func (p *userRedisTaskProcessor) ProcessTaskSendEmail(ctx context.Context, task *asynq.Task) error {
 	var payload users.PayloadSendEmail
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", asynq.SkipRetry)
 	}
-
-	if err := processor.emailSender.SendEmail(
-		ctx,
-		payload.From,
-		payload.To,
-		payload.Subject,
-		payload.BodyHtml,
-		payload.BodyPlain,
-	); err != nil {
+	if err := p.emailSender.SendEmail(ctx, payload.From, payload.To, payload.Subject, payload.BodyHtml, payload.BodyPlain); err != nil {
 		return fmt.Errorf("failed to send verify email: %w", err)
 	}
-
-	processor.Logger.Infof("Type: %v, Msg: email sended", task.Type())
-
+	p.Logger.Infof("Type: %v, Msg: email sended", task.Type())
 	return nil
 }

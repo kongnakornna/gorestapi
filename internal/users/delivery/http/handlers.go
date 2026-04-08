@@ -2,18 +2,20 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
-	"gorestapi/config"
-	"gorestapi/internal/middleware"
-	"gorestapi/internal/models"
-	"gorestapi/internal/users"
-	"gorestapi/internal/users/presenter"
-	"gorestapi/pkg/httpErrors"
-	"gorestapi/pkg/logger"
-	"gorestapi/pkg/responses"
-	"gorestapi/pkg/utils"
+	"icmongolang/config"
+	"icmongolang/internal/middleware"
+	"icmongolang/internal/models"
+	"icmongolang/internal/users"
+	"icmongolang/internal/users/presenter"
+	"icmongolang/pkg/httpErrors"
+	"icmongolang/pkg/logger"
+	"icmongolang/pkg/responses"
+	"icmongolang/pkg/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -30,452 +32,409 @@ func CreateUserHandler(uc users.UserUseCaseI, cfg *config.Config, logger logger.
 	return &userHandler{cfg: cfg, usersUC: uc, logger: logger}
 }
 
-// Create godoc
-// @Summary Create User
-// @Description Create new user.
+// Register – POST /register (public, no auth)
+// Register godoc
+// @Summary สมัครสมาชิกผู้ใช้ใหม่
+// @Description ลงทะเบียนผู้ใช้ทั่วไป (ไม่ต้องใช้ token)
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body presenter.UserCreate true "Add user"
+// @Param user body presenter.UserCreate true "ข้อมูลสมัคร"
 // @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user [post]
-func (h *userHandler) Create() func(w http.ResponseWriter, r *http.Request) {
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 422 {object} responses.ErrorResponse
+// @Router /register [post]
+func (h *userHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := new(presenter.UserCreate)
-
-		err := json.NewDecoder(r.Body).Decode(&user)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+		req := new(presenter.UserCreate)
+		// fixed: decode into req (already a pointer)
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		err = utils.ValidateStruct(r.Context(), user)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+		if err := utils.ValidateStruct(r.Context(), req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
-		newUser, err := h.usersUC.CreateUser(
-			r.Context(),
-			mapModel(user),
-			user.ConfirmPassword,
-		)
+		newUser, err := h.usersUC.CreateUser(r.Context(), mapModel(req), req.ConfirmPassword)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		userResponse := *mapModelResponse(newUser)
-
-		render.Respond(w, r, responses.CreateSuccessResponse(userResponse))
+		userResp := mapModelResponse(newUser)
+		if userResp == nil {
+			render.Render(w, r, responses.CreateErrorResponse(errors.New("internal server error")))
+			return
+		}
+		render.Respond(w, r, responses.CreateSuccessResponse(*userResp))
 	}
 }
 
-// Get godoc
-// @Summary Read user
-// @Description Get user by ID.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path string true "User Id"
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/{id} [get]
-func (h *userHandler) Get() func(w http.ResponseWriter, r *http.Request) {
+// Create – POST /user (admin only)
+// Create – POST /user (admin only)
+func (h *userHandler) Create() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 1. รับ request body
+		req := new(presenter.UserCreate)
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			h.logger.Errorf("decode request body error: %v", err)
+			render.Render(w, r, responses.CreateErrorResponse(err))
+			return
+		}
+		h.logger.Infof("request body decoded: email=%s, role_id=%d", req.Email, req.RoleID)
+
+		// 2. ตรวจสอบความถูกต้องของข้อมูล (validation)
+		if err := utils.ValidateStruct(r.Context(), req); err != nil {
+			h.logger.Warnf("validation failed: %v", err)
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
+			return
+		}
+		h.logger.Info("validation passed")
+
+		// 3. แปลง presenter → model
+		userModel := mapModel(req)
+		if userModel == nil {
+			h.logger.Error("mapModel returned nil")
+			render.Render(w, r, responses.CreateErrorResponse(errors.New("internal mapping error")))
+			return
+		}
+		h.logger.Infof("mapped to model: email=%s, role_id=%d, status=%d", userModel.Email, userModel.RoleID, userModel.Status)
+
+		// 4. สร้างผู้ใช้ผ่าน usecase
+		newUser, err := h.usersUC.CreateUser(r.Context(), userModel, req.ConfirmPassword)
+		if err != nil {
+			h.logger.Errorf("CreateUser error: %v", err)
+			render.Render(w, r, responses.CreateErrorResponse(err))
+			return
+		}
+		h.logger.Infof("user created successfully with id=%s", newUser.ID)
+
+		// 5. แปลง model → response
+		responseData := mapModelResponse(newUser)
+		if responseData == nil {
+			h.logger.Error("mapModelResponse returned nil")
+			render.Render(w, r, responses.CreateErrorResponse(errors.New("internal response error")))
+			return
+		}
+
+		// 6. ส่ง response กลับ
+		render.Respond(w, r, responses.CreateSuccessResponse(responseData))
+	}
+}
+
+// Get – GET /user/{id}
+func (h *userHandler) Get() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
 		user, err := h.usersUC.Get(r.Context(), id)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(user)))
 	}
 }
 
-// GetMulti godoc
-// @Summary Read Users
-// @Description Retrieve users.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param limit query int false "limit" Format(limit)
-// @Param offset query int false "offset" Format(offset)
-// @Success 200 {object} responses.SuccessResponse[[]presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user [get]
-func (h *userHandler) GetMulti() func(w http.ResponseWriter, r *http.Request) {
+// GetMulti – GET /user?limit=10&offset=0
+func (h *userHandler) GetMulti() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-
 		limit, _ := strconv.Atoi(q.Get("limit"))
 		offset, _ := strconv.Atoi(q.Get("offset"))
-
 		users, err := h.usersUC.GetMulti(r.Context(), limit, offset)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelsResponse(users)))
 	}
 }
 
-// Delete godoc
-// @Summary Delete user
-// @Description Delete an user by ID.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path string true "User Id"
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/{id} [delete]
-func (h *userHandler) Delete() func(w http.ResponseWriter, r *http.Request) {
+// Delete – DELETE /user/{id} (admin only)
+func (h *userHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
 		user, err := h.usersUC.Delete(r.Context(), id)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(user)))
 	}
 }
 
-// Update godoc
-// @Summary Update user
-// @Description Update an user by ID.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path string true "User Id"
-// @Param user body presenter.UserUpdate true "Update user"
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/{id} [put]
-func (h *userHandler) Update() func(w http.ResponseWriter, r *http.Request) {
+// Update – PUT /user/{id} (admin only)
+func (h *userHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
-		user := new(presenter.UserUpdate)
-
-		err = json.NewDecoder(r.Body).Decode(&user)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+		req := new(presenter.UserUpdate)
+		// fixed: decode into req
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		err = utils.ValidateStruct(r.Context(), user)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
-			return
-		}
-
 		values := make(map[string]interface{})
-		if user.Name != "" {
-			values["name"] = user.Name
+		if req.Firstname != nil {
+			values["firstname"] = *req.Firstname
 		}
-
+		if req.Lastname != nil {
+			values["lastname"] = *req.Lastname
+		}
+		if req.Fullname != nil {
+			values["fullname"] = *req.Fullname
+		}
+		if req.MobileNumber != nil {
+			values["mobile_number"] = *req.MobileNumber
+		}
+		if req.PhoneNumber != nil {
+			values["phone_number"] = *req.PhoneNumber
+		}
+		if req.LineID != nil {
+			values["lineid"] = *req.LineID
+		}
+		if req.LocationID != nil {
+			values["location_id"] = *req.LocationID
+		}
 		updatedUser, err := h.usersUC.Update(r.Context(), id, values)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(updatedUser)))
 	}
 }
 
-// UpdatePassword godoc
-// @Summary Update password user
-// @Description Update password user by ID.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path string true "User Id"
-// @Param user body presenter.UserUpdatePassword true "Update user"
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/{id}/updatepass [patch]
-func (h *userHandler) UpdatePassword() func(w http.ResponseWriter, r *http.Request) {
+// UpdatePassword – PATCH /user/{id}/updatepass (admin only)
+func (h *userHandler) UpdatePassword() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
-		user := new(presenter.UserUpdatePassword)
-
-		err = json.NewDecoder(r.Body).Decode(&user)
+		req := new(presenter.UserUpdatePassword)
+		// fixed: decode into req
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
+			return
+		}
+		if err := utils.ValidateStruct(r.Context(), req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
+			return
+		}
+		updatedUser, err := h.usersUC.UpdatePassword(r.Context(), id, req.OldPassword, req.NewPassword, req.ConfirmPassword)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		err = utils.ValidateStruct(r.Context(), user)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
-			return
-		}
-
-		updatedUser, err := h.usersUC.UpdatePassword(
-			r.Context(),
-			id,
-			user.OldPassword,
-			user.NewPassword,
-			user.ConfirmPassword,
-		)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
-			return
-		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(updatedUser)))
 	}
 }
 
-// Me godoc
-// @Summary Read user me
-// @Description Get user me.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/me [get]
-func (h *userHandler) Me() func(w http.ResponseWriter, r *http.Request) {
+// UpdateRole – PATCH /user/{id}/role (admin only)
+func (h *userHandler) UpdateRole() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		user, err := middleware.GetUserFromCtx(ctx)
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
+		req := new(presenter.UserUpdateRole)
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
+			return
+		}
+		if req.RoleID <= 0 {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(errors.New("invalid role id"))))
+			return
+		}
+		updatedUser, err := h.usersUC.Update(r.Context(), id, map[string]interface{}{"role_id": req.RoleID})
+		if err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
+			return
+		}
+		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(updatedUser)))
+	}
+}
 
+// Me – GET /user/me
+func (h *userHandler) Me() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, err := middleware.GetUserFromCtx(r.Context())
+		if err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
+			return
+		}
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(user)))
 	}
 }
 
-// UpdateMe godoc
-// @Summary Update user me
-// @Description Update user me.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body presenter.UserUpdate true "Update user"
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/me [put]
-func (h *userHandler) UpdateMe() func(w http.ResponseWriter, r *http.Request) {
+// UpdateMe – PUT /user/me
+func (h *userHandler) UpdateMe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		user, err := middleware.GetUserFromCtx(ctx)
+		user, err := middleware.GetUserFromCtx(r.Context())
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		userUpdate := new(presenter.UserUpdate)
-
-		err = json.NewDecoder(r.Body).Decode(&userUpdate)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+		req := new(presenter.UserUpdate)
+		// fixed: decode into req
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		err = utils.ValidateStruct(r.Context(), userUpdate)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
-			return
-		}
-
 		values := make(map[string]interface{})
-		if userUpdate.Name != "" {
-			values["name"] = userUpdate.Name
+		if req.Firstname != nil {
+			values["firstname"] = *req.Firstname
 		}
-
-		updatedUser, err := h.usersUC.Update(r.Context(), user.Id, values)
+		if req.Lastname != nil {
+			values["lastname"] = *req.Lastname
+		}
+		if req.Fullname != nil {
+			values["fullname"] = *req.Fullname
+		}
+		if req.MobileNumber != nil {
+			values["mobile_number"] = *req.MobileNumber
+		}
+		if req.PhoneNumber != nil {
+			values["phone_number"] = *req.PhoneNumber
+		}
+		if req.LineID != nil {
+			values["lineid"] = *req.LineID
+		}
+		if req.LocationID != nil {
+			values["location_id"] = *req.LocationID
+		}
+		updatedUser, err := h.usersUC.Update(r.Context(), user.ID, values)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(updatedUser)))
 	}
 }
 
-// UpdatePasswordMe godoc
-// @Summary Update password user me
-// @Description Update password user me.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body presenter.UserUpdatePassword true "Update user"
-// @Success 200 {object} responses.SuccessResponse[presenter.UserResponse]
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/me/updatepass [patch]
-func (h *userHandler) UpdatePasswordMe() func(w http.ResponseWriter, r *http.Request) {
+// UpdatePasswordMe – PATCH /user/me/updatepass
+func (h *userHandler) UpdatePasswordMe() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		user, err := middleware.GetUserFromCtx(ctx)
+		user, err := middleware.GetUserFromCtx(r.Context())
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		userUpdate := new(presenter.UserUpdatePassword)
-
-		err = json.NewDecoder(r.Body).Decode(&userUpdate)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+		req := new(presenter.UserUpdatePassword)
+		// fixed: decode into req
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
-		err = utils.ValidateStruct(r.Context(), userUpdate)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+		if err := utils.ValidateStruct(r.Context(), req); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
-		updatedUser, err := h.usersUC.UpdatePassword(
-			r.Context(),
-			user.Id,
-			userUpdate.OldPassword,
-			userUpdate.NewPassword,
-			userUpdate.ConfirmPassword,
-		)
+		updatedUser, err := h.usersUC.UpdatePassword(r.Context(), user.ID, req.OldPassword, req.NewPassword, req.ConfirmPassword)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
-
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelResponse(updatedUser)))
 	}
 }
 
-// LogoutAllAdmin godoc
-// @Summary Logout all of user
-// @Description Logout all session of user with id.
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path string true "User Id"
-// @Success 200
-// @Failure 400	{object} responses.ErrorResponse
-// @Failure 401	{object} responses.ErrorResponse
-// @Failure 403	{object} responses.ErrorResponse
-// @Failure 404	{object} responses.ErrorResponse
-// @Failure 422	{object} responses.ErrorResponse
-// @Security OAuth2Password
-// @Router /user/{id}/logoutall [get]
-func (h *userHandler) LogoutAllAdmin() func(w http.ResponseWriter, r *http.Request) {
+// LogoutAllAdmin – GET /user/{id}/logoutall (admin only)
+func (h *userHandler) LogoutAllAdmin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
-
-		err = h.usersUC.LogoutAll(ctx, id)
-		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+		if err := h.usersUC.LogoutAll(r.Context(), id); err != nil {
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
+		render.Respond(w, r, responses.CreateSuccessResponse(struct{}{}))
 	}
 }
 
-func mapModel(exp *presenter.UserCreate) *models.User {
-	return &models.User{
-		Name:        exp.Name,
-		Email:       exp.Email,
-		Password:    exp.Password,
-		IsActive:    true,
-		IsSuperUser: false,
+// ------------------------------
+// Mapping functions
+// ------------------------------
+
+func mapModel(req *presenter.UserCreate) *models.SdUser {
+	var fullname *string
+	if req.Fullname != "" {
+		fullname = &req.Fullname
+	} else if req.Firstname != "" || req.Lastname != "" {
+		combined := strings.TrimSpace(req.Firstname + " " + req.Lastname)
+		if combined != "" {
+			fullname = &combined
+		}
+	}
+	return &models.SdUser{
+		Email:        strings.ToLower(strings.TrimSpace(req.Email)),
+		Username:     strings.ToLower(strings.TrimSpace(req.Email)),
+		Password:     req.Password,
+		RoleID:       req.RoleID,
+		Firstname:    stringPtr(req.Firstname),
+		Lastname:     stringPtr(req.Lastname),
+		Fullname:     fullname,
+		MobileNumber: stringPtr(req.MobileNumber),
+		PhoneNumber:  stringPtr(req.PhoneNumber),
+		LineID:       stringPtr(req.LineID),
+		LocationID:   stringPtr(req.LocationID),
+		Status:       1,
+		IsSuperUser:  false,
+		Verified:     false,
 	}
 }
 
-func mapModelResponse(exp *models.User) *presenter.UserResponse {
+func mapModelResponse(user *models.SdUser) *presenter.UserResponse {
+	if user == nil {
+		return nil
+	}
 	return &presenter.UserResponse{
-		Id:          exp.Id,
-		Name:        exp.Name,
-		Email:       exp.Email,
-		CreatedAt:   exp.CreatedAt,
-		UpdatedAt:   exp.UpdatedAt,
-		IsActive:    exp.IsActive,
-		IsSuperUser: exp.IsSuperUser,
-		Verified:    exp.Verified,
+		ID:           user.ID,
+		Email:        user.Email,
+		RoleID:       user.RoleID,
+		Firstname:    user.Firstname,
+		Lastname:     user.Lastname,
+		Fullname:     user.Fullname,
+		MobileNumber: user.MobileNumber,
+		PhoneNumber:  user.PhoneNumber,
+		LineID:       user.LineID,
+		LocationID:   user.LocationID,
+		Status:       user.Status,
+		IsSuperUser:  user.IsSuperUser,
+		Verified:     user.Verified,
+		CreatedAt:    user.CreatedDate,
+		UpdatedAt:    user.UpdatedDate,
 	}
 }
 
-func mapModelsResponse(exp []*models.User) []*presenter.UserResponse {
-	out := make([]*presenter.UserResponse, len(exp))
-	for i, user := range exp {
-		out[i] = mapModelResponse(user)
+func mapModelsResponse(users []*models.SdUser) []*presenter.UserResponse {
+	out := make([]*presenter.UserResponse, len(users))
+	for i, u := range users {
+		out[i] = mapModelResponse(u)
 	}
 	return out
+}
+
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

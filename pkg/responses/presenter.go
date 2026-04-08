@@ -1,6 +1,6 @@
 package responses
 
-import "gorestapi/pkg/httpErrors"
+import "icmongolang/pkg/httpErrors"
 
 type Response[D any] struct {
 	Data      D                       `json:"data"`

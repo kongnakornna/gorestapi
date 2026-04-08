@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"gorestapi/config"
-	"gorestapi/internal/items"
-	"gorestapi/internal/items/presenter"
-	"gorestapi/internal/middleware"
-	"gorestapi/internal/models"
-	"gorestapi/pkg/httpErrors"
-	"gorestapi/pkg/logger"
-	"gorestapi/pkg/responses"
-	"gorestapi/pkg/utils"
+	"icmongolang/config"
+	"icmongolang/internal/items"
+	"icmongolang/internal/items/presenter"
+	"icmongolang/internal/middleware"
+	"icmongolang/internal/models"
+	"icmongolang/pkg/httpErrors"
+	"icmongolang/pkg/logger"
+	"icmongolang/pkg/responses"
+	"icmongolang/pkg/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -47,37 +47,37 @@ func (h *itemHandler) Create() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		item := new(presenter.ItemCreate)
+		itemReq := new(presenter.ItemCreate)
 
-		err := json.NewDecoder(r.Body).Decode(&item)
+		err := json.NewDecoder(r.Body).Decode(&itemReq)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
-		err = utils.ValidateStruct(ctx, item)
+		err = utils.ValidateStruct(ctx, itemReq)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
 		user, err := middleware.GetUserFromCtx(ctx)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
-		newItem, err := h.itemsUC.CreateWithOwner(
-			ctx,
-			user.Id,
-			mapModel(item),
-		)
+		// ✅ สร้าง model และกำหนด OwnerId
+		newItem := mapModel(itemReq)
+		newItem.OwnerId = user.ID // กำหนดเจ้าของจาก user ที่ login
+
+		createdItem, err := h.itemsUC.CreateWithOwner(ctx, user.ID, newItem)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
-		itemResponse := *mapModelResponse(newItem)
+		itemResponse := *mapModelResponse(createdItem)
 		render.Respond(w, r, responses.CreateSuccessResponse(itemResponse))
 	}
 }
@@ -103,24 +103,25 @@ func (h *itemHandler) Get() func(w http.ResponseWriter, r *http.Request) {
 
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
 
 		user, err := middleware.GetUserFromCtx(ctx)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
 		item, err := h.itemsUC.Get(ctx, id)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
-		if !user.IsSuperUser && item.OwnerId != user.Id {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrNotEnoughPrivileges(err))) //nolint:errcheck
+		// เปลี่ยน user.Id เป็น user.ID และ item.OwnerId (คงไว้ตาม model item)
+		if !user.IsSuperUser && item.OwnerId != user.ID {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrNotEnoughPrivileges(err)))
 			return
 		}
 
@@ -153,7 +154,7 @@ func (h *itemHandler) GetMulti() func(w http.ResponseWriter, r *http.Request) {
 
 		user, err := middleware.GetUserFromCtx(ctx)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
@@ -161,10 +162,11 @@ func (h *itemHandler) GetMulti() func(w http.ResponseWriter, r *http.Request) {
 		if user.IsSuperUser {
 			items, err = h.itemsUC.GetMulti(ctx, limit, offset)
 		} else {
-			items, err = h.itemsUC.GetMultiByOwnerId(ctx, user.Id, limit, offset)
+			// เปลี่ยน user.Id เป็น user.ID
+			items, err = h.itemsUC.GetMultiByOwnerId(ctx, user.ID, limit, offset)
 		}
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 		render.Respond(w, r, responses.CreateSuccessResponse(mapModelsResponse(items)))
@@ -192,30 +194,31 @@ func (h *itemHandler) Delete() func(w http.ResponseWriter, r *http.Request) {
 
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
 
 		user, err := middleware.GetUserFromCtx(ctx)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
 		item, err := h.itemsUC.Get(ctx, id)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
-		if !user.IsSuperUser && item.OwnerId != user.Id {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrNotEnoughPrivileges(err))) //nolint:errcheck
+		// เปลี่ยน user.Id เป็น user.ID
+		if !user.IsSuperUser && item.OwnerId != user.ID {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrNotEnoughPrivileges(err)))
 			return
 		}
 
 		err = h.itemsUC.DeleteWithoutGet(ctx, id)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
@@ -245,7 +248,7 @@ func (h *itemHandler) Update() func(w http.ResponseWriter, r *http.Request) {
 
 		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
 
@@ -253,30 +256,31 @@ func (h *itemHandler) Update() func(w http.ResponseWriter, r *http.Request) {
 
 		err = json.NewDecoder(r.Body).Decode(&item)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
 		err = utils.ValidateStruct(r.Context(), item)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err))) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrValidation(err)))
 			return
 		}
 
 		user, err := middleware.GetUserFromCtx(ctx)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
 		dbItem, err := h.itemsUC.Get(ctx, id)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 
-		if !user.IsSuperUser && dbItem.OwnerId != user.Id {
-			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrNotEnoughPrivileges(err))) //nolint:errcheck
+		// เปลี่ยน user.Id เป็น user.ID
+		if !user.IsSuperUser && dbItem.OwnerId != user.ID {
+			render.Render(w, r, responses.CreateErrorResponse(httpErrors.ErrNotEnoughPrivileges(err)))
 			return
 		}
 
@@ -290,7 +294,7 @@ func (h *itemHandler) Update() func(w http.ResponseWriter, r *http.Request) {
 
 		updatedItem, err := h.itemsUC.Update(r.Context(), id, values)
 		if err != nil {
-			render.Render(w, r, responses.CreateErrorResponse(err)) //nolint:errcheck
+			render.Render(w, r, responses.CreateErrorResponse(err))
 			return
 		}
 

@@ -3,20 +3,20 @@ package users
 import (
 	"context"
 
-	"gorestapi/internal"
-	"gorestapi/internal/models"
+	"icmongolang/internal"
+	"icmongolang/internal/models"
 
 	"github.com/google/uuid"
 )
 
 type UserUseCaseI interface {
-	internal.UseCaseI[models.User]
-	CreateUser(ctx context.Context, exp *models.User, confirmPassword string) (*models.User, error)
+	internal.UseCaseI[models.SdUser]
+	CreateUser(ctx context.Context, exp *models.SdUser, confirmPassword string) (*models.SdUser, error)
 	SignIn(ctx context.Context, email string, password string) (string, string, error)
-	IsActive(ctx context.Context, exp models.User) bool
-	IsSuper(ctx context.Context, exp models.User) bool
+	IsActive(ctx context.Context, exp models.SdUser) bool
+	IsSuper(ctx context.Context, exp models.SdUser) bool
 	CreateSuperUserIfNotExist(context.Context) (bool, error)
-	UpdatePassword(ctx context.Context, id uuid.UUID, oldPassword string, newPassword string, confirmPassword string) (*models.User, error)
+	UpdatePassword(ctx context.Context, id uuid.UUID, oldPassword string, newPassword string, confirmPassword string) (*models.SdUser, error)
 	ParseIdFromRefreshToken(ctx context.Context, refreshToken string) (uuid.UUID, error)
 	Refresh(ctx context.Context, refreshToken string) (string, string, error)
 	GenerateRedisUserKey(id uuid.UUID) string

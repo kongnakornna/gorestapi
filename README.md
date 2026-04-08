@@ -55,10 +55,21 @@ In this project use 3 layer architecture
 
 ### Run
 - `docker-compose up`
-- OR  go run cmd/api/main.go serve  on loca Windows OS
-- Swagger: [localhost:5000/swagger/](http://localhost:5000/swagger/)
-- http://localhost:5000/swagger/index.html#/
+- OR  go run ./main.go serve  on loca Windows OS
+- Swagger: [localhost:8088/swagger/](http://localhost:8088/swagger/)
+- http://localhost:8088/swagger/index.html#/
 
+### monitoring
+
+- http://localhost:8088/monitoring/health
+- http://localhost:8088/monitoring/metrics
+- http://localhost:8088/monitoring/system
+
+### curl
+curl http://localhost:8088/monitoring/health
+curl http://localhost:8088/monitoring/metrics
+curl http://localhost:8088/monitoring/system
+ 
 ```bash
   Email: root@gmail.com
   Password: root_password
@@ -95,13 +106,13 @@ In this project use 3 layer architecture
 
 ```bash
 - ตรวจสอบว่า go.mod มี replace directive หรือใช้ local module หรือไม่
-- ถ้า gorestapi เป็น local module ให้ใช้ replace gorestapi => gorestapi
+- ถ้า icmongolang เป็น local module ให้ใช้ replace icmongolang => icmongolang
 - หรือถ้าเป็น private repo ให้ตั้ง GOPRIVATE และใช้ access token
-- Perfect! You're setting up an existing Go project (gorestapi). Here's how to properly set it up and run it:
+- Perfect! You're setting up an existing Go project (icmongolang). Here's how to properly set it up and run it:
 ```bash
-## Complete Setup Steps for Your gorestapi Project
-## 📘 การจัดการ `go.mod` และ dependencies สำหรับโปรเจกต์ `gorestapi`  
-## 📘 Managing `go.mod` and dependencies for `gorestapi` project
+## Complete Setup Steps for Your icmongolang Project
+## 📘 การจัดการ `go.mod` และ dependencies สำหรับโปรเจกต์ `icmongolang`  
+## 📘 Managing `go.mod` and dependencies for `icmongolang` project
 
 > คำแนะนำแบบทีละขั้นตอน (ไทย / อังกฤษ)  
 > Step-by-step guide (Thai / English)
@@ -114,16 +125,31 @@ In this project use 3 layer architecture
 ```bash
 # ไทย: โคลน repository จาก GitHub และเปลี่ยนไปยังไดเรกทอรีโปรเจกต์
 # EN: Clone the repository from GitHub and change into the project directory
-git clone github.com/kongnakornna/gorestapi.git
-cd gorestapi
+git clone github.com/kongnakornna/icmongolang.git
+cd icmongolang
 ```
 ```bash
 
+<<<<<<< HEAD
 go clean 
+=======
+>>>>>>> dev
 go mod tidy
 go mod download
 go mod verify
-go run cmd/api/main.go serve
+
+# ล้างฐานข้อมูลเก่า (ระวังข้อมูล)
+# go run cmd/api/main.go migrate:reset (ถ้ามีคำสั่ง)
+
+# รัน migrate ใหม่
+go run  main.go migrate
+
+
+go run ./main.go serve
+
+OR ใช้ go run โดยตรง (ไม่ต้อง build exe)
+
+go run ./cmd/api/main.go serve
 
  ```
 # Auto Run 
@@ -159,7 +185,7 @@ air
 
 ![Icmon5](https://github.com/user-attachments/assets/fa802d05-f4f7-4f60-bab0-897a95cea541)
 
-# 🚀 โครงสร้างและ Workflow ของโปรเจกต์ `gorestapi` (Go Backend Clean Architecture)
+# 🚀 โครงสร้างและ Workflow ของโปรเจกต์ `icmongolang` (Go Backend Clean Architecture)
 
 เอกสารนี้  ประกอบด้วย  
 - โครงสร้างการทำงานแบบละเอียด  
@@ -593,7 +619,7 @@ Worker ใน Go เป็น **concurrency pattern ที่ใช้ goroutine
 ### โฟลเดอร์หลัก (ย่อ)
 
 ```
-gorestapi/
+icmongolang/
 ├── cmd/                     # Cobra CLI (serve, migrate, initdata, worker)
 ├── config/                  # Viper config (YAML + env)
 ├── internal/                # โค้ดส่วนตัว (ไม่ถูก import จากภายนอก)
@@ -1025,16 +1051,16 @@ go run cmd/api/main.go migrate
 go run cmd/api/main.go worker
 
 # 6. รัน HTTP server (หรือใช้ air เพื่อ hot-reload)
-go run cmd/api/main.go serve
+go run ./main.go serve
 # หรือ
 air -c .air.toml
 
 # 7. ทดสอบ API
-curl -X POST http://localhost:5000/api/v1/register \
+curl -X POST http://localhost:8088/api/v1/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"P@ssw0rd","name":"Test User"}'
 
-curl -X POST http://localhost:5000/api/v1/login \
+curl -X POST http://localhost:8088/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"P@ssw0rd"}'
 ```
@@ -1104,118 +1130,15 @@ curl -X POST http://localhost:5000/api/v1/login \
 
 ---
 
-> **หมายเหตุ**: ตัวอย่างโค้ดทั้งหมดอยู่ใน namespace `yourmodule` – คุณควรเปลี่ยนเป็น `gorestapi` ตามชื่อโปรเจกต์จริง และต้องติดตั้ง dependencies ด้วย `go mod tidy` ก่อนรัน
+> **หมายเหตุ**: ตัวอย่างโค้ดทั้งหมดอยู่ใน namespace `yourmodule` – คุณควรเปลี่ยนเป็น `icmongolang` ตามชื่อโปรเจกต์จริง และต้องติดตั้ง dependencies ด้วย `go mod tidy` ก่อนรัน
 
 
-### โฟลเดอร์หลัก  gorestapi
-```
-gorestapi/
-├── .vscode/
-│   ├── launch.json
-│   └── settings.json
-├── cmd/
-│   ├── api/
-│   │   └── main.go
-│   ├── initdata.go
-│   ├── migrate.go
-│   ├── root.go
-│   ├── serve.go
-│   └── worker.go
-├── config/
-│   ├── config-local.yml
-│   ├── config-prod.yml
-│   └── config.go
-├── docdev/
-├── docs/
-├── internal/
-│   ├── models/
-│   │   ├── base.go
-│   │   ├── session.go
-│   │   ├── user.go
-│   │   └── verification.go
-│   ├── repository/
-│   │   ├── pg_repository.go
-│   │   ├── redis_repo.go
-│   │   ├── session_repo.go
-│   │   └── user_repo.go
-│   ├── usecase/
-│   │   ├── auth_usecase.go
-│   │   ├── cache_usecase.go
-│   │   └── user_usecase.go
-│   ├── delivery/
-│   │   ├── rest/
-│   │   │   ├── handler/
-│   │   │   │   ├── auth_handler.go
-│   │   │   │   ├── health_handler.go
-│   │   │   │   └── user_handler.go
-│   │   │   ├── middleware/
-│   │   │   │   ├── auth.go
-│   │   │   │   ├── cors.go
-│   │   │   │   ├── logger.go
-│   │   │   │   ├── monitoring.go
-│   │   │   │   ├── rate_limit.go
-│   │   │   │   └── security.go
-│   │   │   ├── dto/
-│   │   │   │   ├── auth_dto.go
-│   │   │   │   ├── error_dto.go
-│   │   │   │   └── user_dto.go
-│   │   │   └── router.go
-│   │   └── worker/
-│   │       └── email_worker.go
-│   └── pkg/
-│       ├── email/
-│       │   ├── gomail_sender.go
-│       │   ├── sender.go
-│       │   └── templates/
-│       │       ├── reset_password.html
-│       │       └── verification.html
-│       ├── hash/
-│       │   └── bcrypt.go
-│       ├── jwt/
-│       │   ├── maker.go
-│       │   ├── payload.go
-│       │   └── rsa_maker.go
-│       ├── logger/
-│       │   └── zap_logger.go
-│       ├── redis/
-│       │   ├── cache.go
-│       │   ├── client.go
-│       │   └── refresh_store.go
-│       ├── utils/
-│       │   ├── random.go
-│       │   └── time.go
-│       └── validator/
-│           └── custom_validator.go
-├── migrations/
-│   ├── 000001_create_users_table.down.sql
-│   └── 000001_create_users_table.up.sql
-├── pkg/
-│   └── utils/
-├── scripts/
-│   ├── build.sh
-│   └── deploy.sh
-├── vendor/
-├── .air.toml
-├── .dockerignore
-├── .env.dev
-├── .env.prod
-├── .gitignore
-├── docker-compose.dev.yml
-├── docker-compose.prod.yml
-├── Dockerfile.dev
-├── Dockerfile.prod
-├── go.mod
-├── go.sum
-├── LICENSE
-├── README.md
-└── BookGolang.md
-```
 
-# คำอธิบายการทำงานตามโครงสร้าง `gorestapi`
+# คำอธิบายการทำงานตามโครงสร้าง `icmongolang`
 
 ## 1. โครงสร้างนี้คืออะไร?
 
-โครงสร้าง `gorestapi` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
+โครงสร้าง `icmongolang` คือ **เทมเพลตสำหรับพัฒนา REST API ด้วยภาษา Go** ที่ใช้ **Clean Architecture** (หรือเรียกอีกแบบว่า **Layered Architecture**) โดยแบ่งชั้นหน้าที่ชัดเจน 3–4 ชั้น ได้แก่:
 
 - **Model Layer** (`internal/models/`) – กำหนดโครงสร้างข้อมูล (entity) ที่สอดคล้องกับฐานข้อมูล
 - **Repository Layer** (`internal/repository/`) – ติดต่อฐานข้อมูลและ Redis โดยใช้ interface
@@ -1409,7 +1332,7 @@ flowchart LR
 
 ![Icmon3](https://github.com/user-attachments/assets/cbb342e0-2e51-47c6-b755-40a58dc3f59f)
 
-# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `gorestapi`  
+# 🧩 การเพิ่มฟีเจอร์ใหม่ในโครงสร้าง `icmongolang`  
 ## ตัวอย่าง: เพิ่ม Module IoT (ระบบสั่งซื้อน้ำออนไลน์ + GPS Tracking + MQTT + Queue Processor)
 
 โครงสร้างเดิมเป็น Clean Architecture ที่แยก Model → Repository → Usecase → Delivery อย่างชัดเจน การเพิ่ม module ใหม่จะทำแบบ **Modular** โดยไม่กระทบ module เดิม (auth, users)
@@ -1547,6 +1470,7 @@ func (r *Router) SetupIotRoutes(deviceHandler *handler.DeviceHandler, authMiddle
 - รัน `swag init` แล้วทดสอบที่ `/swagger/index.html`
 
 --- 
+<<<<<<< HEAD
 
 **หมายเหตุ:** ขั้นตอนทั้งหมดยึดตาม Clean Architecture ที่มีอยู่แล้วใน `gorestapi` 
 การเพิ่ม module ใหม่จะไม่ต้องแก้ไข `auth` หรือ `users` module ยกเว้นต้องเพิ่มความสัมพันธ์ (foreign key) เช่น Device มี UserID เป็นต้น
@@ -1872,18 +1796,25 @@ flowchart LR
 =======
 **หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapig` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
 >>>>>>> dev
+=======
+**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `icmongolang` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
+>>>>>>> dev
 
 ### การนำ Template ไปใช้
 
 - **ผู้เริ่มต้น** ควรศึกษาเนื้อหาตามลำดับตั้งแต่ภาคที่ 1 ถึงภาคที่ 3
-- https://github.com/kongnakornna/gorestapi/blob/main/Book/BookGolang1.md
+- https://github.com/kongnakornna/icmongolang/blob/main/knowledge/Book/BookGolang1.md
 - **นักพัฒนาที่มีประสบการณ์** สามารถข้ามไปยังภาคที่ 7-9 เพื่อศึกษา Clean Architecture, DDD และการผสานระบบภายนอก
-- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/sulution
+- https://github.com/kongnakornna/icmongolang/tree/main/knowledge/project_manamet/sulution
 - **ทีมพัฒนา** สามารถนำ Task List Template และ Checklist Template ไปปรับใช้ในการทำงาน
+<<<<<<< HEAD
 - https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/Template
 - https://github.com/kongnakornna/gorestapi/blob/main/project_manamet/%E0%B8%84%E0%B8%B9%E0%B9%88%E0%B8%A1%E0%B8%B7-Git-Flow.md
+=======
+- https://github.com/kongnakornna/icmongolang/tree/main/knowledge/project_manamet/Template
+>>>>>>> dev
 - **Design Thinking  & Business Model Canvas (BMC) - Design & Implementation Package **
-- https://github.com/kongnakornna/gorestapi/tree/main/project_manamet/DesignThinking
+- https://github.com/kongnakornna/icmongolang/tree/main/knowledge/project_manamet/DesignThinking
 ---
 **ผู้เขียน:** คงนคร จันทะคุณ  
 **อีเมล:** kongnakornjantakun@gmail.com  

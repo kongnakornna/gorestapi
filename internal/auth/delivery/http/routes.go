@@ -1,10 +1,33 @@
 package http
 
 import (
+	"icmongolang/internal/auth"
+	"icmongolang/internal/middleware"
+	"time"
+
 	"github.com/go-chi/chi/v5"
-	"gorestapi/internal/auth"
-	"gorestapi/internal/middleware"
 )
+
+func (h *authHandler) Routes(r chi.Router) {
+	// สร้าง rate limit middleware
+	rateLimitConfig := middleware.RateLimitConfig{
+		RequestsPerSecond: 50,               // 50 requests per second | 50 คำขอต่อวินาที
+		Burst:             100,              // Burst up to 100 | อนุญาตให้ส่งสูงสุด 100 คำขอในครั้งเดียว
+		CleanupInterval:   15 * time.Minute, // Clean up every 15 minutes | ทำความสะอาดทุก 15 นาที
+	}
+	rateLimiter := middleware.NewRateLimitMiddleware(rateLimitConfig)
+
+	// ใช้ rate limit เฉพาะ route login
+	r.Group(func(r chi.Router) {
+		r.Use(rateLimiter.Handler)   // ใช้ rate limit middleware
+		r.Post("/login", h.SignIn()) // route login
+	})
+
+	// // routes อื่นๆ ไม่มี rate limit
+	// r.Post("/signup", h.SignUp())
+	// r.Post("/logout", h.Logout())
+	// r.Post("/refresh", h.Refresh())
+}
 
 func MapAuthRoute(router *chi.Mux, h auth.Handlers, mw *middleware.MiddlewareManager) {
 	// Auth routes

@@ -1,0 +1,10 @@
+go get github.com/prometheus/client_golang/prometheus
+go get github.com/prometheus/client_golang/prometheus/promauto
+go get github.com/prometheus/client_golang/prometheus/promhttp
+go get go.opentelemetry.io/otel
+go get go.opentelemetry.io/otel/exporters/jaeger
+go get go.opentelemetry.io/otel/sdk/trace
+go get github.com/getsentry/sentry-go
+go get github.com/shirou/gopsutil/v3
+go get github.com/go-chi/chi/v5
+go mod tidy
