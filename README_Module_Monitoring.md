@@ -1545,9 +1545,4 @@ flowchart LR
 | 12 | สร้าง Swagger docs | `swag init` |
 
 ---
-
-<<<<<<< HEAD
-**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapi` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
-=======
-**หมายเหตุ:** ขั้นตอนทั้งหมดสอดคล้องกับ Clean Architecture ของ `gorestapig` และสามารถนำไปปรับใช้กับฟีเจอร์อื่น ๆ ในรายการ (Smart Building, Smart Farm, Smart Healthcare, ฯลฯ) ได้โดยเปลี่ยน model และ usecase เท่านั้น ส่วนโครงสร้างหลัก (repository, delivery, pkg) จะเหมือนกัน
->>>>>>> dev
+ 
